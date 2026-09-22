@@ -3,8 +3,6 @@ package dev.jarful.ui.today
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,7 +13,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
@@ -26,6 +23,8 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -45,7 +44,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
@@ -58,7 +56,6 @@ import dev.jarful.platform.nowMillis
 import dev.jarful.ui.AppState
 import dev.jarful.ui.PrintTarget
 import dev.jarful.ui.i18n.LocalStrings
-import dev.jarful.ui.theme.JarfulColors
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -89,24 +86,18 @@ fun TicketCard(state: AppState, ticket: Ticket, modifier: Modifier = Modifier, s
         }
     }
 
-    val bg = when {
-        ticket.isDone -> MaterialTheme.colorScheme.surfaceVariant
-        isRunning -> JarfulColors.Sticky.copy(alpha = 0.35f)
-        else -> MaterialTheme.colorScheme.surface
+    val colors = when {
+        ticket.isDone -> CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        isRunning -> CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer)
+        else -> CardDefaults.elevatedCardColors()
     }
-    val border = if (isRunning) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.6f)
 
-    Column(
-        modifier
-            .fillMaxWidth()
-            .scale(scale.value)
-            .rotate(rotation.value)
-            .alpha(alpha.value)
-            .clip(RoundedCornerShape(6.dp))
-            .background(bg)
-            .border(1.dp, border, RoundedCornerShape(6.dp))
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+    ElevatedCard(
+        modifier = modifier.fillMaxWidth().scale(scale.value).rotate(rotation.value).alpha(alpha.value),
+        colors = colors,
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = if (ticket.isDone) 0.dp else 1.dp),
     ) {
+      Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 ticket.category.ifBlank { "—" }.uppercase(),
@@ -138,7 +129,11 @@ fun TicketCard(state: AppState, ticket: Ticket, modifier: Modifier = Modifier, s
             ticket.title,
             style = MaterialTheme.typography.titleMedium,
             textDecoration = if (ticket.isDone) TextDecoration.LineThrough else null,
-            color = if (ticket.isDone) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+            color = when {
+                ticket.isDone -> MaterialTheme.colorScheme.onSurfaceVariant
+                isRunning -> MaterialTheme.colorScheme.onPrimaryContainer
+                else -> MaterialTheme.colorScheme.onSurface
+            },
             modifier = Modifier.padding(top = 2.dp),
         )
 
@@ -163,6 +158,7 @@ fun TicketCard(state: AppState, ticket: Ticket, modifier: Modifier = Modifier, s
                 }
             }
         }
+      }
     }
 }
 

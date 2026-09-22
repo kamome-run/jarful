@@ -44,6 +44,8 @@ data class Ticket(
     val startedAt: Long? = null,
     val doneAt: Long? = null,
     val printedAt: Long? = null,
+    /** Last-writer-wins timestamp for sync (FR-14.5). Stamped automatically by the Store. */
+    val updatedAt: Long = 0,
 ) {
     val isDone: Boolean get() = state == TicketState.DONE
     val isQuota: Boolean get() = quotaTarget != null
@@ -60,6 +62,8 @@ data class Routine(
     val timeboxMin: Int? = null,
     val quotaTarget: Int? = null,
     val enabled: Boolean = true,
+    /** Last-writer-wins timestamp for sync (FR-14.5). Stamped automatically by the Store. */
+    val updatedAt: Long = 0,
 )
 
 @Serializable
@@ -112,6 +116,21 @@ data class PrinterSettings(
 @Serializable
 enum class Language { SYSTEM, JA, EN }
 
+/** LAN sync configuration (FR-14). Device-local, never synced itself. */
+@Serializable
+data class SyncSettings(
+    val hostEnabled: Boolean = false,
+    val port: Int = 47831,
+    val pin: String = "",
+    val peerHost: String = "",
+    val peerPort: Int = 47831,
+    val peerPin: String = "",
+    val autoSync: Boolean = true,
+    val lastSyncAt: Long? = null,
+    val lastSyncResult: String? = null,
+    val deviceId: String = "",
+)
+
 @Serializable
 data class Settings(
     val soundEnabled: Boolean = true,
@@ -123,6 +142,7 @@ data class Settings(
     val showCompleted: Boolean = true,
     /** Set once the first-run routine suggestion has been shown (FR-6.6). */
     val onboardingDone: Boolean = false,
+    val sync: SyncSettings = SyncSettings(),
 )
 
 @Serializable
@@ -138,4 +158,6 @@ data class AppData(
     val dayStats: List<DayStat> = emptyList(),
     /** Dates (yyyy-MM-dd) for which routine tickets were already generated (FR-6.3). */
     val routineGeneratedDates: Set<String> = emptySet(),
+    /** id -> deletedAt for synced entity types (FR-14.4). */
+    val tombstones: Map<String, Long> = emptyMap(),
 )

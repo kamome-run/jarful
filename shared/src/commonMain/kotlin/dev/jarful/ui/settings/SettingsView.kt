@@ -15,7 +15,10 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -42,6 +45,7 @@ import dev.jarful.platform.bluetoothSupported
 import dev.jarful.platform.copyToClipboard
 import dev.jarful.platform.listBluetoothDevices
 import dev.jarful.platform.listSerialPorts
+import dev.jarful.platform.localIpAddresses
 import dev.jarful.platform.serialSupported
 import dev.jarful.ui.AppState
 import dev.jarful.ui.common.IntField
@@ -51,6 +55,7 @@ import dev.jarful.ui.i18n.LocalStrings
 import kotlinx.coroutines.launch
 
 /** Settings (FR-13) including the printer configuration (FR-9). */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsView(state: AppState, modifier: Modifier = Modifier) {
     val s = LocalStrings.current
@@ -72,9 +77,10 @@ fun SettingsView(state: AppState, modifier: Modifier = Modifier) {
                 IntField("MM", settings.prepareMinute, { v -> if (v != null && v in 0..59) state.store.updateSettings { it.copy(prepareMinute = v) } })
             }
             SectionTitle(s.language)
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                listOf(Language.SYSTEM to s.langSystem, Language.JA to s.langJa, Language.EN to s.langEn).forEach { (l, label) ->
-                    FilterChip(selected = settings.language == l, onClick = { state.store.updateSettings { it.copy(language = l) } }, label = { Text(label) })
+            val langs = listOf(Language.SYSTEM to s.langSystem, Language.JA to s.langJa, Language.EN to s.langEn)
+            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                langs.forEachIndexed { i, (l, label) ->
+                    SegmentedButton(selected = settings.language == l, onClick = { state.store.updateSettings { it.copy(language = l) } }, shape = SegmentedButtonDefaults.itemShape(i, langs.size)) { Text(label) }
                 }
             }
         }
@@ -82,6 +88,11 @@ fun SettingsView(state: AppState, modifier: Modifier = Modifier) {
         item {
             SectionTitle(s.printer)
             PrinterSection(state, p, ::update)
+        }
+
+        item {
+            SectionTitle(s.sync)
+            SyncSection(state)
         }
 
         item {
@@ -101,6 +112,7 @@ fun SettingsView(state: AppState, modifier: Modifier = Modifier) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PrinterSection(state: AppState, p: PrinterSettings, update: ((PrinterSettings) -> PrinterSettings) -> Unit) {
     val s = LocalStrings.current
@@ -111,9 +123,9 @@ private fun PrinterSection(state: AppState, p: PrinterSettings, update: ((Printe
         add(PrinterTransport.TCP)
     }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            transports.forEach { t ->
-                FilterChip(selected = p.transport == t, onClick = { update { it.copy(transport = t) } }, label = { Text(t.label) })
+        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+            transports.forEachIndexed { i, t ->
+                SegmentedButton(selected = p.transport == t, onClick = { update { it.copy(transport = t) } }, shape = SegmentedButtonDefaults.itemShape(i, transports.size)) { Text(t.label, maxLines = 1) }
             }
         }
         when (p.transport) {
@@ -150,6 +162,43 @@ private fun PrinterSection(state: AppState, p: PrinterSettings, update: ((Printe
             }
         }
         Button(onClick = { scope.launch { state.testPrint() } }, enabled = !state.printing) { Text(s.testPrint) }
+    }
+}
+
+@Composable
+private fun SyncSection(state: AppState) {
+    val s = LocalStrings.current
+    val sy = state.data.settings.sync
+    fun update(f: (dev.jarful.model.SyncSettings) -> dev.jarful.model.SyncSettings) = state.store.updateSettings { it.copy(sync = f(it.sync)) }
+    val addresses = remember(sy.hostEnabled) { localIpAddresses() }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(s.syncIntro, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        LabeledRow(s.syncHost) { Switch(checked = sy.hostEnabled, onCheckedChange = { v -> update { it.copy(hostEnabled = v) } }) }
+        Text(s.syncHostHint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (sy.hostEnabled) {
+            val addr = if (addresses.isEmpty()) s.syncHostNoAddress else addresses.joinToString("  ")
+            Text("${s.syncHostAddresses}: $addr", style = MaterialTheme.typography.bodyLarge)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("${s.syncPort}: ${sy.port}")
+                Text("${s.syncPin}: ${sy.pin}", style = MaterialTheme.typography.titleMedium)
+                TextButton(onClick = { update { it.copy(pin = (100000 + kotlin.random.Random.nextInt(900000)).toString()) } }) { Text(s.syncRegeneratePin) }
+            }
+            state.syncServerError?.let { Text(s.syncHostError(it), color = MaterialTheme.colorScheme.error) }
+                ?: if (state.syncHostRunning) Text("● " + s.syncHostRunning, color = MaterialTheme.colorScheme.secondary) else Unit
+        }
+        Text(s.syncPeer, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 4.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedTextField(value = sy.peerHost, onValueChange = { v -> update { it.copy(peerHost = v.trim()) } }, label = { Text(s.syncPeerHost) }, singleLine = true, modifier = Modifier.weight(1f))
+            IntField(s.syncPort, sy.peerPort, { v -> if (v != null) update { it.copy(peerPort = v) } })
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            OutlinedTextField(value = sy.peerPin, onValueChange = { v -> update { it.copy(peerPin = v.filter { c -> c.isDigit() }.take(6)) } }, label = { Text(s.syncPeerPin) }, singleLine = true, modifier = Modifier.width(140.dp))
+            Button(onClick = { state.syncNow() }, enabled = !state.syncing && sy.peerHost.isNotBlank()) { Text(s.syncNow) }
+        }
+        LabeledRow(s.syncAuto) { Switch(checked = sy.autoSync, onCheckedChange = { v -> update { it.copy(autoSync = v) } }) }
+        val last = sy.lastSyncAt?.let { dev.jarful.domain.Dates.toLocalDateTime(it).toString().replace('T', ' ').take(16) } ?: s.syncNever
+        val result = sy.lastSyncResult?.let { if (it == "OK") "" else "  (${s.syncError(it)})" } ?: ""
+        Text("${s.syncLast}: $last$result", style = MaterialTheme.typography.bodySmall, color = if (result.isEmpty()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error)
     }
 }
 
