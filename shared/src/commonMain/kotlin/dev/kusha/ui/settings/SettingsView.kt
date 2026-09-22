@@ -95,7 +95,7 @@ fun SettingsView(state: AppState, modifier: Modifier = Modifier) {
             TextButton(onClick = { state.showShortcuts = true }) { Text(s.shortcuts) }
             SectionTitle(s.about)
             Text(s.aboutBody, style = MaterialTheme.typography.bodyMedium)
-            Text("https://github.com/oyama-company/kusha", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+            Text("https://github.com/kamome-run/kusha", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
             Spacer(Modifier.padding(24.dp))
         }
     }

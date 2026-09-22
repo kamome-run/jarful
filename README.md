@@ -1,6 +1,6 @@
 # Kusha（クシャ） — ADHD 脳のためのゲームループ型タスク管理
 
-[![CI](https://github.com/oyama-company/kusha/actions/workflows/ci.yml/badge.svg)](https://github.com/oyama-company/kusha/actions/workflows/ci.yml)
+[![CI](https://github.com/kamome-run/kusha/actions/workflows/ci.yml/badge.svg)](https://github.com/kamome-run/kusha/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 「ゲームには何時間でも集中できるのに、仕事や家事は先延ばしにしてしまう」——
@@ -37,7 +37,7 @@ Android（Chromebook 対応）と Windows 11 で使えるアプリにしたも�
 | Chromebook (ChromeOS) | 同上 | タッチ非搭載機でもインストール可。キーボード・マウスで全操作 |
 | Windows 11 (x64) | `Kusha-*.msi` / `Kusha-*.exe` | インストーラ。Bluetooth プリンターは仮想 COM ポート経由 |
 
-ビルド成果物は [GitHub Actions](https://github.com/oyama-company/kusha/actions) の Artifacts、
+ビルド成果物は [GitHub Actions](https://github.com/kamome-run/kusha/actions) の Artifacts、
 またはリリースページから取得できます。
 
 ## 対応プリンター
