@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.LinearProgressIndicator
+import dev.jarful.ui.ds.DsProgress
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -69,7 +69,7 @@ fun StatsView(state: AppState, modifier: Modifier = Modifier) {
             item {
                 Column(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
                     Row { Text(r.routine.title, Modifier.weight(1f)); Text("${r.done}/${r.scheduled}  ${(r.ratio * 100).toInt()}%") }
-                    LinearProgressIndicator(progress = { r.ratio }, modifier = Modifier.fillMaxWidth().height(8.dp).padding(top = 2.dp))
+                    DsProgress(progress = { r.ratio }, modifier = Modifier.fillMaxWidth().padding(top = 4.dp))
                 }
             }
         }

@@ -8,12 +8,12 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import dev.jarful.ui.ds.ButtonKind
+import dev.jarful.ui.ds.DsButton
+import dev.jarful.ui.ds.DsDialog
+import dev.jarful.ui.ds.DsTextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -68,7 +68,7 @@ fun AppDialogs(state: AppState) {
     state.moveTaskId?.let { id -> MoveTaskDialog(state, id) }
 
     if (state.showShortcuts) {
-        AlertDialog(
+        DsDialog(
             onDismissRequest = { state.showShortcuts = false },
             title = { Text(s.shortcuts) },
             text = {
@@ -81,17 +81,17 @@ fun AppDialogs(state: AppState) {
                     }
                 }
             },
-            confirmButton = { TextButton(onClick = { state.showShortcuts = false }) { Text(s.close) } },
+            confirmButton = { DsButton(onClick = { state.showShortcuts = false }, modifier = Modifier.fillMaxWidth()) { Text(s.close) } },
         )
     }
 
     if (state.showOnboarding) {
-        AlertDialog(
+        DsDialog(
             onDismissRequest = { state.finishOnboarding(false) },
             title = { Text(s.sampleRoutinesTitle) },
             text = { Text(s.sampleRoutinesBody) },
-            confirmButton = { Button(onClick = { state.finishOnboarding(true) }) { Text(s.sampleRoutinesAdd) } },
-            dismissButton = { TextButton(onClick = { state.finishOnboarding(false) }) { Text(s.sampleRoutinesSkip) } },
+            confirmButton = { DsButton(onClick = { state.finishOnboarding(true) }, kind = ButtonKind.Accent, modifier = Modifier.fillMaxWidth()) { Text(s.sampleRoutinesAdd) } },
+            dismissButton = { DsButton(onClick = { state.finishOnboarding(false) }, modifier = Modifier.fillMaxWidth()) { Text(s.sampleRoutinesSkip) } },
         )
     }
 }
@@ -103,23 +103,23 @@ private fun RefocusDialog(state: AppState) {
     var text by remember { mutableStateOf("") }
     val fr = remember { FocusRequester() }
     LaunchedEffect(Unit) { fr.requestFocus() }
-    AlertDialog(
+    DsDialog(
         onDismissRequest = { state.refocusOpen = false },
         title = { Text("⚡ " + s.refocus) },
         text = {
             Column {
                 Text(s.refocusHint, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 8.dp))
-                OutlinedTextField(
+                DsTextField(
                     value = text, onValueChange = { text = it }, minLines = 5, maxLines = 8,
-                    placeholder = { Text(s.refocusPlaceholder) },
+                    placeholder = s.refocusPlaceholder,
                     modifier = Modifier.fillMaxWidth().focusRequester(fr).onPreviewKeyEvent { e ->
                         if (e.type == KeyEventType.KeyDown && e.isCtrlPressed && (e.key == Key.Enter || e.key == Key.NumPadEnter)) { state.refocus(text); true } else false
                     },
                 )
             }
         },
-        confirmButton = { Button(onClick = { state.refocus(text) }, enabled = text.isNotBlank()) { Text(s.refocusGo) } },
-        dismissButton = { TextButton(onClick = { state.refocusOpen = false }) { Text(s.cancel) } },
+        confirmButton = { DsButton(onClick = { state.refocus(text) }, enabled = text.isNotBlank(), kind = ButtonKind.Accent, modifier = Modifier.fillMaxWidth()) { Text(s.refocusGo) } },
+        dismissButton = { DsButton(onClick = { state.refocusOpen = false }, modifier = Modifier.fillMaxWidth()) { Text(s.cancel) } },
     )
 }
 
@@ -130,7 +130,7 @@ private fun TaskDetailDialog(state: AppState, id: String) {
     val t = TaskTree.byId(state.data.tasks, id) ?: run { state.detailTaskId = null; return }
     var est by remember(id) { mutableStateOf(t.estimateMin) }
     var box by remember(id) { mutableStateOf(t.timeboxMin) }
-    AlertDialog(
+    DsDialog(
         onDismissRequest = { state.detailTaskId = null },
         title = { Text(t.title) },
         text = {
@@ -142,8 +142,8 @@ private fun TaskDetailDialog(state: AppState, id: String) {
                 }
             }
         },
-        confirmButton = { TextButton(onClick = { state.store.setTaskEstimate(id, est, box); state.detailTaskId = null }) { Text(s.save) } },
-        dismissButton = { TextButton(onClick = { state.detailTaskId = null }) { Text(s.cancel) } },
+        confirmButton = { DsButton(onClick = { state.store.setTaskEstimate(id, est, box); state.detailTaskId = null }, kind = ButtonKind.Accent, modifier = Modifier.fillMaxWidth()) { Text(s.save) } },
+        dismissButton = { DsButton(onClick = { state.detailTaskId = null }, modifier = Modifier.fillMaxWidth()) { Text(s.cancel) } },
     )
 }
 
@@ -155,18 +155,18 @@ private fun MoveTaskDialog(state: AppState, id: String) {
     val t = TaskTree.byId(tasks, id) ?: run { state.moveTaskId = null; return }
     val excluded = (TaskTree.descendants(tasks, id).map { it.id } + id).toSet()
     val candidates = tasks.filter { it.id !in excluded && !it.done }.map { it to TaskTree.pathTo(tasks, it.id).joinToString(" › ") { p -> p.title } }.sortedBy { it.second }
-    AlertDialog(
+    DsDialog(
         onDismissRequest = { state.moveTaskId = null },
         title = { Text("${s.moveTo}: ${t.title}") },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()).heightIn(max = 400.dp)) {
-                TextButton(onClick = { state.store.reparentTask(id, null); state.moveTaskId = null }) { Text(s.moveToRoot) }
+                DsButton(onClick = { state.store.reparentTask(id, null); state.moveTaskId = null }, kind = ButtonKind.Subtle) { Text(s.moveToRoot) }
                 candidates.forEach { (c, label) ->
-                    TextButton(onClick = { state.store.reparentTask(id, c.id); state.moveTaskId = null }) { Text(label) }
+                    DsButton(onClick = { state.store.reparentTask(id, c.id); state.moveTaskId = null }, kind = ButtonKind.Subtle) { Text(label) }
                 }
             }
         },
-        confirmButton = { TextButton(onClick = { state.moveTaskId = null }) { Text(s.cancel) } },
+        confirmButton = { DsButton(onClick = { state.moveTaskId = null }, modifier = Modifier.fillMaxWidth()) { Text(s.cancel) } },
     )
 }
 

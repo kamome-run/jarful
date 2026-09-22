@@ -95,3 +95,8 @@ expect suspend fun httpPostJson(url: String, body: String, timeoutMs: Int): Http
 
 /** Non-loopback IPv4 addresses of this device, for showing on the host's settings screen. */
 expect fun localIpAddresses(): List<String>
+
+// ----- Design system (NFR-8) -----
+
+/** System UI font for the Fluent design system (Segoe UI Variable / Segoe UI on Windows), null if unavailable. */
+expect fun fluentFontFamily(): androidx.compose.ui.text.font.FontFamily?

@@ -16,17 +16,9 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Print
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,6 +32,14 @@ import dev.jarful.model.Routine
 import dev.jarful.ui.AppState
 import dev.jarful.ui.PrintTarget
 import dev.jarful.ui.common.IntField
+import dev.jarful.ui.ds.ButtonKind
+import dev.jarful.ui.ds.DsButton
+import dev.jarful.ui.ds.DsCard
+import dev.jarful.ui.ds.DsChip
+import dev.jarful.ui.ds.DsDialog
+import dev.jarful.ui.ds.DsIconButton
+import dev.jarful.ui.ds.DsSwitch
+import dev.jarful.ui.ds.DsTextField
 import dev.jarful.ui.common.LabeledRow
 import dev.jarful.ui.i18n.LocalStrings
 import kotlinx.datetime.DayOfWeek
@@ -54,19 +54,19 @@ fun RoutinesView(state: AppState, modifier: Modifier = Modifier) {
             Text(s.routines, style = MaterialTheme.typography.titleLarge)
             Text(s.routineOrderHint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = { state.editingRoutine = state.newRoutine() }) { Icon(Icons.Default.Add, null); Text(s.routineNew) }
-                OutlinedButton(onClick = { state.print(PrintTarget.Routines) }, enabled = !state.printing) { Icon(Icons.Default.Print, null); Text(s.routinePrintToday) }
-                TextButton(onClick = { state.store.regenerateToday() }) { Text(s.routineRegenerate) }
+                DsButton(onClick = { state.editingRoutine = state.newRoutine() }, kind = ButtonKind.Accent) { Icon(Icons.Default.Add, null, modifier = Modifier.width(18.dp)); Spacer(Modifier.width(4.dp)); Text(s.routineNew) }
+                DsButton(onClick = { state.print(PrintTarget.Routines) }, enabled = !state.printing) { Icon(Icons.Default.Print, null, modifier = Modifier.width(18.dp)); Spacer(Modifier.width(4.dp)); Text(s.routinePrintToday) }
+                DsButton(onClick = { state.store.regenerateToday() }, kind = ButtonKind.Subtle) { Text(s.routineRegenerate) }
             }
         }
         if (routines.isEmpty()) {
             item {
                 Text(s.routineEmpty, modifier = Modifier.padding(top = 24.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                TextButton(onClick = { state.addSampleRoutines() }) { Text(s.sampleRoutinesAdd) }
+                DsButton(onClick = { state.addSampleRoutines() }, kind = ButtonKind.Subtle) { Text(s.sampleRoutinesAdd) }
             }
         }
         items(routines, key = { it.id }) { r ->
-            Card(Modifier.fillMaxWidth()) {
+            DsCard(Modifier.fillMaxWidth()) {
                 Row(Modifier.padding(start = 12.dp, end = 4.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text(r.title, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -80,10 +80,11 @@ fun RoutinesView(state: AppState, modifier: Modifier = Modifier) {
                         }.joinToString(" · ")
                         Text(meta, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    Switch(checked = r.enabled, onCheckedChange = { state.store.upsertRoutine(r.copy(enabled = it)) })
-                    IconButton(onClick = { state.store.moveRoutine(r.id, -1) }) { Icon(Icons.Default.KeyboardArrowUp, s.moveUp) }
-                    IconButton(onClick = { state.store.moveRoutine(r.id, +1) }) { Icon(Icons.Default.KeyboardArrowDown, s.moveDown) }
-                    TextButton(onClick = { state.editingRoutine = r }) { Text(s.rename) }
+                    DsSwitch(checked = r.enabled, onCheckedChange = { state.store.upsertRoutine(r.copy(enabled = it)) })
+                    Spacer(Modifier.width(8.dp))
+                    DsIconButton(onClick = { state.store.moveRoutine(r.id, -1) }, icon = Icons.Default.KeyboardArrowUp, contentDescription = s.moveUp)
+                    DsIconButton(onClick = { state.store.moveRoutine(r.id, +1) }, icon = Icons.Default.KeyboardArrowDown, contentDescription = s.moveDown)
+                    DsButton(onClick = { state.editingRoutine = r }, kind = ButtonKind.Subtle) { Text(s.rename) }
                 }
             }
         }
@@ -96,17 +97,17 @@ private fun RoutineDialog(state: AppState, initial: Routine) {
     val s = LocalStrings.current
     var r by remember(initial.id) { mutableStateOf(initial) }
     val isNew = state.data.routines.none { it.id == initial.id }
-    AlertDialog(
+    DsDialog(
         onDismissRequest = { state.editingRoutine = null },
         title = { Text(if (isNew) s.routineNew else r.title) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = r.title, onValueChange = { r = r.copy(title = it) }, label = { Text(s.routineTitle) }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = r.category, onValueChange = { r = r.copy(category = it) }, label = { Text(s.routineCategory) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                DsTextField(value = r.title, onValueChange = { r = r.copy(title = it) }, label = s.routineTitle, singleLine = true, modifier = Modifier.fillMaxWidth())
+                DsTextField(value = r.category, onValueChange = { r = r.copy(category = it) }, label = s.routineCategory, singleLine = true, modifier = Modifier.fillMaxWidth())
                 Text(s.routineDays, style = MaterialTheme.typography.labelLarge)
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     DayOfWeek.entries.forEach { d ->
-                        FilterChip(selected = d in r.weekdays, onClick = { r = r.copy(weekdays = if (d in r.weekdays) r.weekdays - d else r.weekdays + d) }, label = { Text(s.dayShort(d)) })
+                        DsChip(selected = d in r.weekdays, onClick = { r = r.copy(weekdays = if (d in r.weekdays) r.weekdays - d else r.weekdays + d) }, label = s.dayShort(d))
                     }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -115,21 +116,20 @@ private fun RoutineDialog(state: AppState, initial: Routine) {
                 }
                 IntField(s.routineQuota, r.quotaTarget, { r = r.copy(quotaTarget = it?.takeIf { v -> v > 0 }) })
                 Text(s.routineQuotaHint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                LabeledRow(s.routineEnabled) { Switch(checked = r.enabled, onCheckedChange = { r = r.copy(enabled = it) }) }
+                LabeledRow(s.routineEnabled) { DsSwitch(checked = r.enabled, onCheckedChange = { r = r.copy(enabled = it) }) }
             }
         },
         confirmButton = {
-            TextButton(enabled = r.title.isNotBlank() && r.weekdays.isNotEmpty(), onClick = {
+            DsButton(enabled = r.title.isNotBlank() && r.weekdays.isNotEmpty(), kind = ButtonKind.Accent, modifier = Modifier.fillMaxWidth(), onClick = {
                 state.store.upsertRoutine(r.copy(title = r.title.trim(), category = r.category.trim()))
                 state.store.regenerateToday()
                 state.editingRoutine = null
             }) { Text(s.save) }
         },
         dismissButton = {
-            Row {
-                if (!isNew) TextButton(onClick = { state.store.deleteRoutine(r.id); state.store.regenerateToday(); state.editingRoutine = null }) { Text(s.delete, color = MaterialTheme.colorScheme.error) }
-                Spacer(Modifier.width(8.dp))
-                TextButton(onClick = { state.editingRoutine = null }) { Text(s.cancel) }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (!isNew) DsButton(onClick = { state.store.deleteRoutine(r.id); state.store.regenerateToday(); state.editingRoutine = null }, modifier = Modifier.weight(1f)) { Text(s.delete, color = MaterialTheme.colorScheme.error) }
+                DsButton(onClick = { state.editingRoutine = null }, modifier = Modifier.weight(1f)) { Text(s.cancel) }
             }
         },
     )

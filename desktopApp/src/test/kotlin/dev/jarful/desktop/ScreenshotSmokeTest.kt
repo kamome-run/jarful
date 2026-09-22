@@ -11,6 +11,7 @@ import dev.jarful.model.Ticket
 import dev.jarful.platform.MonoBitmap
 import dev.jarful.print.TicketFormatter
 import dev.jarful.ui.JarfulApp
+import dev.jarful.ui.ds.DesignSystem
 import dev.jarful.ui.i18n.JA
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.TestScope
@@ -50,10 +51,10 @@ class ScreenshotSmokeTest {
         return store
     }
 
-    private fun shoot(name: String, w: Int, h: Int, dark: Boolean = false, tab: dev.jarful.ui.Tab? = null) {
+    private fun shoot(name: String, w: Int, h: Int, dark: Boolean = false, system: DesignSystem? = null) {
         val store = seededStore()
         ImageComposeScene(width = w, height = h, coroutineContext = Dispatchers.Unconfined).use { scene ->
-            scene.setContent { JarfulApp(store, darkTheme = dark) }
+            scene.setContent { JarfulApp(store, darkTheme = dark, designSystemOverride = system) }
             scene.render(1_000_000_000L)
             val img = scene.render(2_000_000_000L)
             val png = img.encodeToData(EncodedImageFormat.PNG)!!.bytes
@@ -62,17 +63,25 @@ class ScreenshotSmokeTest {
         }
     }
 
+    // Windows: Fluent Design (desktop default)
     @Test
-    fun desktopWideLayout() = shoot("desktop-1280x800", 1280, 800)
+    fun windowsFluentLight() = shoot("windows-fluent-1280x800", 1280, 800, system = DesignSystem.FLUENT)
 
     @Test
-    fun phoneCompactLayout() = shoot("phone-412x915", 412, 915)
+    fun windowsFluentDark() = shoot("windows-fluent-1280x800-dark", 1280, 800, dark = true, system = DesignSystem.FLUENT)
 
     @Test
-    fun desktopDark() = shoot("desktop-1280x800-dark", 1280, 800, dark = true)
+    fun windowsFluentNarrow() = shoot("windows-fluent-600x800", 600, 800, system = DesignSystem.FLUENT)
+
+    // Android: Material 3
+    @Test
+    fun androidMaterialTablet() = shoot("android-material-1280x800", 1280, 800, system = DesignSystem.MATERIAL)
 
     @Test
-    fun phoneDark() = shoot("phone-412x915-dark", 412, 915, dark = true)
+    fun androidMaterialPhone() = shoot("android-material-412x915", 412, 915, system = DesignSystem.MATERIAL)
+
+    @Test
+    fun androidMaterialPhoneDark() = shoot("android-material-412x915-dark", 412, 915, dark = true, system = DesignSystem.MATERIAL)
 
     @Test
     fun ticketRasterLooksRight() {
