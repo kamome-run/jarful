@@ -14,9 +14,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Print
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -82,11 +80,5 @@ fun TodayView(state: AppState, showJar: Boolean, modifier: Modifier = Modifier) 
             }
             items(tickets, key = { it.id }) { k -> TicketCard(state, k) }
         }
-        ExtendedFloatingActionButton(
-            onClick = { state.refocusOpen = true },
-            icon = { Icon(Icons.Default.Bolt, null) },
-            text = { Text(s.refocus) },
-            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
-        )
     }
 }

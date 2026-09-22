@@ -1,4 +1,5 @@
 <resources>
     <color name="paper">#FFFCF5</color>
     <color name="sticky">#FFD84D</color>
+    <color name="paper_dark">#17150F</color>
 </resources>

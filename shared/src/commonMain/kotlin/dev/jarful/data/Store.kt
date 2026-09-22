@@ -15,6 +15,8 @@ import dev.jarful.model.TicketState
 import dev.jarful.platform.FileStore
 import dev.jarful.platform.ioDispatcher
 import dev.jarful.platform.nowMillis
+import dev.jarful.sync.SyncMerge
+import dev.jarful.sync.SyncPayload
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -46,6 +48,14 @@ class Store(
         val parsed = text?.let { runCatching { json.decodeFromString(AppData.serializer(), it) }.getOrNull() }
         val base = migrate(parsed ?: AppData())
         _data.value = base.copy(tasks = TaskTree.ensureInbox(base.tasks, inboxTitle, nowMillis()))
+        if (base.settings.sync.deviceId.isBlank() || base.settings.sync.pin.isBlank()) {
+            updateSettings { st ->
+                st.copy(sync = st.sync.copy(
+                    deviceId = st.sync.deviceId.ifBlank { Ids.next("d") },
+                    pin = st.sync.pin.ifBlank { (100000 + kotlin.random.Random.nextInt(900000)).toString() },
+                ))
+            }
+        }
         prepareRoutines()
     }
 
@@ -64,11 +74,53 @@ class Store(
 
     fun mutate(undoable: Boolean = false, f: (AppData) -> AppData) {
         val before = _data.value
-        val after = f(before)
-        if (after === before) return
+        val raw = f(before)
+        if (raw === before) return
+        val after = stamp(before, raw, nowMillis())
         if (undoable) { undoStack.addLast(before); while (undoStack.size > 50) undoStack.removeFirst() }
         _data.value = after
         scheduleSave()
+    }
+
+    /** Replaces synced data with a merged payload without re-stamping (FR-14.4). */
+    fun applySynced(p: SyncPayload) {
+        val d = _data.value
+        val next = SyncMerge.apply(d, p)
+        _data.value = next.copy(tasks = TaskTree.ensureInbox(next.tasks, inboxTitle, nowMillis()))
+        scheduleSave()
+    }
+
+    fun syncPayload(): SyncPayload = SyncPayload.of(_data.value)
+
+    /** Merges a remote payload into local state and returns the result both sides keep (host side, FR-14.1). */
+    fun mergeFromPeer(remote: SyncPayload): SyncPayload {
+        val merged = SyncMerge.merge(syncPayload(), remote)
+        applySynced(merged)
+        return merged
+    }
+
+    companion object {
+        /**
+         * Stamps `updatedAt = now` on every task/ticket/routine whose content changed and records a
+         * tombstone for every id that disappeared (FR-14.5). Pure; unit-tested.
+         */
+        fun stamp(before: AppData, after: AppData, now: Long): AppData {
+            var tomb = after.tombstones
+            fun <T> diff(old: List<T>, new: List<T>, id: (T) -> String, touch: (T) -> T): List<T> {
+                val oldById = old.associateBy(id)
+                val out = new.map { e -> val prev = oldById[id(e)]; if (prev == null || prev != e) touch(e) else e }
+                val newIds = new.map(id).toSet()
+                val removed = old.map(id).filter { it !in newIds }
+                if (removed.isNotEmpty()) tomb = tomb + removed.associateWith { now }
+                return out
+            }
+            if (before.tasks === after.tasks && before.tickets === after.tickets && before.routines === after.routines) return after
+            val tasks = diff(before.tasks, after.tasks, { it.id }) { it.copy(updatedAt = now) }
+            val tickets = diff(before.tickets, after.tickets, { it.id }) { it.copy(updatedAt = now) }
+            val routines = diff(before.routines, after.routines, { it.id }) { it.copy(updatedAt = now) }
+            val live = (tasks.map { it.id } + tickets.map { it.id } + routines.map { it.id }).toSet()
+            return after.copy(tasks = tasks, tickets = tickets, routines = routines, tombstones = tomb.filterKeys { it !in live })
+        }
     }
 
     fun canUndo(): Boolean = undoStack.isNotEmpty()

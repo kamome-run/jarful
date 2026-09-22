@@ -2,6 +2,7 @@ package dev.jarful.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -14,32 +15,43 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.Keyboard
+import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.Today
 import androidx.compose.material.icons.filled.ViewColumn
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
-import androidx.compose.material3.Snackbar
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
@@ -64,9 +76,9 @@ import dev.jarful.ui.theme.JarfulTheme
 import dev.jarful.ui.today.TodayView
 import kotlinx.coroutines.delay
 
-/** Root composable shared by Android and desktop (§7). */
+/** Root composable shared by Android and desktop (§7). Material 3 throughout (NFR-8). */
 @Composable
-fun JarfulApp(store: Store) {
+fun JarfulApp(store: Store, darkTheme: Boolean? = null) {
     val data by store.data.collectAsState()
     val strings = stringsFor(data.settings.language)
     val scope = rememberCoroutineScope()
@@ -77,9 +89,17 @@ fun JarfulApp(store: Store) {
 
     LaunchedEffect(Unit) {
         if (!data.settings.onboardingDone && data.routines.isEmpty()) state.showOnboarding = true
+        if (data.settings.sync.autoSync) state.syncNow(quiet = true)
         // Re-check routine preparation every minute (FR-6.3) — covers apps left open across midnight / prepare time.
-        while (true) { delay(60_000); store.prepareRoutines() }
+        var tick = 0
+        while (true) {
+            delay(60_000); tick++
+            store.prepareRoutines()
+            if (tick % 5 == 0 && store.data.value.settings.sync.autoSync) state.syncNow(quiet = true) // FR-14.6: every 5 min
+        }
     }
+    LaunchedEffect(data.settings.sync.hostEnabled, data.settings.sync.port) { state.reconcileSyncHost() }
+    DisposableEffect(Unit) { onDispose { state.stopSyncHost() } }
     LaunchedEffect(state.toast) {
         val t = state.toast ?: return@LaunchedEffect
         snackbar.showSnackbar(t)
@@ -91,7 +111,7 @@ fun JarfulApp(store: Store) {
     }
 
     CompositionLocalProvider(LocalStrings provides strings) {
-        JarfulTheme {
+        JarfulTheme(dark = darkTheme ?: isSystemInDarkTheme()) {
             BoxWithConstraints(
                 Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
                     .focusRequester(rootFocus).focusable()
@@ -99,53 +119,14 @@ fun JarfulApp(store: Store) {
                     .onKeyEvent { columnShortcut(state, it) },
             ) {
                 val wide = maxWidth >= 840.dp
-                if (wide) WideLayout(state) else CompactLayout(state)
-                SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(bottom = if (wide) 16.dp else 88.dp)) { Snackbar(it) }
+                if (wide) WideLayout(state, snackbar) else CompactLayout(state, snackbar)
                 AppDialogs(state)
             }
         }
     }
 }
 
-@Composable
-private fun WideLayout(state: AppState) {
-    val s = LocalStrings.current
-    Row(Modifier.fillMaxSize()) {
-        NavigationRail { RailItems(state) }
-        when (state.tab) {
-            Tab.COLUMNS, Tab.TODAY -> {
-                ColumnsView(state, compact = false, modifier = Modifier.weight(1f).fillMaxHeight())
-                VerticalDivider()
-                Column(Modifier.width(380.dp).fillMaxHeight()) {
-                    JarView(state.loopsToday(), state.jarDropSignal, Modifier.fillMaxWidth().padding(top = 8.dp), height = 200.dp)
-                    TodayView(state, showJar = false, modifier = Modifier.weight(1f))
-                }
-            }
-            Tab.ROUTINES -> RoutinesView(state, Modifier.weight(1f))
-            Tab.STATS -> StatsView(state, Modifier.weight(1f))
-            Tab.SETTINGS -> SettingsView(state, Modifier.weight(1f))
-        }
-    }
-    @Suppress("UNUSED_VARIABLE") val unused = s
-}
-
-@Composable
-private fun CompactLayout(state: AppState) {
-    Column(Modifier.fillMaxSize()) {
-        Box(Modifier.weight(1f)) {
-            when (state.tab) {
-                Tab.TODAY -> TodayView(state, showJar = true)
-                Tab.COLUMNS -> ColumnsView(state, compact = true)
-                Tab.ROUTINES -> RoutinesView(state)
-                Tab.STATS -> StatsView(state)
-                Tab.SETTINGS -> SettingsView(state)
-            }
-        }
-        NavigationBar { BarItems(state) }
-    }
-}
-
-private data class NavEntry(val tab: Tab, val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector)
+private data class NavEntry(val tab: Tab, val label: String, val icon: ImageVector)
 
 @Composable
 private fun navEntries(): List<NavEntry> {
@@ -160,20 +141,111 @@ private fun navEntries(): List<NavEntry> {
 }
 
 @Composable
-private fun RailItems(state: AppState) {
+private fun currentTitle(state: AppState): String {
     val s = LocalStrings.current
-    navEntries().forEach { e ->
-        // In the wide layout TODAY and COLUMNS share one screen.
-        val selected = state.tab == e.tab || (e.tab == Tab.COLUMNS && state.tab == Tab.TODAY)
-        NavigationRailItem(selected = selected, onClick = { state.tab = e.tab }, icon = { Icon(e.icon, e.label) }, label = { Text(e.label) })
+    return when (state.tab) {
+        Tab.TODAY -> s.tabToday
+        Tab.COLUMNS -> s.tabColumns
+        Tab.ROUTINES -> s.tabRoutines
+        Tab.STATS -> s.tabStats
+        Tab.SETTINGS -> s.tabSettings
     }
-    NavigationRailItem(selected = false, onClick = { state.refocusOpen = true }, icon = { Icon(Icons.Default.Bolt, s.refocus) }, label = { Text(s.refocus) })
 }
 
+/** Shared top-bar actions: print today, sync, shortcuts (§8). */
 @Composable
-private fun androidx.compose.foundation.layout.RowScope.BarItems(state: AppState) {
-    navEntries().forEach { e ->
-        NavigationBarItem(selected = state.tab == e.tab, onClick = { state.tab = e.tab }, icon = { Icon(e.icon, e.label) }, label = { Text(e.label) })
+private fun TopActions(state: AppState) {
+    val s = LocalStrings.current
+    val hasPeer = state.data.settings.sync.peerHost.isNotBlank()
+    if (hasPeer) IconButton(onClick = { state.syncNow() }, enabled = !state.syncing) { Icon(Icons.Default.Sync, s.syncNow) }
+    IconButton(onClick = { state.print(PrintTarget.Today) }, enabled = !state.printing) { Icon(Icons.Default.Print, s.printToday) }
+    IconButton(onClick = { state.showShortcuts = true }) { Icon(Icons.Default.Keyboard, s.shortcuts) }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun WideLayout(state: AppState, snackbar: SnackbarHostState) {
+    val s = LocalStrings.current
+    Row(Modifier.fillMaxSize()) {
+        NavigationRail(
+            header = {
+                FloatingActionButton(onClick = { state.refocusOpen = true }, modifier = Modifier.padding(vertical = 8.dp)) {
+                    Icon(Icons.Default.Bolt, s.refocus)
+                }
+            },
+        ) {
+            navEntries().forEach { e ->
+                // In the wide layout TODAY and COLUMNS share one screen.
+                val selected = state.tab == e.tab || (e.tab == Tab.COLUMNS && state.tab == Tab.TODAY)
+                NavigationRailItem(selected = selected, onClick = { state.tab = e.tab }, icon = { Icon(e.icon, e.label) }, label = { Text(e.label) })
+            }
+        }
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text(if (state.tab == Tab.TODAY) s.tabColumns else currentTitle(state)) },
+                    actions = { TopActions(state) },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
+                )
+            },
+            snackbarHost = { SnackbarHost(snackbar) },
+            containerColor = MaterialTheme.colorScheme.background,
+        ) { padding ->
+            Row(Modifier.fillMaxSize().padding(padding)) {
+                when (state.tab) {
+                    Tab.COLUMNS, Tab.TODAY -> {
+                        ColumnsView(state, compact = false, modifier = Modifier.weight(1f).fillMaxHeight())
+                        VerticalDivider()
+                        Column(Modifier.width(380.dp).fillMaxHeight()) {
+                            JarView(state.loopsToday(), state.jarDropSignal, Modifier.fillMaxWidth().padding(top = 8.dp), height = 200.dp)
+                            TodayView(state, showJar = false, modifier = Modifier.weight(1f))
+                        }
+                    }
+                    Tab.ROUTINES -> RoutinesView(state, Modifier.weight(1f))
+                    Tab.STATS -> StatsView(state, Modifier.weight(1f))
+                    Tab.SETTINGS -> SettingsView(state, Modifier.weight(1f))
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CompactLayout(state: AppState, snackbar: SnackbarHostState) {
+    val s = LocalStrings.current
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text(currentTitle(state)) },
+                actions = { TopActions(state) },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
+            )
+        },
+        bottomBar = {
+            NavigationBar {
+                navEntries().forEach { e ->
+                    NavigationBarItem(selected = state.tab == e.tab, onClick = { state.tab = e.tab }, icon = { Icon(e.icon, e.label) }, label = { Text(e.label) })
+                }
+            }
+        },
+        floatingActionButton = {
+            if (state.tab == Tab.TODAY || state.tab == Tab.COLUMNS) {
+                ExtendedFloatingActionButton(onClick = { state.refocusOpen = true }, icon = { Icon(Icons.Default.Bolt, null) }, text = { Text(s.refocus) })
+            }
+        },
+        snackbarHost = { SnackbarHost(snackbar) },
+        containerColor = MaterialTheme.colorScheme.background,
+    ) { padding ->
+        Box(Modifier.fillMaxSize().padding(padding)) {
+            when (state.tab) {
+                Tab.TODAY -> TodayView(state, showJar = true)
+                Tab.COLUMNS -> ColumnsView(state, compact = true)
+                Tab.ROUTINES -> RoutinesView(state)
+                Tab.STATS -> StatsView(state)
+                Tab.SETTINGS -> SettingsView(state)
+            }
+        }
     }
 }
 
