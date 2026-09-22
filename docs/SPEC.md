@@ -1,6 +1,6 @@
 # Jarful（ジャーフル） 仕様・要件定義書
 
-- 版: 1.2 (2026-09-22) — 1.1 で対象プリンター（Bluetooth Classic）と複数印刷プロトコルを追加、1.2 で端末間同期（FR-14）を追加
+- 版: 1.3 (2026-09-23) — 1.1 で対象プリンター（Bluetooth Classic）と複数印刷プロトコルを追加、1.2 で端末間同期（FR-14）を追加、1.3 で Windows 版の Fluent Design System 採用（NFR-8）
 - 対象: Android（Chromebook 含む）/ Windows 11 デスクトップ
 - 根拠記事: `SOURCES.md` を参照。本文中の `[S1]` `[S2]` `[S3]` は出典記号。
 
@@ -210,7 +210,7 @@ GET  http://<host>:<port>/ping → 200 {"app":"jarful","protocolVersion":1}
 | NFR-5 | 最小タッチターゲット 48dp。色だけに依存しない状態表示。 |
 | NFR-6 | 共有コードのドメインロジック（ツリー操作、ルーチン生成、ESC/POS・TSPL・CPCL エンコード、統計）に単体テストを備える。 |
 | NFR-7 | CI（GitHub Actions）で Android APK と Windows MSI を自動ビルドする。 |
-| NFR-8 | UI は **Material Design 3** に全面準拠する: `Scaffold` / `TopAppBar` / `NavigationBar` / `NavigationRail` / `FloatingActionButton` / `Card` / `ListItem` / `SegmentedButton` / `Switch` / `Snackbar` / `AlertDialog` 等の M3 コンポーネントと M3 タイポグラフィ・カラースキームを用い、Android 12 以降ではダイナミックカラー（Material You）を適用する。ライト・ダーク両テーマで WCAG AA 相当のコントラストを保つ。 |
+| NFR-8 | **プラットフォーム固有のデザインシステム** を採用し、ブランドカラー（付箋イエロー `#FFD84D`、紙色 `#FFFCF5` / `#17150F`、インク色 `#1F1B16`）は共通とする。<br>**Android**: Material Design 3（`Scaffold` / `TopAppBar` / `NavigationBar` / `NavigationRail` / `FloatingActionButton` / `Card` / `ListItem` / `SegmentedButton` / `Switch` / `Snackbar` / `AlertDialog`、M3 タイポグラフィ、Android 12 以降はダイナミックカラー）。<br>**Windows 11**: Fluent Design System（WinUI 3 準拠: Mica 相当の背景と Layer の階層、角丸 4dp のコントロールと 8dp のオーバーレイ、1px の Subtle stroke、NavigationView 型の左ペインと 3×16dp の選択インジケーター、Accent / Standard / Subtle ボタン、ToggleSwitch、ContentDialog、InfoBar、Segoe UI Variable の type ramp、ホバー/押下の状態色）。<br>画面の実装は 1 つで、部品層（`ui/ds`）が実行時にプラットフォームの design system に切り替える。ライト・ダーク両テーマで WCAG AA 相当のコントラストを保つ。 |
 
 ## 7. 画面構成
 

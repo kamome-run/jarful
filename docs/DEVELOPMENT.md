@@ -5,7 +5,7 @@
 ```
 jarful/
 ├── shared/       Kotlin Multiplatform 共通コード（ドメイン、UI、印刷、プラットフォーム抽象）
-│   ├── commonMain/   model / data(Store) / domain / print / sound / ui
+│   ├── commonMain/   model / data(Store) / domain / print / sound / sync / ui (ui/ds = design-system primitives)
 │   ├── androidMain/  FileStore, Bluetooth SPP, AudioTrack, Vibrator, Canvas ラスタライズ
 │   ├── desktopMain/  FileStore, jSerialComm(COM), javax.sound, Java2D ラスタライズ
 │   └── commonTest/   ツリー操作・ルーチン生成・印刷エンコード・統計・Store のテスト
@@ -36,6 +36,7 @@ jarful/
 - **状態**: `Store` が `StateFlow<AppData>` を持ち、すべての変更は `mutate {}` を通る。150ms デバウンスで JSON に原子的書き込み。Undo はスナップショット方式（最大 50）。
 - **UI 状態**: `AppState`（選択パス、フォーカス列、ダイアログ、コンボ、瓶の投入シグナル）。
 - **印刷**: `TicketFormatter` が `PrinterSettings.protocol` に応じて ESC/POS テキスト、または 1bit 画像（`renderTextBitmap` の expect/actual）を各プロトコルにエンコード。`PrinterClient` がトランスポートを切り替え、512 バイト単位で送信。
+- **デザインシステム**: `ui/ds` の `Ds*` プリミティブ（Button / IconButton / Switch / Checkbox / TextField / Card / ListItem / Dialog / Menu / Segmented / Chip / Progress / Divider / AppShell）が `LocalDesignSystem` に応じて Material 3（Android）または自前実装の Fluent / WinUI 3（デスクトップ）で描画する。画面は `Ds*` と foundation のレイアウトだけを使う。Fluent のトークンは `DesignSystem.kt` の `fluentTokens()`。
 - **同期**: `SyncMerge`（純粋関数、最終更新優先＋トゥームストーン）、`SyncServer`/`SyncClient`（`src/jvmShared` の最小 HTTP 実装を Android・デスクトップで共用）。`Store.mutate` が変更差分から `updatedAt` とトゥームストーンを自動付与する。
 - **効果音**: `CrumpleSound` が PCM を手続き生成（バイナリ資産なし）。
 - **Chromebook**: `uses-feature touchscreen required=false`、`resizeableActivity`、幅 840dp 以上で 3 ペイン。

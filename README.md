@@ -25,10 +25,15 @@ Android（Chromebook 対応）と Windows 11 で使えるアプリにしたも�
 
 ## スクリーンショット
 
-| Windows / Chromebook（3 ペイン） | スマートフォン | 印刷チケット（58mm ラスター） |
+Windows 11 版は **Fluent Design System**（WinUI 3 準拠）、Android 版は **Material 3** で、ブランドカラー（付箋イエロー・紙色・インク色）は共通です。
+
+| Windows 11（Fluent） | Windows 11 ダーク | Windows 11 狭い幅 |
 |---|---|---|
-| ![desktop](docs/screenshots/desktop-wide.png) | ![phone](docs/screenshots/phone-compact.png) | ![ticket](docs/screenshots/ticket-raster.png) |
-| ![desktop dark](docs/screenshots/desktop-wide-dark.png) | ![phone dark](docs/screenshots/phone-compact-dark.png) | ダークモード |
+| ![windows](docs/screenshots/windows-fluent.png) | ![windows dark](docs/screenshots/windows-fluent-dark.png) | ![windows narrow](docs/screenshots/windows-fluent-narrow.png) |
+
+| Android / Chromebook タブレット（Material 3） | Android スマートフォン | Android ダーク | 印刷チケット（58mm ラスター） |
+|---|---|---|---|
+| ![tablet](docs/screenshots/android-material-tablet.png) | ![phone](docs/screenshots/android-material-phone.png) | ![phone dark](docs/screenshots/android-material-phone-dark.png) | ![ticket](docs/screenshots/ticket-raster.png) |
 
 ## 対応プラットフォーム
 
@@ -36,7 +41,7 @@ Android（Chromebook 対応）と Windows 11 で使えるアプリにしたも�
 |------------------|--------|------|
 | Android 8.0+ | `jarful-android-*.apk` | スマートフォン / タブレット。Android 12 以降は Material You のダイナミックカラー対応 |
 | Chromebook (ChromeOS) | 同上 | タッチ非搭載機でもインストール可。キーボード・マウスで全操作 |
-| Windows 11 (x64) | `Jarful-*.msi` / `Jarful-*.exe` | インストーラ。Bluetooth プリンターは仮想 COM ポート経由 |
+| Windows 11 (x64) | `Jarful-*.msi` / `Jarful-*.exe` | インストーラ。Fluent Design System の UI。Bluetooth プリンターは仮想 COM ポート経由 |
 
 ビルド成果物は [GitHub Actions](https://github.com/kamome-run/jarful/actions) の Artifacts、
 またはリリースページから取得できます。
@@ -120,5 +125,5 @@ Laurie Hérault 氏、同氏のアプリ Colonnes、ナゾロジー編集部と�
 break tasks into 2–5 minute pieces in Miller columns, crumple each finished ticket into a transparent jar
 (animation, sound, haptics), auto-prepare weekday routines the night before, refocus with the next 3–5 tasks,
 and print tickets to a thermal printer over Bluetooth Classic / COM / TCP using ESC/POS (text, raster, bit-image),
-TSPL or CPCL. Devices sync directly over the local network (no cloud, PIN-protected, last-writer-wins merge). Material 3 UI with dynamic color on Android 12+. Android (incl. Chromebook) and Windows 11. Kotlin Multiplatform + Compose Multiplatform. MIT.
+TSPL or CPCL. Devices sync directly over the local network (no cloud, PIN-protected, last-writer-wins merge). Material 3 UI on Android (dynamic color on 12+) and a Fluent Design (WinUI 3) UI on Windows, sharing one screen implementation through a small design-system primitive layer. Android (incl. Chromebook) and Windows 11. Kotlin Multiplatform + Compose Multiplatform. MIT.
 Jarful is an independent, unofficial project and is not affiliated with or endorsed by Laurie Hérault or Colonnes.

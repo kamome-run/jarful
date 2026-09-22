@@ -31,18 +31,10 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Today
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -72,6 +64,14 @@ import dev.jarful.model.Task
 import dev.jarful.platform.nowMillis
 import dev.jarful.ui.AppState
 import dev.jarful.ui.PrintTarget
+import dev.jarful.ui.ds.ButtonKind
+import dev.jarful.ui.ds.DsButton
+import dev.jarful.ui.ds.DsCheckbox
+import dev.jarful.ui.ds.DsDivider
+import dev.jarful.ui.ds.DsIconButton
+import dev.jarful.ui.ds.DsListItem
+import dev.jarful.ui.ds.DsMenu
+import dev.jarful.ui.ds.DsMenuItem
 import dev.jarful.ui.i18n.LocalStrings
 
 /** Miller-column task browser (FR-1). Wide layout shows all columns; compact shows one with a breadcrumb. */
@@ -103,9 +103,7 @@ private fun CompactColumns(state: AppState, modifier: Modifier) {
     val s = LocalStrings.current
     Column(modifier.fillMaxSize()) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
-            IconButton(onClick = { if (i > 0) { state.compactColumnIndex = i - 1; state.focusedColumn = i - 1 } }, enabled = i > 0) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, s.close)
-            }
+            DsIconButton(onClick = { if (i > 0) { state.compactColumnIndex = i - 1; state.focusedColumn = i - 1 } }, enabled = i > 0, icon = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = s.close)
             Text(state.columnTitle(i), style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
         }
         Breadcrumb(state)
@@ -118,11 +116,11 @@ private fun Breadcrumb(state: AppState) {
     val s = LocalStrings.current
     val scroll = rememberScrollState()
     Row(Modifier.fillMaxWidth().horizontalScroll(scroll).padding(horizontal = 12.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-        TextButton(onClick = { state.select(0, state.selectedIdInColumn(0)); state.compactColumnIndex = 0 }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 6.dp)) { Text(s.root) }
+        DsButton(onClick = { state.select(0, state.selectedIdInColumn(0)); state.compactColumnIndex = 0 }, kind = ButtonKind.Subtle) { Text(s.root) }
         state.path.forEachIndexed { i, id ->
             val t = TaskTree.byId(state.data.tasks, id) ?: return@forEachIndexed
             Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            TextButton(onClick = { state.focusedColumn = i + 1; state.compactColumnIndex = i + 1 }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 6.dp)) {
+            DsButton(onClick = { state.focusedColumn = i + 1; state.compactColumnIndex = i + 1 }, kind = ButtonKind.Subtle) {
                 Text(t.title, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
@@ -149,7 +147,7 @@ private fun TaskColumn(state: AppState, index: Int, modifier: Modifier, compact:
         } else {
             Row(Modifier.fillMaxWidth().padding(end = 4.dp), horizontalArrangement = Arrangement.End) { ColumnMenu(state, parentId, menu, { menu = it }) }
         }
-        HorizontalDivider()
+        DsDivider()
         LazyColumn(Modifier.weight(1f)) {
             items(tasks, key = { it.id }) { t ->
                 TaskRow(state, t, index, selected = t.id == selectedId, focusedColumn = focused, compact = compact)
@@ -158,8 +156,8 @@ private fun TaskColumn(state: AppState, index: Int, modifier: Modifier, compact:
                 if (state.addingIn == parentId) {
                     NewTaskField(state, parentId)
                 } else {
-                    TextButton(onClick = { state.focusedColumn = index; state.startAdd(parentId) }, modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
-                        Icon(Icons.Default.Add, null); Spacer(Modifier.width(4.dp)); Text(if (parentId == null) s.newTask else s.newSubtask)
+                    DsButton(onClick = { state.focusedColumn = index; state.startAdd(parentId) }, kind = ButtonKind.Subtle, modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
+                        Icon(Icons.Default.Add, null, modifier = Modifier.width(18.dp)); Spacer(Modifier.width(4.dp)); Text(if (parentId == null) s.newTask else s.newSubtask)
                     }
                 }
                 if (tasks.isEmpty() && state.addingIn != parentId) {
@@ -174,12 +172,12 @@ private fun TaskColumn(state: AppState, index: Int, modifier: Modifier, compact:
 private fun ColumnMenu(state: AppState, parentId: String?, open: Boolean, setOpen: (Boolean) -> Unit) {
     val s = LocalStrings.current
     Box {
-        IconButton(onClick = { setOpen(true) }) { Icon(Icons.Default.MoreVert, null) }
-        DropdownMenu(expanded = open, onDismissRequest = { setOpen(false) }) {
-            DropdownMenuItem(text = { Text(s.columnToToday) }, leadingIcon = { Icon(Icons.Default.Today, null) }, onClick = { setOpen(false); state.ticketizeColumn(parentId) })
-            DropdownMenuItem(text = { Text(s.printColumn) }, leadingIcon = { Icon(Icons.Default.Print, null) }, onClick = { setOpen(false); state.print(PrintTarget.Column(parentId)) })
+        DsIconButton(onClick = { setOpen(true) }, icon = Icons.Default.MoreVert, contentDescription = null)
+        DsMenu(expanded = open, onDismissRequest = { setOpen(false) }) {
+            DsMenuItem(s.columnToToday, icon = Icons.Default.Today, onClick = { setOpen(false); state.ticketizeColumn(parentId) })
+            DsMenuItem(s.printColumn, icon = Icons.Default.Print, onClick = { setOpen(false); state.print(PrintTarget.Column(parentId)) })
             if (parentId != null) {
-                DropdownMenuItem(text = { Text(s.pasteLines) }, leadingIcon = { Icon(Icons.Default.Add, null) }, onClick = { setOpen(false); state.breakDownTaskId = parentId })
+                DsMenuItem(s.pasteLines, icon = Icons.Default.Add, onClick = { setOpen(false); state.breakDownTaskId = parentId })
             }
         }
     }
@@ -217,10 +215,10 @@ private fun TaskRow(state: AppState, t: Task, column: Int, selected: Boolean, fo
                 onLongClick = { menu = true },
             ),
     ) {
-        ListItem(
-            colors = ListItemDefaults.colors(containerColor = bg, headlineColor = fg),
-            leadingContent = { Checkbox(checked = t.done, onCheckedChange = { state.toggleDone(t.id) }, enabled = t.id != INBOX_ID) },
-            headlineContent = {
+        DsListItem(
+            containerColor = bg, contentColor = fg,
+            leading = { DsCheckbox(checked = t.done, onCheckedChange = { state.toggleDone(t.id) }, enabled = t.id != INBOX_ID) },
+            headline = {
                 if (state.renamingId == t.id) {
                     Row { RenameField(state, t) }
                 } else {
@@ -231,15 +229,15 @@ private fun TaskRow(state: AppState, t: Task, column: Int, selected: Boolean, fo
                     )
                 }
             },
-            supportingContent = if (staleTicket) {
+            supporting = if (staleTicket) {
                 {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(s.breakDownHint, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error, modifier = Modifier.weight(1f))
-                        TextButton(onClick = { state.select(column, t.id); state.startAddChildOfSelection() }) { Text(s.breakDownAction) }
+                        DsButton(onClick = { state.select(column, t.id); state.startAddChildOfSelection() }, kind = ButtonKind.Subtle) { Text(s.breakDownAction) }
                     }
                 }
             } else null,
-            trailingContent = {
+            trailing = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (todayTicket) Icon(Icons.Default.Today, s.toToday, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.padding(horizontal = 2.dp))
                     if (totalKids > 0) {
@@ -247,7 +245,7 @@ private fun TaskRow(state: AppState, t: Task, column: Int, selected: Boolean, fo
                         Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Box {
-                        IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, null) }
+                        DsIconButton(onClick = { menu = true }, icon = Icons.Default.MoreVert, contentDescription = null)
                         TaskMenu(state, t, column, menu) { menu = false }
                     }
                 }
@@ -259,20 +257,20 @@ private fun TaskRow(state: AppState, t: Task, column: Int, selected: Boolean, fo
 @Composable
 private fun TaskMenu(state: AppState, t: Task, column: Int, open: Boolean, dismiss: () -> Unit) {
     val s = LocalStrings.current
-    DropdownMenu(expanded = open, onDismissRequest = dismiss) {
-        DropdownMenuItem(text = { Text(s.newSubtask) }, leadingIcon = { Icon(Icons.Default.Add, null) }, onClick = { dismiss(); state.select(column, t.id); state.startAddChildOfSelection() })
+    DsMenu(expanded = open, onDismissRequest = dismiss) {
+        DsMenuItem(s.newSubtask, icon = Icons.Default.Add, onClick = { dismiss(); state.select(column, t.id); state.startAddChildOfSelection() })
         if (t.id != INBOX_ID) {
-            DropdownMenuItem(text = { Text(s.toToday) }, leadingIcon = { Icon(Icons.Default.Today, null) }, onClick = { dismiss(); state.ticketize(t.id) })
-            DropdownMenuItem(text = { Text(s.printTask) }, leadingIcon = { Icon(Icons.Default.Print, null) }, onClick = { dismiss(); state.print(PrintTarget.Task(t.id)) })
+            DsMenuItem(s.toToday, icon = Icons.Default.Today, onClick = { dismiss(); state.ticketize(t.id) })
+            DsMenuItem(s.printTask, icon = Icons.Default.Print, onClick = { dismiss(); state.print(PrintTarget.Task(t.id)) })
         }
-        DropdownMenuItem(text = { Text(s.estimate + " / " + s.timebox) }, onClick = { dismiss(); state.detailTaskId = t.id })
-        DropdownMenuItem(text = { Text(s.pasteLines) }, onClick = { dismiss(); state.breakDownTaskId = t.id })
-        DropdownMenuItem(text = { Text(s.rename) }, onClick = { dismiss(); state.select(column, t.id); state.renamingId = t.id })
-        DropdownMenuItem(text = { Text(s.moveUp) }, onClick = { dismiss(); state.store.moveTask(t.id, -1) })
-        DropdownMenuItem(text = { Text(s.moveDown) }, onClick = { dismiss(); state.store.moveTask(t.id, +1) })
+        DsMenuItem(s.estimate + " / " + s.timebox, onClick = { dismiss(); state.detailTaskId = t.id })
+        DsMenuItem(s.pasteLines, onClick = { dismiss(); state.breakDownTaskId = t.id })
+        DsMenuItem(s.rename, onClick = { dismiss(); state.select(column, t.id); state.renamingId = t.id })
+        DsMenuItem(s.moveUp, onClick = { dismiss(); state.store.moveTask(t.id, -1) })
+        DsMenuItem(s.moveDown, onClick = { dismiss(); state.store.moveTask(t.id, +1) })
         if (t.id != INBOX_ID) {
-            DropdownMenuItem(text = { Text(s.moveTo) }, onClick = { dismiss(); state.moveTaskId = t.id })
-            DropdownMenuItem(text = { Text(s.delete) }, onClick = { dismiss(); state.confirmDeleteId = t.id })
+            DsMenuItem(s.moveTo, onClick = { dismiss(); state.moveTaskId = t.id })
+            DsMenuItem(s.delete, danger = true, onClick = { dismiss(); state.confirmDeleteId = t.id })
         }
     }
 }
@@ -316,7 +314,7 @@ private fun NewTaskField(state: AppState, parentId: String?) {
                 Box { if (text.isEmpty()) Text(if (parentId == null) s.addTaskHint else s.addSubtaskHint, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1); inner() }
             },
         )
-        IconButton(onClick = { commit(false) }) { Icon(Icons.Default.Check, s.ok) }
+        DsIconButton(onClick = { commit(false) }, icon = Icons.Default.Check, contentDescription = s.ok)
     }
 }
 
