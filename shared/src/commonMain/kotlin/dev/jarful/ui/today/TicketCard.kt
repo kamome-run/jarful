@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -22,18 +21,10 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material3.Button
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -46,7 +37,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -55,6 +45,14 @@ import dev.jarful.model.TicketState
 import dev.jarful.platform.nowMillis
 import dev.jarful.ui.AppState
 import dev.jarful.ui.PrintTarget
+import dev.jarful.ui.ds.ButtonKind
+import dev.jarful.ui.ds.CardTone
+import dev.jarful.ui.ds.DsButton
+import dev.jarful.ui.ds.DsCard
+import dev.jarful.ui.ds.DsIconButton
+import dev.jarful.ui.ds.DsMenu
+import dev.jarful.ui.ds.DsMenuItem
+import dev.jarful.ui.ds.DsProgress
 import dev.jarful.ui.i18n.LocalStrings
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -86,79 +84,62 @@ fun TicketCard(state: AppState, ticket: Ticket, modifier: Modifier = Modifier, s
         }
     }
 
-    val colors = when {
-        ticket.isDone -> CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-        isRunning -> CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer)
-        else -> CardDefaults.elevatedCardColors()
-    }
+    val tone = when { ticket.isDone -> CardTone.Muted; isRunning -> CardTone.Highlight; else -> CardTone.Default }
 
-    ElevatedCard(
-        modifier = modifier.fillMaxWidth().scale(scale.value).rotate(rotation.value).alpha(alpha.value),
-        colors = colors,
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = if (ticket.isDone) 0.dp else 1.dp),
-    ) {
-      Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                ticket.category.ifBlank { "—" }.uppercase(),
-                style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f),
-            )
-            val meta = buildList {
-                ticket.estimateMin?.let { add("~$it${s.minutes}") }
-                ticket.timeboxMin?.let { add("⏱ $it${s.minutes}") }
-                if (ticket.printedAt != null) add("🖨")
-            }.joinToString("  ")
-            if (meta.isNotEmpty()) Text(meta, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            if (!ticket.isDone) {
-                Box {
-                    IconButton(onClick = { menu = true }, modifier = Modifier.size(32.dp)) { Icon(Icons.Default.MoreVert, null) }
-                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                        if (showReorder) {
-                            DropdownMenuItem(text = { Text(s.moveUp) }, leadingIcon = { Icon(Icons.Default.KeyboardArrowUp, null) }, onClick = { menu = false; state.store.moveTicket(ticket.id, -1) })
-                            DropdownMenuItem(text = { Text(s.moveDown) }, leadingIcon = { Icon(Icons.Default.KeyboardArrowDown, null) }, onClick = { menu = false; state.store.moveTicket(ticket.id, +1) })
+    DsCard(modifier = modifier.fillMaxWidth().scale(scale.value).rotate(rotation.value).alpha(alpha.value), tone = tone) {
+        Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    ticket.category.ifBlank { "—" }.uppercase(),
+                    style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold,
+                    color = LocalContentColor.current.copy(alpha = 0.75f), modifier = Modifier.weight(1f),
+                )
+                val meta = buildList {
+                    ticket.estimateMin?.let { add("~$it${s.minutes}") }
+                    ticket.timeboxMin?.let { add("⏱ $it${s.minutes}") }
+                    if (ticket.printedAt != null) add("🖨")
+                }.joinToString("  ")
+                if (meta.isNotEmpty()) Text(meta, style = MaterialTheme.typography.labelMedium, color = LocalContentColor.current.copy(alpha = 0.75f))
+                if (!ticket.isDone) {
+                    Box {
+                        DsIconButton(onClick = { menu = true }, icon = Icons.Default.MoreVert, contentDescription = null, size = 32.dp)
+                        DsMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                            if (showReorder) {
+                                DsMenuItem(s.moveUp, icon = Icons.Default.KeyboardArrowUp, onClick = { menu = false; state.store.moveTicket(ticket.id, -1) })
+                                DsMenuItem(s.moveDown, icon = Icons.Default.KeyboardArrowDown, onClick = { menu = false; state.store.moveTicket(ticket.id, +1) })
+                            }
+                            DsMenuItem(s.print, icon = Icons.Default.Print, onClick = { menu = false; state.print(PrintTarget.Tickets(listOf(ticket))) })
+                            ticket.taskId?.let { tid -> DsMenuItem(s.breakDown, onClick = { menu = false; state.breakDownTaskId = tid }) }
+                            DsMenuItem(s.delete, icon = Icons.Default.Close, danger = true, onClick = { menu = false; state.store.removeTicket(ticket.id) })
                         }
-                        DropdownMenuItem(text = { Text(s.print) }, leadingIcon = { Icon(Icons.Default.Print, null) }, onClick = { menu = false; state.print(PrintTarget.Tickets(listOf(ticket))) })
-                        ticket.taskId?.let { tid -> DropdownMenuItem(text = { Text(s.breakDown) }, onClick = { menu = false; state.breakDownTaskId = tid }) }
-                        DropdownMenuItem(text = { Text(s.delete) }, leadingIcon = { Icon(Icons.Default.Close, null) }, onClick = { menu = false; state.store.removeTicket(ticket.id) })
+                    }
+                }
+            }
+            Text(
+                ticket.title,
+                style = MaterialTheme.typography.titleMedium,
+                textDecoration = if (ticket.isDone) TextDecoration.LineThrough else null,
+                modifier = Modifier.padding(top = 2.dp),
+            )
+
+            if (ticket.isQuota && !ticket.isDone) QuotaRow(state, ticket)
+            if (isRunning) TimerRow(state, ticket)
+
+            Row(Modifier.padding(top = 8.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (ticket.isDone) {
+                    DsButton(onClick = { state.undoComplete(ticket.id) }, kind = ButtonKind.Subtle) { Icon(Icons.Default.Refresh, null, modifier = Modifier.size(16.dp)); Spacer(Modifier.width(4.dp)); Text(s.undoDone) }
+                } else {
+                    if (isRunning) {
+                        DsButton(onClick = { state.store.stopTicket(ticket.id) }) { Text(s.stop) }
+                    } else {
+                        DsButton(onClick = { state.store.startTicket(ticket.id) }) { Icon(Icons.Default.PlayArrow, null, modifier = Modifier.size(16.dp)); Spacer(Modifier.width(2.dp)); Text(s.start) }
+                    }
+                    DsButton(onClick = { if (!crumpling) crumpling = true }, enabled = !crumpling, kind = ButtonKind.Accent, modifier = Modifier.weight(1f)) {
+                        Icon(Icons.Default.Check, null, modifier = Modifier.size(16.dp)); Spacer(Modifier.width(4.dp)); Text(s.done, maxLines = 1)
                     }
                 }
             }
         }
-        Text(
-            ticket.title,
-            style = MaterialTheme.typography.titleMedium,
-            textDecoration = if (ticket.isDone) TextDecoration.LineThrough else null,
-            color = when {
-                ticket.isDone -> MaterialTheme.colorScheme.onSurfaceVariant
-                isRunning -> MaterialTheme.colorScheme.onPrimaryContainer
-                else -> MaterialTheme.colorScheme.onSurface
-            },
-            modifier = Modifier.padding(top = 2.dp),
-        )
-
-        if (ticket.isQuota && !ticket.isDone) {
-            QuotaRow(state, ticket)
-        }
-        if (isRunning) {
-            TimerRow(state, ticket)
-        }
-
-        Row(Modifier.padding(top = 8.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (ticket.isDone) {
-                TextButton(onClick = { state.undoComplete(ticket.id) }) { Icon(Icons.Default.Refresh, null); Spacer(Modifier.width(4.dp)); Text(s.undoDone) }
-            } else {
-                if (isRunning) {
-                    OutlinedButton(onClick = { state.store.stopTicket(ticket.id) }) { Text(s.stop) }
-                } else {
-                    OutlinedButton(onClick = { state.store.startTicket(ticket.id) }) { Icon(Icons.Default.PlayArrow, null); Spacer(Modifier.width(2.dp)); Text(s.start) }
-                }
-                Button(onClick = { if (!crumpling) crumpling = true }, enabled = !crumpling, modifier = Modifier.weight(1f)) {
-                    Icon(Icons.Default.Check, null); Spacer(Modifier.width(4.dp)); Text(s.done, maxLines = 1)
-                }
-            }
-        }
-      }
     }
 }
 
@@ -167,18 +148,18 @@ private fun QuotaRow(state: AppState, ticket: Ticket) {
     val s = LocalStrings.current
     val target = ticket.quotaTarget ?: return
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
-        OutlinedButton(onClick = { state.store.setQuotaCount(ticket.id, ticket.quotaCount - 1) }) { Text("−1") }
+        DsButton(onClick = { state.store.setQuotaCount(ticket.id, ticket.quotaCount - 1) }) { Text("−1") }
         Spacer(Modifier.width(8.dp))
         Text(s.quotaProgress(ticket.quotaCount, target), style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.width(8.dp))
-        OutlinedButton(onClick = {
+        DsButton(onClick = {
             val next = ticket.quotaCount + 1
             if (next >= target) state.feedback()
             state.store.setQuotaCount(ticket.id, next)
             if (next >= target) { state.lastCompletedTicketId = ticket.id; state.jarDropSignal++ }
         }) { Text("+1") }
     }
-    LinearProgressIndicator(progress = { ticket.quotaCount.toFloat() / target }, modifier = Modifier.fillMaxWidth().padding(top = 4.dp).height(6.dp))
+    DsProgress(progress = { ticket.quotaCount.toFloat() / target }, modifier = Modifier.fillMaxWidth().padding(top = 6.dp))
 }
 
 /** Elapsed / countdown timer for a running ticket (FR-8). */
@@ -198,21 +179,21 @@ private fun TimerRow(state: AppState, ticket: Ticket) {
     Column(Modifier.padding(top = 6.dp)) {
         if (box != null) {
             val ratio = (elapsedSec.toFloat() / (box * 60f)).coerceIn(0f, 1f)
-            LinearProgressIndicator(progress = { ratio }, modifier = Modifier.fillMaxWidth().height(6.dp), color = if (timeUp) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary)
+            DsProgress(progress = { ratio }, modifier = Modifier.fillMaxWidth(), color = if (timeUp) MaterialTheme.colorScheme.error else null)
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
                 Text(
                     if (timeUp) s.timeUp else "${s.remaining} ${fmt(remainingSec!!)}",
                     style = MaterialTheme.typography.titleMedium,
-                    color = if (timeUp) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                    color = if (timeUp) MaterialTheme.colorScheme.error else LocalContentColor.current,
                     modifier = Modifier.weight(1f),
                 )
                 if (timeUp) {
-                    TextButton(onClick = { state.store.extendTimebox(ticket.id, 5) }) { Text(s.extend5) }
-                    ticket.taskId?.let { tid -> TextButton(onClick = { state.breakDownTaskId = tid }) { Text(s.breakDown) } }
+                    DsButton(onClick = { state.store.extendTimebox(ticket.id, 5) }, kind = ButtonKind.Subtle) { Text(s.extend5) }
+                    ticket.taskId?.let { tid -> DsButton(onClick = { state.breakDownTaskId = tid }, kind = ButtonKind.Subtle) { Text(s.breakDown) } }
                 }
             }
         } else {
-            Text("${s.elapsed} ${fmt(elapsedSec)}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("${s.elapsed} ${fmt(elapsedSec)}", style = MaterialTheme.typography.bodyMedium, color = LocalContentColor.current.copy(alpha = 0.75f))
         }
     }
 }
@@ -222,6 +203,3 @@ private fun fmt(sec: Long): String {
     val m = v / 60; val s = v % 60
     return (if (sec < 0) "-" else "") + m.toString() + ":" + s.toString().padStart(2, '0')
 }
-
-@Suppress("unused")
-private val Transparent = Color.Transparent

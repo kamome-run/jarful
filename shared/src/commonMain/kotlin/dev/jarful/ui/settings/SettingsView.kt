@@ -12,19 +12,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material3.Button
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -49,13 +38,20 @@ import dev.jarful.platform.localIpAddresses
 import dev.jarful.platform.serialSupported
 import dev.jarful.ui.AppState
 import dev.jarful.ui.common.IntField
+import dev.jarful.ui.ds.ButtonKind
+import dev.jarful.ui.ds.DsButton
+import dev.jarful.ui.ds.DsIconButton
+import dev.jarful.ui.ds.DsMenu
+import dev.jarful.ui.ds.DsMenuItem
+import dev.jarful.ui.ds.DsSegmented
+import dev.jarful.ui.ds.DsSwitch
+import dev.jarful.ui.ds.DsTextField
 import dev.jarful.ui.common.LabeledRow
 import dev.jarful.ui.common.SectionTitle
 import dev.jarful.ui.i18n.LocalStrings
 import kotlinx.coroutines.launch
 
 /** Settings (FR-13) including the printer configuration (FR-9). */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsView(state: AppState, modifier: Modifier = Modifier) {
     val s = LocalStrings.current
@@ -66,9 +62,9 @@ fun SettingsView(state: AppState, modifier: Modifier = Modifier) {
     LazyColumn(modifier.fillMaxSize(), contentPadding = PaddingValues(12.dp)) {
         item {
             Text(s.settings, style = MaterialTheme.typography.titleLarge)
-            LabeledRow(s.sound) { Switch(checked = settings.soundEnabled, onCheckedChange = { v -> state.store.updateSettings { it.copy(soundEnabled = v) } }) }
-            LabeledRow(s.haptics) { Switch(checked = settings.hapticsEnabled, onCheckedChange = { v -> state.store.updateSettings { it.copy(hapticsEnabled = v) } }) }
-            LabeledRow(s.showCompleted) { Switch(checked = settings.showCompleted, onCheckedChange = { v -> state.store.updateSettings { it.copy(showCompleted = v) } }) }
+            LabeledRow(s.sound) { DsSwitch(checked = settings.soundEnabled, onCheckedChange = { v -> state.store.updateSettings { it.copy(soundEnabled = v) } }) }
+            LabeledRow(s.haptics) { DsSwitch(checked = settings.hapticsEnabled, onCheckedChange = { v -> state.store.updateSettings { it.copy(hapticsEnabled = v) } }) }
+            LabeledRow(s.showCompleted) { DsSwitch(checked = settings.showCompleted, onCheckedChange = { v -> state.store.updateSettings { it.copy(showCompleted = v) } }) }
             SectionTitle(s.prepareTime)
             Text(s.prepareTimeHint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
@@ -78,11 +74,7 @@ fun SettingsView(state: AppState, modifier: Modifier = Modifier) {
             }
             SectionTitle(s.language)
             val langs = listOf(Language.SYSTEM to s.langSystem, Language.JA to s.langJa, Language.EN to s.langEn)
-            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                langs.forEachIndexed { i, (l, label) ->
-                    SegmentedButton(selected = settings.language == l, onClick = { state.store.updateSettings { it.copy(language = l) } }, shape = SegmentedButtonDefaults.itemShape(i, langs.size)) { Text(label) }
-                }
-            }
+            DsSegmented(options = langs.map { it.second }, selected = langs.indexOfFirst { it.first == settings.language }.coerceAtLeast(0), onSelect = { i -> state.store.updateSettings { it.copy(language = langs[i].first) } }, modifier = Modifier.fillMaxWidth())
         }
 
         item {
@@ -99,11 +91,11 @@ fun SettingsView(state: AppState, modifier: Modifier = Modifier) {
             SectionTitle(s.dataTitle)
             Text("${s.dataPath}: ${state.store.let { runCatching { dev.jarful.platform.FileStore(dev.jarful.data.DATA_FILE).path() }.getOrDefault("-") }}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 6.dp)) {
-                OutlinedButton(onClick = { copyToClipboard(state.store.exportJson()); state.showToast(s.copied) }) { Text(s.exportJson) }
-                OutlinedButton(onClick = { state.importOpen = true }) { Text(s.importJson) }
+                DsButton(onClick = { copyToClipboard(state.store.exportJson()); state.showToast(s.copied) }) { Text(s.exportJson) }
+                DsButton(onClick = { state.importOpen = true }) { Text(s.importJson) }
             }
             SectionTitle(s.shortcuts)
-            TextButton(onClick = { state.showShortcuts = true }) { Text(s.shortcuts) }
+            DsButton(onClick = { state.showShortcuts = true }, kind = ButtonKind.Subtle) { Text(s.shortcuts) }
             SectionTitle(s.about)
             Text(s.aboutBody, style = MaterialTheme.typography.bodyMedium)
             Text("https://github.com/kamome-run/jarful", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
@@ -112,7 +104,6 @@ fun SettingsView(state: AppState, modifier: Modifier = Modifier) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PrinterSection(state: AppState, p: PrinterSettings, update: ((PrinterSettings) -> PrinterSettings) -> Unit) {
     val s = LocalStrings.current
@@ -123,14 +114,10 @@ private fun PrinterSection(state: AppState, p: PrinterSettings, update: ((Printe
         add(PrinterTransport.TCP)
     }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-            transports.forEachIndexed { i, t ->
-                SegmentedButton(selected = p.transport == t, onClick = { update { it.copy(transport = t) } }, shape = SegmentedButtonDefaults.itemShape(i, transports.size)) { Text(t.label, maxLines = 1) }
-            }
-        }
+        DsSegmented(options = transports.map { it.label }, selected = transports.indexOf(p.transport).coerceAtLeast(0), onSelect = { i -> update { it.copy(transport = transports[i]) } }, modifier = Modifier.fillMaxWidth())
         when (p.transport) {
             PrinterTransport.TCP -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = p.host, onValueChange = { v -> update { it.copy(host = v) } }, label = { Text(s.printerHost) }, singleLine = true, modifier = Modifier.weight(1f))
+                DsTextField(value = p.host, onValueChange = { v -> update { it.copy(host = v) } }, label = s.printerHost, singleLine = true, modifier = Modifier.weight(1f))
                 IntField(s.printerPort, p.port, { v -> if (v != null) update { it.copy(port = v) } })
             }
             PrinterTransport.BLUETOOTH -> EndpointPicker(
@@ -153,7 +140,7 @@ private fun PrinterSection(state: AppState, p: PrinterSettings, update: ((Printe
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             IntField("Feed", p.feedLines, { v -> if (v != null) update { it.copy(feedLines = v.coerceIn(0, 20)) } })
-            Text("Cut (GS V)"); Switch(checked = p.cutEnabled, onCheckedChange = { v -> update { it.copy(cutEnabled = v) } })
+            Text("Cut (GS V)"); DsSwitch(checked = p.cutEnabled, onCheckedChange = { v -> update { it.copy(cutEnabled = v) } })
         }
         if (p.protocol == PrintProtocol.TSPL || p.protocol == PrintProtocol.CPCL) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -161,7 +148,7 @@ private fun PrinterSection(state: AppState, p: PrinterSettings, update: ((Printe
                 IntField("Gap", p.labelGapMm, { v -> if (v != null) update { it.copy(labelGapMm = v) } }, suffix = "mm")
             }
         }
-        Button(onClick = { scope.launch { state.testPrint() } }, enabled = !state.printing) { Text(s.testPrint) }
+        DsButton(onClick = { scope.launch { state.testPrint() } }, enabled = !state.printing, kind = ButtonKind.Accent) { Text(s.testPrint) }
     }
 }
 
@@ -173,7 +160,7 @@ private fun SyncSection(state: AppState) {
     val addresses = remember(sy.hostEnabled) { localIpAddresses() }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(s.syncIntro, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        LabeledRow(s.syncHost) { Switch(checked = sy.hostEnabled, onCheckedChange = { v -> update { it.copy(hostEnabled = v) } }) }
+        LabeledRow(s.syncHost) { DsSwitch(checked = sy.hostEnabled, onCheckedChange = { v -> update { it.copy(hostEnabled = v) } }) }
         Text(s.syncHostHint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (sy.hostEnabled) {
             val addr = if (addresses.isEmpty()) s.syncHostNoAddress else addresses.joinToString("  ")
@@ -181,21 +168,21 @@ private fun SyncSection(state: AppState) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text("${s.syncPort}: ${sy.port}")
                 Text("${s.syncPin}: ${sy.pin}", style = MaterialTheme.typography.titleMedium)
-                TextButton(onClick = { update { it.copy(pin = (100000 + kotlin.random.Random.nextInt(900000)).toString()) } }) { Text(s.syncRegeneratePin) }
+                DsButton(onClick = { update { it.copy(pin = (100000 + kotlin.random.Random.nextInt(900000)).toString()) } }, kind = ButtonKind.Subtle) { Text(s.syncRegeneratePin) }
             }
             state.syncServerError?.let { Text(s.syncHostError(it), color = MaterialTheme.colorScheme.error) }
                 ?: if (state.syncHostRunning) Text("● " + s.syncHostRunning, color = MaterialTheme.colorScheme.secondary) else Unit
         }
         Text(s.syncPeer, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 4.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedTextField(value = sy.peerHost, onValueChange = { v -> update { it.copy(peerHost = v.trim()) } }, label = { Text(s.syncPeerHost) }, singleLine = true, modifier = Modifier.weight(1f))
+            DsTextField(value = sy.peerHost, onValueChange = { v -> update { it.copy(peerHost = v.trim()) } }, label = s.syncPeerHost, singleLine = true, modifier = Modifier.weight(1f))
             IntField(s.syncPort, sy.peerPort, { v -> if (v != null) update { it.copy(peerPort = v) } })
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            OutlinedTextField(value = sy.peerPin, onValueChange = { v -> update { it.copy(peerPin = v.filter { c -> c.isDigit() }.take(6)) } }, label = { Text(s.syncPeerPin) }, singleLine = true, modifier = Modifier.width(140.dp))
-            Button(onClick = { state.syncNow() }, enabled = !state.syncing && sy.peerHost.isNotBlank()) { Text(s.syncNow) }
+            DsTextField(value = sy.peerPin, onValueChange = { v -> update { it.copy(peerPin = v.filter { c -> c.isDigit() }.take(6)) } }, label = s.syncPeerPin, singleLine = true, modifier = Modifier.width(140.dp))
+            DsButton(onClick = { state.syncNow() }, enabled = !state.syncing && sy.peerHost.isNotBlank(), kind = ButtonKind.Accent) { Text(s.syncNow) }
         }
-        LabeledRow(s.syncAuto) { Switch(checked = sy.autoSync, onCheckedChange = { v -> update { it.copy(autoSync = v) } }) }
+        LabeledRow(s.syncAuto) { DsSwitch(checked = sy.autoSync, onCheckedChange = { v -> update { it.copy(autoSync = v) } }) }
         val last = sy.lastSyncAt?.let { dev.jarful.domain.Dates.toLocalDateTime(it).toString().replace('T', ' ').take(16) } ?: s.syncNever
         val result = sy.lastSyncResult?.let { if (it == "OK") "" else "  (${s.syncError(it)})" } ?: ""
         Text("${s.syncLast}: $last$result", style = MaterialTheme.typography.bodySmall, color = if (result.isEmpty()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error)
@@ -211,17 +198,15 @@ private fun EndpointPicker(selectedId: String, selectedName: String, load: suspe
     LaunchedEffect(Unit) { loading = true; list = runCatching { load() }.getOrDefault(emptyList()); loading = false }
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         androidx.compose.foundation.layout.Box(Modifier.weight(1f)) {
-            OutlinedButton(onClick = { open = true }, modifier = Modifier.fillMaxWidth()) {
+            DsButton(onClick = { open = true }, modifier = Modifier.fillMaxWidth()) {
                 Text(selectedName.ifBlank { selectedId.ifBlank { if (loading) "…" else "—" } })
             }
-            DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-                if (list.isEmpty()) DropdownMenuItem(text = { Text("—") }, onClick = { open = false })
-                list.forEach { e -> DropdownMenuItem(text = { Text(e.name) }, onClick = { onSelect(e); open = false }) }
+            DsMenu(expanded = open, onDismissRequest = { open = false }) {
+                if (list.isEmpty()) DsMenuItem("—", onClick = { open = false })
+                list.forEach { e -> DsMenuItem(e.name, onClick = { onSelect(e); open = false }) }
             }
         }
-        OutlinedButton(onClick = { scope.launch { loading = true; list = runCatching { load() }.getOrDefault(emptyList()); loading = false } }) {
-            androidx.compose.material3.Icon(Icons.Default.Refresh, null)
-        }
+        DsIconButton(onClick = { scope.launch { loading = true; list = runCatching { load() }.getOrDefault(emptyList()); loading = false } }, icon = Icons.Default.Refresh, contentDescription = null)
     }
 }
 
@@ -229,9 +214,9 @@ private fun EndpointPicker(selectedId: String, selectedName: String, load: suspe
 private fun <T> EnumDropdown(label: String, values: List<T>, selected: T, labelOf: (T) -> String, modifier: Modifier = Modifier, onSelect: (T) -> Unit) {
     var open by remember { mutableStateOf(false) }
     androidx.compose.foundation.layout.Box(modifier) {
-        OutlinedButton(onClick = { open = true }, modifier = Modifier.fillMaxWidth()) { Text("$label: ${labelOf(selected)}") }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            values.forEach { v -> DropdownMenuItem(text = { Text(labelOf(v)) }, onClick = { onSelect(v); open = false }) }
+        DsButton(onClick = { open = true }, modifier = Modifier.fillMaxWidth()) { Text("$label: ${labelOf(selected)}") }
+        DsMenu(expanded = open, onDismissRequest = { open = false }) {
+            values.forEach { v -> DsMenuItem(labelOf(v), onClick = { onSelect(v); open = false }) }
         }
     }
 }

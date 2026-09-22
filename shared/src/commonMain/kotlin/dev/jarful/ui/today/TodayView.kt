@@ -18,7 +18,8 @@ import androidx.compose.material.icons.filled.Print
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import dev.jarful.ui.ds.ButtonKind
+import dev.jarful.ui.ds.DsButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,8 +48,8 @@ fun TodayView(state: AppState, showJar: Boolean, modifier: Modifier = Modifier) 
                         Text(s.combo(state.combo), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                     }
                     Spacer(Modifier.width(8.dp))
-                    TextButton(onClick = { state.print(PrintTarget.Today) }, enabled = !state.printing && tickets.any { !it.isDone }) {
-                        Icon(Icons.Default.Print, null); Spacer(Modifier.width(4.dp)); Text(s.printToday, maxLines = 1)
+                    DsButton(onClick = { state.print(PrintTarget.Today) }, enabled = !state.printing && tickets.any { !it.isDone }, kind = ButtonKind.Subtle) {
+                        Icon(Icons.Default.Print, null, modifier = Modifier.width(18.dp)); Spacer(Modifier.width(4.dp)); Text(s.printToday, maxLines = 1)
                     }
                 }
             }
@@ -59,13 +60,13 @@ fun TodayView(state: AppState, showJar: Boolean, modifier: Modifier = Modifier) 
                         old.forEach { k ->
                             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                                 Text("${k.date}  ${k.title}", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
-                                TextButton(onClick = { state.store.carryOver(listOf(k.id)) }) { Text(s.carryOver) }
-                                TextButton(onClick = { state.store.discardOld(listOf(k.id)) }) { Text(s.discard) }
+                                DsButton(onClick = { state.store.carryOver(listOf(k.id)) }, kind = ButtonKind.Subtle) { Text(s.carryOver) }
+                                DsButton(onClick = { state.store.discardOld(listOf(k.id)) }, kind = ButtonKind.Subtle) { Text(s.discard) }
                             }
                         }
                         Row {
-                            TextButton(onClick = { state.store.carryOver(old.map { it.id }) }) { Text(s.carryOverAll) }
-                            TextButton(onClick = { state.store.discardOld(old.map { it.id }) }) { Text(s.discardAll) }
+                            DsButton(onClick = { state.store.carryOver(old.map { it.id }) }, kind = ButtonKind.Subtle) { Text(s.carryOverAll) }
+                            DsButton(onClick = { state.store.discardOld(old.map { it.id }) }, kind = ButtonKind.Subtle) { Text(s.discardAll) }
                         }
                     }
                 }
