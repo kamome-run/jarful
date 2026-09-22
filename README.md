@@ -23,6 +23,12 @@ Android（Chromebook 対応）と Windows 11 で使えるアプリにしたも�
 | 溜まったメールは「新着＋古いもの N 件」を **毎日** | **クォータ型ルーチン**（+1 カウンター、目標到達で完了） |
 | **レシートプリンター** で摩擦をなくす | Bluetooth Classic (SPP) / COM ポート / TCP で **ESC/POS・TSPL・CPCL** に印刷。1 チケット 1 枚 |
 
+## スクリーンショット
+
+| Windows / Chromebook（3 ペイン） | スマートフォン | 印刷チケット（58mm ラスター） |
+|---|---|---|
+| ![desktop](docs/screenshots/desktop-wide.png) | ![phone](docs/screenshots/phone-compact.png) | ![ticket](docs/screenshots/ticket-raster.png) |
+
 ## 対応プラットフォーム
 
 | プラットフォーム | 配布物 | 備考 |
