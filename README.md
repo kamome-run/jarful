@@ -43,9 +43,8 @@ Android（Chromebook 対応）と Windows 11 で使えるアプリにしたも�
 
 ## 対応プリンター
 
-- **Irfora 57mm ミニポケットサーマルプリンター**（Amazon ASIN B0DNSQ4NWF、Luck Jingle 互換機）— 既定設定
-  （Bluetooth / ESC/POS ラスター / 58mm）でそのまま使えます。
-- 一般的な 58mm / 80mm の ESC/POS プリンター（Bluetooth SPP、TCP 9100）。
+- 58mm / 80mm の ESC/POS 互換サーマルプリンター（Bluetooth SPP、シリアル COM、TCP 9100）。
+  日本語フォントを内蔵しない機種向けに、既定設定（Bluetooth / ESC/POS ラスター / 58mm）では画像として印刷します。
 - TSPL / CPCL 対応のラベルプリンター。
 
 ### Android / Chromebook（Bluetooth）
