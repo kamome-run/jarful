@@ -28,12 +28,13 @@ Android（Chromebook 対応）と Windows 11 で使えるアプリにしたも�
 | Windows / Chromebook（3 ペイン） | スマートフォン | 印刷チケット（58mm ラスター） |
 |---|---|---|
 | ![desktop](docs/screenshots/desktop-wide.png) | ![phone](docs/screenshots/phone-compact.png) | ![ticket](docs/screenshots/ticket-raster.png) |
+| ![desktop dark](docs/screenshots/desktop-wide-dark.png) | ![phone dark](docs/screenshots/phone-compact-dark.png) | ダークモード |
 
 ## 対応プラットフォーム
 
 | プラットフォーム | 配布物 | 備考 |
 |------------------|--------|------|
-| Android 8.0+ | `jarful-android-*.apk` | スマートフォン / タブレット |
+| Android 8.0+ | `jarful-android-*.apk` | スマートフォン / タブレット。Android 12 以降は Material You のダイナミックカラー対応 |
 | Chromebook (ChromeOS) | 同上 | タッチ非搭載機でもインストール可。キーボード・マウスで全操作 |
 | Windows 11 (x64) | `Jarful-*.msi` / `Jarful-*.exe` | インストーラ。Bluetooth プリンターは仮想 COM ポート経由 |
 
@@ -55,6 +56,19 @@ Android（Chromebook 対応）と Windows 11 で使えるアプリにしたも�
 1. 設定 → Bluetooth とデバイス → デバイス → **その他のデバイスとプリンターの設定** → プリンターを右クリック → プロパティ → **サービス** で「シリアルポート (SPP)」にチェック。
 2. 「その他の Bluetooth 設定」→ **COM ポート** タブで発信用ポート（例 `COM5`）を確認。
 3. Jarful → 設定 → プリンター → `Serial / COM` → ポートを選択 → **テスト印刷**。
+
+## Android ⇄ Windows の同期
+
+クラウドもアカウントも使いません。**同じ Wi-Fi 上の端末同士が直接同期**します。
+
+1. Windows 側: 設定 → 端末間の同期 → **「この端末をホストにする」をオン**。表示された IP アドレスと 6 桁の PIN を控える。
+2. Android 側: 設定 → 端末間の同期 → 接続先に **ホストの IP アドレスと PIN** を入力 → **今すぐ同期**。
+3. 以後、アプリ起動時と 5 分ごとに自動同期します（設定でオフにできます）。上部バーの同期アイコンで手動同期もできます。
+
+同期されるのはタスク・チケット・ルーチンです（プリンター設定などの端末固有設定は同期されません）。
+同じ項目を両方で変更した場合は後に変更した方が残り、削除も相手に伝わります。
+通信は LAN 内の平文 HTTP（既定ポート 47831）なので、自宅や職場など信頼できるネットワークで使ってください。
+Windows のファイアウォールで受信を求められたら許可してください。
 
 ## キーボードショートカット（抜粋）
 
@@ -107,5 +121,5 @@ Laurie Hérault 氏、同氏のアプリ Colonnes、ナゾロジー編集部と�
 break tasks into 2–5 minute pieces in Miller columns, crumple each finished ticket into a transparent jar
 (animation, sound, haptics), auto-prepare weekday routines the night before, refocus with the next 3–5 tasks,
 and print tickets to a thermal printer over Bluetooth Classic / COM / TCP using ESC/POS (text, raster, bit-image),
-TSPL or CPCL. Android (incl. Chromebook) and Windows 11. Kotlin Multiplatform + Compose Multiplatform. MIT.
+TSPL or CPCL. Devices sync directly over the local network (no cloud, PIN-protected, last-writer-wins merge). Material 3 UI with dynamic color on Android 12+. Android (incl. Chromebook) and Windows 11. Kotlin Multiplatform + Compose Multiplatform. MIT.
 Jarful is an independent, unofficial project and is not affiliated with or endorsed by Laurie Hérault or Colonnes.

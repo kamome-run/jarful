@@ -40,6 +40,10 @@ data class Strings(
     val confirmDelete: (String) -> String, val moveUp: String, val moveDown: String, val moveTo: String, val moveToRoot: String,
     val all: String, val subtasksOf: (String) -> String, val empty: String,
     val sampleRoutines: List<Triple<String, String, Int?>>,
+    val sync: String, val syncIntro: String, val syncHost: String, val syncHostHint: String, val syncHostAddresses: String, val syncHostNoAddress: String,
+    val syncPort: String, val syncPin: String, val syncRegeneratePin: String, val syncPeer: String, val syncPeerHost: String, val syncPeerPin: String,
+    val syncAuto: String, val syncNow: String, val syncOk: String, val syncFailed: (String) -> String, val syncLast: String, val syncNever: String,
+    val syncHostRunning: String, val syncHostError: (String) -> String, val syncError: (String) -> String,
 )
 
 val JA = Strings(
@@ -87,6 +91,13 @@ val JA = Strings(
         Triple("2 分ウォームアップ（タイピング練習）", "仕事", 2), Triple("今日のチケットを確認する", "仕事", 2),
         Triple("机の上を片付ける", "夜", 5), Triple("明日のチケットを準備する", "夜", 5),
     ),
+    sync = "端末間の同期（同じ Wi-Fi 内）", syncIntro = "クラウドを使わず、同じネットワーク上の端末同士で直接同期します。片方を「ホスト」にして、もう片方にホストのアドレスと PIN を入力してください。",
+    syncHost = "この端末をホストにする", syncHostHint = "アプリを開いている間、他の端末からの同期を受け付けます（Windows 側をホストにするのがおすすめ）。",
+    syncHostAddresses = "この端末のアドレス", syncHostNoAddress = "ネットワークに接続されていません",
+    syncPort = "ポート", syncPin = "PIN", syncRegeneratePin = "PIN を再生成", syncPeer = "接続先（クライアントとして）", syncPeerHost = "ホストの IP アドレス", syncPeerPin = "ホストの PIN",
+    syncAuto = "自動同期（起動時・5 分ごと）", syncNow = "今すぐ同期", syncOk = "同期しました", syncFailed = { "同期に失敗: $it" }, syncLast = "最終同期", syncNever = "未同期",
+    syncHostRunning = "受付中", syncHostError = { "ホストを開始できません: $it" },
+    syncError = { code -> when (code) { "UNREACHABLE" -> "接続できません（同じ Wi-Fi か、ホストが起動しているか確認）"; "PIN_MISMATCH" -> "PIN が違います"; "VERSION_MISMATCH" -> "アプリのバージョンが違います"; "NO_PEER" -> "接続先が未設定"; "BAD_RESPONSE" -> "応答を読めません"; else -> code } },
 )
 
 val EN = Strings(
@@ -134,6 +145,13 @@ val EN = Strings(
         Triple("2-minute warm-up (typing practice)", "Work", 2), Triple("Review today's tickets", "Work", 2),
         Triple("Clear the desk", "Evening", 5), Triple("Prepare tomorrow's tickets", "Evening", 5),
     ),
+    sync = "Device sync (same Wi-Fi)", syncIntro = "No cloud: devices on the same network sync directly. Make one device the host and enter its address and PIN on the other.",
+    syncHost = "Make this device the host", syncHostHint = "Accepts sync from other devices while the app is open (the Windows PC is the recommended host).",
+    syncHostAddresses = "This device's addresses", syncHostNoAddress = "Not connected to a network",
+    syncPort = "Port", syncPin = "PIN", syncRegeneratePin = "Regenerate PIN", syncPeer = "Connect to (as client)", syncPeerHost = "Host IP address", syncPeerPin = "Host PIN",
+    syncAuto = "Auto sync (on launch and every 5 min)", syncNow = "Sync now", syncOk = "Synced", syncFailed = { "Sync failed: $it" }, syncLast = "Last sync", syncNever = "never",
+    syncHostRunning = "listening", syncHostError = { "Cannot start host: $it" },
+    syncError = { code -> when (code) { "UNREACHABLE" -> "Cannot reach the host (same Wi-Fi? host running?)"; "PIN_MISMATCH" -> "Wrong PIN"; "VERSION_MISMATCH" -> "App versions differ"; "NO_PEER" -> "No host configured"; "BAD_RESPONSE" -> "Unreadable response"; else -> code } },
 )
 
 fun stringsFor(lang: Language): Strings = when (lang) {

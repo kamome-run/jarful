@@ -1,0 +1,7 @@
+<resources>
+    <style name="Theme.Jarful" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/paper_dark</item>
+        <item name="android:statusBarColor">@color/paper_dark</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>
