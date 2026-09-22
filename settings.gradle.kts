@@ -1,4 +1,4 @@
-rootProject.name = "kusha"
+rootProject.name = "jarful"
 
 pluginManagement {
     repositories {

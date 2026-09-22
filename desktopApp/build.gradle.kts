@@ -25,26 +25,26 @@ tasks.withType<Test> {
 
 compose.desktop {
     application {
-        mainClass = "dev.kusha.desktop.MainKt"
+        mainClass = "dev.jarful.desktop.MainKt"
 
         nativeDistributions {
             targetFormats(TargetFormat.Msi, TargetFormat.Exe)
-            packageName = "Kusha"
+            packageName = "Jarful"
             packageVersion = "1.0.0"
             description = "Game-loop task manager for ADHD brains"
-            vendor = "Kusha contributors"
+            vendor = "Jarful contributors"
             licenseFile.set(rootProject.file("LICENSE"))
 
             windows {
-                menuGroup = "Kusha"
+                menuGroup = "Jarful"
                 shortcut = true
                 dirChooser = true
                 perUserInstall = true
                 upgradeUuid = "7f1d7d3e-5b64-4c6a-9d2f-2b2f4d1e6c01"
-                iconFile.set(project.file("icons/kusha.ico"))
+                iconFile.set(project.file("icons/jarful.ico"))
             }
             linux {
-                iconFile.set(project.file("icons/kusha.png"))
+                iconFile.set(project.file("icons/jarful.png"))
             }
         }
     }

@@ -38,7 +38,7 @@ jobs:
       - run: ./gradlew :androidApp:assembleDebug :androidApp:assembleRelease --no-daemon
       - uses: actions/upload-artifact@v4
         with:
-          name: kusha-android
+          name: jarful-android
           path: |
             androidApp/build/outputs/apk/debug/*.apk
             androidApp/build/outputs/apk/release/*.apk
@@ -55,7 +55,7 @@ jobs:
       - run: ./gradlew :desktopApp:packageMsi :desktopApp:packageExe --no-daemon
       - uses: actions/upload-artifact@v4
         with:
-          name: kusha-windows
+          name: jarful-windows
           path: |
             desktopApp/build/compose/binaries/main/msi/*.msi
             desktopApp/build/compose/binaries/main/exe/*.exe
@@ -71,7 +71,7 @@ jobs:
       - uses: softprops/action-gh-release@v2
         with:
           files: |
-            dist/kusha-android/**/*.apk
-            dist/kusha-windows/**/*.msi
-            dist/kusha-windows/**/*.exe
+            dist/jarful-android/**/*.apk
+            dist/jarful-windows/**/*.msi
+            dist/jarful-windows/**/*.exe
           generate_release_notes: true

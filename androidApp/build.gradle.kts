@@ -26,11 +26,11 @@ kotlin {
 }
 
 android {
-    namespace = "dev.kusha.android"
+    namespace = "dev.jarful.android"
     compileSdk = libs.versions.androidCompileSdk.get().toInt()
 
     defaultConfig {
-        applicationId = "dev.kusha.app"
+        applicationId = "dev.jarful.app"
         minSdk = libs.versions.androidMinSdk.get().toInt()
         targetSdk = libs.versions.androidTargetSdk.get().toInt()
         versionCode = 1
