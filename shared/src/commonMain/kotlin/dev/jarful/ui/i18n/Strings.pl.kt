@@ -55,5 +55,4 @@ val PL = Strings(
     syncHostRunning = "nasłuchuje", syncHostError = { "Nie można uruchomić hosta: $it" },
     syncError = { code -> when (code) { "UNREACHABLE" -> "Brak połączenia z hostem (ta sama sieć Wi-Fi? host uruchomiony?)"; "PIN_MISMATCH" -> "Błędny PIN"; "VERSION_MISMATCH" -> "Różne wersje aplikacji"; "NO_PEER" -> "Nie skonfigurowano hosta"; "BAD_RESPONSE" -> "Nieczytelna odpowiedź"; else -> code } },
     printerDiagnose = "Diagnozuj połączenie", printerDiagnoseTitle = "Diagnostyka Bluetooth", printerDiagnoseHint = "Pokazuje typ urządzenia, dostępność SPP, usługi GATT i wynik każdej metody połączenia. Jeśli druk nie działa, skopiuj to do zgłoszenia na GitHubie.", copy = "Kopiuj", printSwitchedTransport = { "Przełączono połączenie na $it" },
-    printerProbe = "Wydruk próbny zaczernienia (A–H)",
 )
