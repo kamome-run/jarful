@@ -190,7 +190,13 @@ Bluetooth プリンターは **ChromeOS 側の設定 → Bluetooth** でペア�
 5. Jarful → 設定 → サーマルプリンター → **Serial / COM** → 一覧から `COMx` を選択 → **テスト印刷**。
 6. 「PORT_OPEN_FAILED」が出る場合は、他のアプリ（専用ユーティリティ等）がポートを掴んでいないか確認し、プリンターの電源を入れ直してください。
 
-> Windows 版は Bluetooth LE 専用機には接続できません。LE 専用機は Android 端末から印刷するか、TCP 対応機をお使いください。
+### 6.5b Windows 11 — Bluetooth LE（GB01 系ポケットプリンター向け）
+
+1. **設定 → Bluetooth とデバイス → デバイスの追加 → Bluetooth** でプリンターを一度ペアリングします（Windows に機器を認識させるため。LE 機器は PIN 不要のことが多い）。
+2. Jarful → 設定 → サーマルプリンター → **Bluetooth LE (GATT)** → 🔄 → プリンターを選択 → プロトコル **Cat printer (GB01/GT01/MX06)** → **テスト印刷**。
+3. 初回は Windows PowerShell の起動に 2〜5 秒かかります。エラーが出た場合は **接続診断** の結果を Issue に貼ってください。
+
+> Windows の BLE は、アプリに同梱した PowerShell スクリプトから Windows 標準の Bluetooth LE API を呼び出しています。追加のインストールは不要です。
 
 ### 6.6 ネットワークプリンター（TCP/IP）
 

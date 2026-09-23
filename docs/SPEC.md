@@ -1,6 +1,6 @@
 # Jarful（ジャーフル） 仕様・要件定義書
 
-- 版: 2.0 (2026-09-23) — 1.1 で Bluetooth Classic と複数印刷プロトコルを追加、1.2 で端末間同期（FR-14）を追加、1.3 で Windows 版の Fluent Design System 採用（NFR-8）、1.4 で Bluetooth LE・12 言語・多言語印刷・タッチ操作を追加、1.5 で接続診断・自動フォールバック・キャットプリンター対応（FR-9.11）、1.6 で MXW01 系プロトコルと BLE 多段ジョブ、1.7 で印刷濃度設定、1.8 で濃度を常に最大に固定（FR-9.10）、1.9 で濃度検証印刷を追加、2.0 で GB01 の最濃設定を確定し検証機能を削除
+- 版: 2.1 (2026-09-23) — 1.1 で Bluetooth Classic と複数印刷プロトコルを追加、1.2 で端末間同期（FR-14）を追加、1.3 で Windows 版の Fluent Design System 採用（NFR-8）、1.4 で Bluetooth LE・12 言語・多言語印刷・タッチ操作を追加、1.5 で接続診断・自動フォールバック・キャットプリンター対応（FR-9.11）、1.6 で MXW01 系プロトコルと BLE 多段ジョブ、1.7 で印刷濃度設定、1.8 で濃度を常に最大に固定（FR-9.10）、1.9 で濃度検証印刷を追加、2.0 で GB01 の最濃設定を確定し検証機能を削除、2.1 で Windows の BLE 対応（PowerShell/WinRT ヘルパー）
 - 対象: Android（Chromebook 含む）/ Windows 11 デスクトップ
 - 根拠記事: `SOURCES.md` を参照。本文中の `[S1]` `[S2]` `[S3]` は出典記号。
 
@@ -136,7 +136,7 @@ ADHD 傾向のある人が「先延ばし」を減らし、毎日安定してタ
 
 - FR-9.1 **接続方式（トランスポート）** を以下から選択できる。
   - (a) **Bluetooth Classic（SPP / RFCOMM, UUID 00001101-0000-1000-8000-00805F9B34FB）**: Android / Chromebook。ペアリング済み機器一覧から選択する。Android 12 以降は `BLUETOOTH_CONNECT` 権限を実行時に要求する。
-  - (d) **Bluetooth LE（GATT）**: Android / Chromebook。約 4 秒のスキャンとペアリング済み LE 機器の一覧から選択する。接続後に MTU 512 を要求し、既知のプリンター用キャラクタリスティック（FF02, AE01, 2AF1, ISSC 49535343-8841-…, BEF8D6C9-…, Nordic UART 6E400002-…）を優先し、無ければ書き込み可能な最初のキャラクタリスティックを用いる。書き込みは MTU−3 バイト以下に分割し、Write Without Response の場合は 12ms 間隔で送る。Android 12 以降は `BLUETOOTH_SCAN`（`neverForLocation`）、それ以前は `ACCESS_FINE_LOCATION` をスキャン時に要求する。Windows（JVM）では BLE を扱えないため対象外とし、Classic（COM ポート）または TCP を用いる。
+  - (d) **Bluetooth LE（GATT）**: Android / Chromebook。約 4 秒のスキャンとペアリング済み LE 機器の一覧から選択する。接続後に MTU 512 を要求し、既知のプリンター用キャラクタリスティック（FF02, AE01, 2AF1, ISSC 49535343-8841-…, BEF8D6C9-…, Nordic UART 6E400002-…）を優先し、無ければ書き込み可能な最初のキャラクタリスティックを用いる。書き込みは MTU−3 バイト以下に分割し、Write Without Response の場合は 12ms 間隔で送る。Android 12 以降は `BLUETOOTH_SCAN`（`neverForLocation`）、それ以前は `ACCESS_FINE_LOCATION` をスキャン時に要求する。Windows では JVM に BLE API がないため、アプリに同梱した PowerShell スクリプト（Windows PowerShell 5.1 から WinRT の `Windows.Devices.Bluetooth` を呼ぶ）を子プロセスとして実行して GATT 書き込みを行う。機器一覧は Windows が把握している（ペアリング済み／検出済み）BLE 機器、書き込みは 20 バイト単位。通知の待ち受けは行わない（GB01 系は不要）。
   - (b) **シリアル COM ポート**: Windows 11。Bluetooth 設定で SPP 機器に割り当てられた仮想 COM ポート（例: `COM5`）を一覧から選択する。
   - (c) **TCP/IP（既定ポート 9100）**: ネットワークプリンター用。Android / Windows 共通。
 - FR-9.2 **印刷プロトコル（コマンド体系）** を以下から選択できる。既定は「ESC/POS ラスター」。
