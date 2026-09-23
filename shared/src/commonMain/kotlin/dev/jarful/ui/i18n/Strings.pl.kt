@@ -56,4 +56,5 @@ val PL = Strings(
     syncError = { code -> when (code) { "UNREACHABLE" -> "Brak połączenia z hostem (ta sama sieć Wi-Fi? host uruchomiony?)"; "PIN_MISMATCH" -> "Błędny PIN"; "VERSION_MISMATCH" -> "Różne wersje aplikacji"; "NO_PEER" -> "Nie skonfigurowano hosta"; "BAD_RESPONSE" -> "Nieczytelna odpowiedź"; else -> code } },
     printerDiagnose = "Diagnozuj połączenie", printerDiagnoseTitle = "Diagnostyka Bluetooth", printerDiagnoseHint = "Pokazuje typ urządzenia, dostępność SPP, usługi GATT i wynik każdej metody połączenia. Jeśli druk nie działa, skopiuj to do zgłoszenia na GitHubie.", copy = "Kopiuj", printSwitchedTransport = { "Przełączono połączenie na $it" },
     nothingToPrint = "Nie ma czego drukować. Utwórz dzisiejszy bilet zadania albo użyj ⋮ → Drukuj.",
+    printBusy = "Trwa drukowanie", printPaused = { "Druk przerwany (zostało $it)" }, printProgress = { d, n -> "Drukowanie $d / $n" }, printResume = "Wznów drukowanie", printDiscard = "Odrzuć resztę", printStop = "Zatrzymaj", printPaperHint = "Skończył się papier? Wymień rolkę i naciśnij „Wznów drukowanie”.",
 )

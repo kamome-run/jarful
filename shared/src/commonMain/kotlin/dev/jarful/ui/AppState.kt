@@ -36,7 +36,7 @@ import kotlinx.datetime.DayOfWeek
 enum class Tab { TODAY, COLUMNS, ROUTINES, STATS, SETTINGS }
 
 /** Transient UI state: selection, focus, dialogs, feedback. Persistent state lives in [Store]. */
-class AppState(val store: Store, val scope: CoroutineScope, var strings: Strings) {
+class AppState(val store: Store, val scope: CoroutineScope, var strings: Strings, private val printer: PrinterClient = PrinterClient()) {
 
     var tab by mutableStateOf(Tab.TODAY)
 
@@ -71,7 +71,6 @@ class AppState(val store: Store, val scope: CoroutineScope, var strings: Strings
     private val sound = SoundPlayer()
     private val crumplePcm by lazy { CrumpleSound.crumple() }
     private val chimePcm by lazy { CrumpleSound.chime() }
-    private val printer = PrinterClient()
 
     // ----- Sync (FR-14) -----
     private val syncClient = SyncClient(json)
@@ -264,20 +263,63 @@ class AppState(val store: Store, val scope: CoroutineScope, var strings: Strings
         else print(PrintTarget.Today)
     }
 
+    /** Print queue (FR-9.12): tickets are printed one at a time with a 1 s gap so labels can be torn off. */
+    var printProgress by mutableStateOf<Pair<Int, Int>?>(null)   // (done, total) while printing
+    var printStopRequested = false
+    val printQueue: List<String> get() = data.settings.printQueue
+
     fun print(kind: PrintTarget) {
         val tickets = ticketsToPrint(kind)
         if (tickets.isEmpty()) { showToast(strings.nothingToPrint); return }
+        if (printing) { showToast(strings.printBusy); return }
+        store.updateSettings { it.copy(printQueue = tickets.map { t -> queueKey(t) }) }
+        runPrintQueue(tickets.size)
+    }
+
+    private fun queueKey(t: Ticket): String = if (t.id.startsWith("virtual-")) "task:" + (t.taskId ?: "") else t.id
+
+    private fun ticketForKey(key: String): Ticket? =
+        if (key.startsWith("task:")) TaskTree.byId(data.tasks, key.removePrefix("task:"))?.let { virtualTicket(it) }
+        else data.tickets.firstOrNull { it.id == key }
+
+    /** Resumes whatever is left in the queue (after a paper change, an error or a stop). */
+    fun resumePrintQueue() {
+        if (printing || printQueue.isEmpty()) return
+        runPrintQueue(printQueue.size)
+    }
+
+    fun discardPrintQueue() { store.updateSettings { it.copy(printQueue = emptyList()) } }
+    fun stopPrinting() { printStopRequested = true }
+
+    private fun runPrintQueue(total: Int) {
         val settings = data.settings.printer
-        printing = true
+        printing = true; printStopRequested = false
+        printProgress = 0 to total
         scope.launch {
-            val result = withContext(Dispatchers.Default) {
-                val job = TicketFormatter.encodeJob(tickets, settings) { dateLabel(it.date) }
-                printer.send(settings, job)
+            var done = 0
+            var failure: String? = null
+            while (true) {
+                val key = data.settings.printQueue.firstOrNull() ?: break
+                if (printStopRequested) break
+                val ticket = ticketForKey(key)
+                if (ticket == null) { store.updateSettings { it.copy(printQueue = it.printQueue.drop(1)) }; continue }
+                val result = withContext(Dispatchers.Default) { printer.send(settings, TicketFormatter.encodeJob(listOf(ticket), settings) { dateLabel(it.date) }) }
+                when (result) {
+                    is PrintResult.Ok -> {
+                        store.markPrinted(listOf(ticket.id)); adoptTransport(result.usedTransport)
+                        store.updateSettings { it.copy(printQueue = it.printQueue.drop(1)) }
+                        done++; printProgress = done to total
+                        if (data.settings.printQueue.isNotEmpty()) kotlinx.coroutines.delay(1000) // 1 s gap between labels
+                    }
+                    is PrintResult.Error -> { failure = result.message; break }
+                }
             }
-            printing = false
-            when (result) {
-                is PrintResult.Ok -> { store.markPrinted(tickets.map { it.id }); adoptTransport(result.usedTransport); showToast(strings.printOk) }
-                is PrintResult.Error -> showToast(strings.printFailed(result.message))
+            printing = false; printProgress = null
+            val left = data.settings.printQueue.size
+            when {
+                failure != null -> showToast(strings.printFailed(failure) + (if (left > 0) "  " + strings.printPaused(left) else ""))
+                left > 0 -> showToast(strings.printPaused(left))
+                else -> showToast(strings.printOk)
             }
         }
     }
