@@ -52,6 +52,8 @@ data class Strings(
     val selectMode: String, val selectAll: String, val selectNone: String, val selectedCount: (Int) -> String, val enableSelected: String, val disableSelected: String,
     val duplicate: String, val duplicateCount: String, val duplicateHint: String,
     val dragToReorder: String, val depthLimitHint: String, val uncategorized: String,
+    // v1.7.2: print retry
+    val printRetrying: (Int, Int) -> String, val printLastError: (String) -> String,
 )
 
 val JA = Strings(
@@ -110,6 +112,7 @@ val JA = Strings(
     nothingToPrint = "印刷するものがありません。タスクを「今日のチケットにする」か、タスクの ⋮ → 印刷を使ってください。",
     printBusy = "印刷中です", printPaused = { "印刷が中断されました（残り $it 枚）" }, printProgress = { d, n -> "印刷中 $d / $n 枚" }, printResume = "続きから印刷", printDiscard = "残りを破棄", printStop = "中断", printPaperHint = "用紙切れのときはロールを交換してから「続きから印刷」を押してください。",
     routinePrintDate = "日付を選んで印刷", printDateTitle = "印刷する日付", printDateHint = "翌朝の分を前夜に印刷できます。選んだ日のルーチンをチケットにして印刷します。", today = "今日", tomorrow = "翌日", selectMode = "まとめて選択", selectAll = "すべて選択", selectNone = "選択解除", selectedCount = { "$it 件を選択中" }, enableSelected = "選択をオン", disableSelected = "選択をオフ", duplicate = "複製", duplicateCount = "複製する数", duplicateHint = "子タスクも一緒に複製されます（最大 50）。", dragToReorder = "≡ をドラッグして並べ替え", depthLimitHint = "ひ孫タスクまでです。これ以上は分解できません。", uncategorized = "未分類",
+    printRetrying = { n, max -> "接続をやり直しています（$n / $max 回目）…" }, printLastError = { "最後のエラー: $it" },
 )
 
 val EN = Strings(
@@ -168,6 +171,7 @@ val EN = Strings(
     nothingToPrint = "Nothing to print. Make the task today's ticket, or use the task menu ⋮ → Print.",
     printBusy = "Already printing", printPaused = { "Printing paused ($it left)" }, printProgress = { d, n -> "Printing $d / $n" }, printResume = "Resume printing", printDiscard = "Discard the rest", printStop = "Stop", printPaperHint = "Out of paper? Replace the roll, then press “Resume printing”.",
     routinePrintDate = "Print for a date…", printDateTitle = "Date to print", printDateHint = "Print tomorrow morning's routines tonight: the routines of the chosen day become tickets and are printed.", today = "Today", tomorrow = "Tomorrow", selectMode = "Select several", selectAll = "Select all", selectNone = "Clear selection", selectedCount = { "$it selected" }, enableSelected = "Turn selection on", disableSelected = "Turn selection off", duplicate = "Duplicate", duplicateCount = "Number of copies", duplicateHint = "Subtasks are duplicated too (max 50).", dragToReorder = "Drag ≡ to reorder", depthLimitHint = "Great-grandchild level reached; tasks cannot be broken down further.", uncategorized = "Uncategorized",
+    printRetrying = { n, max -> "Reconnecting ($n / $max)…" }, printLastError = { "Last error: $it" },
 )
 
 /** Resolves the effective UI language: explicit choice, or the best match for the system locale. */

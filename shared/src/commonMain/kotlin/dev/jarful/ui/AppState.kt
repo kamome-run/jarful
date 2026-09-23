@@ -267,7 +267,13 @@ class AppState(val store: Store, val scope: CoroutineScope, var strings: Strings
 
     /** Print queue (FR-9.12): tickets are printed one at a time with a 1 s gap so labels can be torn off. */
     var printProgress by mutableStateOf<Pair<Int, Int>?>(null)   // (done, total) while printing
+    /** (attempt, max) while the queue is waiting to retry a failed label; null otherwise. */
+    var printRetry by mutableStateOf<Pair<Int, Int>?>(null)
+    /** Message of the failure that paused the queue, shown in the banner until the queue is empty. */
+    var printLastError by mutableStateOf<String?>(null)
     var printStopRequested = false
+    /** Waits before each retry of a failed label: lets a pocket printer recover from a dropped link or a thermal pause. */
+    var printRetryDelaysMs: List<Long> = listOf(3_000, 8_000, 20_000)
     val printQueue: List<String> get() = data.settings.printQueue
 
     fun print(kind: PrintTarget) {
@@ -290,16 +296,17 @@ class AppState(val store: Store, val scope: CoroutineScope, var strings: Strings
         runPrintQueue(printQueue.size)
     }
 
-    fun discardPrintQueue() { store.updateSettings { it.copy(printQueue = emptyList()) } }
+    fun discardPrintQueue() { store.updateSettings { it.copy(printQueue = emptyList()) }; printLastError = null }
     fun stopPrinting() { printStopRequested = true }
 
     private fun runPrintQueue(total: Int) {
         val settings = data.settings.printer
         printing = true; printStopRequested = false
-        printProgress = 0 to total
+        printProgress = 0 to total; printRetry = null; printLastError = null
         scope.launch {
             var done = 0
             var failure: String? = null
+            var attempt = 0 // failed attempts for the label at the head of the queue
             while (true) {
                 val key = data.settings.printQueue.firstOrNull() ?: break
                 if (printStopRequested) break
@@ -308,6 +315,7 @@ class AppState(val store: Store, val scope: CoroutineScope, var strings: Strings
                 val result = withContext(Dispatchers.Default) { printer.send(settings, TicketFormatter.encodeJob(listOf(ticket), settings) { dateLabel(it.date) }) }
                 when (result) {
                     is PrintResult.Ok -> {
+                        attempt = 0; printRetry = null
                         store.markPrinted(listOf(ticket.id)); adoptTransport(result.usedTransport)
                         store.updateSettings { it.copy(printQueue = it.printQueue.drop(1)) }
                         done++; printProgress = done to total
@@ -317,10 +325,21 @@ class AppState(val store: Store, val scope: CoroutineScope, var strings: Strings
                             kotlinx.coroutines.delay(printMs + 1000)
                         }
                     }
-                    is PrintResult.Error -> { failure = result.message; break }
+                    is PrintResult.Error -> {
+                        // Pocket printers drop the link or pause to cool down during long runs (FR-9.12):
+                        // retry the same label a few times with growing pauses before giving up.
+                        if (attempt < printRetryDelaysMs.size) {
+                            printRetry = (attempt + 1) to printRetryDelaysMs.size
+                            kotlinx.coroutines.delay(printRetryDelaysMs[attempt]); attempt++
+                            if (printStopRequested) { failure = result.message; break }
+                            continue
+                        }
+                        failure = result.message; break
+                    }
                 }
             }
-            printing = false; printProgress = null
+            printing = false; printProgress = null; printRetry = null
+            printLastError = failure
             val left = data.settings.printQueue.size
             when {
                 failure != null -> showToast(strings.printFailed(failure) + (if (left > 0) "  " + strings.printPaused(left) else ""))
