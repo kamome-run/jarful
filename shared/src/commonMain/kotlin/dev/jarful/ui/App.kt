@@ -49,6 +49,7 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
 import dev.jarful.data.Store
+import dev.jarful.platform.hasHardwareKeyboard
 import dev.jarful.ui.columns.ColumnsView
 import dev.jarful.ui.ds.DesignSystem
 import dev.jarful.ui.ds.DsAppShell
@@ -153,7 +154,7 @@ private fun TopActions(state: AppState) {
     val hasPeer = state.data.settings.sync.peerHost.isNotBlank()
     if (hasPeer) DsIconButton(onClick = { state.syncNow() }, icon = Icons.Default.Sync, contentDescription = s.syncNow, enabled = !state.syncing)
     DsIconButton(onClick = { state.print(PrintTarget.Today) }, icon = Icons.Default.Print, contentDescription = s.printToday, enabled = !state.printing)
-    DsIconButton(onClick = { state.showShortcuts = true }, icon = Icons.Default.Keyboard, contentDescription = s.shortcuts)
+    if (hasHardwareKeyboard()) DsIconButton(onClick = { state.showShortcuts = true }, icon = Icons.Default.Keyboard, contentDescription = s.shortcuts)
 }
 
 @Composable

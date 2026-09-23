@@ -39,6 +39,11 @@ class Store(
     private val _data = MutableStateFlow(AppData())
     val data: StateFlow<AppData> = _data
 
+    /** Synchronous observer, invoked on every change (UI mirrors the data into snapshot state through it). */
+    var onChange: ((AppData) -> Unit)? = null
+
+    private fun publish(next: AppData) { _data.value = next; onChange?.invoke(next) }
+
     /** Undo stack of previous snapshots (FR-2.5, FR-4.5). */
     private val undoStack = ArrayDeque<AppData>()
     private var saveJob: Job? = null
@@ -47,7 +52,7 @@ class Store(
         val text = try { file?.read() } catch (_: Throwable) { null }
         val parsed = text?.let { runCatching { json.decodeFromString(AppData.serializer(), it) }.getOrNull() }
         val base = migrate(parsed ?: AppData())
-        _data.value = base.copy(tasks = TaskTree.ensureInbox(base.tasks, inboxTitle, nowMillis()))
+        publish(base.copy(tasks = TaskTree.ensureInbox(base.tasks, inboxTitle, nowMillis())))
         if (base.settings.sync.deviceId.isBlank() || base.settings.sync.pin.isBlank()) {
             updateSettings { st ->
                 st.copy(sync = st.sync.copy(
@@ -78,7 +83,7 @@ class Store(
         if (raw === before) return
         val after = stamp(before, raw, nowMillis())
         if (undoable) { undoStack.addLast(before); while (undoStack.size > 50) undoStack.removeFirst() }
-        _data.value = after
+        publish(after)
         scheduleSave()
     }
 
@@ -86,7 +91,7 @@ class Store(
     fun applySynced(p: SyncPayload) {
         val d = _data.value
         val next = SyncMerge.apply(d, p)
-        _data.value = next.copy(tasks = TaskTree.ensureInbox(next.tasks, inboxTitle, nowMillis()))
+        publish(next.copy(tasks = TaskTree.ensureInbox(next.tasks, inboxTitle, nowMillis())))
         scheduleSave()
     }
 
@@ -127,7 +132,7 @@ class Store(
 
     fun undo(): Boolean {
         val prev = undoStack.removeLastOrNull() ?: return false
-        _data.value = prev
+        publish(prev)
         scheduleSave()
         return true
     }
