@@ -37,6 +37,7 @@ import dev.jarful.platform.bleSupported
 import dev.jarful.platform.bluetoothSupported
 import dev.jarful.platform.listBleDevices
 import dev.jarful.platform.copyToClipboard
+import dev.jarful.platform.hasHardwareKeyboard
 import dev.jarful.platform.listBluetoothDevices
 import dev.jarful.platform.listSerialPorts
 import dev.jarful.platform.localIpAddresses
@@ -99,8 +100,10 @@ fun SettingsView(state: AppState, modifier: Modifier = Modifier) {
                 DsButton(onClick = { copyToClipboard(state.store.exportJson()); state.showToast(s.copied) }) { Text(s.exportJson) }
                 DsButton(onClick = { state.importOpen = true }) { Text(s.importJson) }
             }
-            SectionTitle(s.shortcuts)
-            DsButton(onClick = { state.showShortcuts = true }, kind = ButtonKind.Subtle) { Text(s.shortcuts) }
+            if (hasHardwareKeyboard()) {
+                SectionTitle(s.shortcuts)
+                DsButton(onClick = { state.showShortcuts = true }, kind = ButtonKind.Subtle) { Text(s.shortcuts) }
+            }
             SectionTitle(s.about)
             Text(s.aboutBody, style = MaterialTheme.typography.bodyMedium)
             Text("https://github.com/kamome-run/jarful", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
