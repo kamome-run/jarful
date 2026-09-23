@@ -15,6 +15,7 @@ import java.net.InetSocketAddress
 import java.net.Socket
 import java.nio.charset.Charset
 import java.util.Locale
+import java.util.concurrent.TimeUnit
 import javax.sound.sampled.AudioFormat
 import javax.sound.sampled.AudioSystem
 import kotlin.concurrent.thread
@@ -57,19 +58,77 @@ actual suspend fun sendRawTcp(host: String, port: Int, bytes: ByteArray, timeout
 }
 
 actual fun bluetoothSupported(): Boolean = false
-actual fun bleSupported(): Boolean = false
 actual suspend fun ensureBluetoothPermission(scan: Boolean): Boolean = true
-actual suspend fun listBleDevices(): List<PrinterEndpoint> = emptyList()
-actual suspend fun sendBlePlan(address: String, plan: List<BleWrite>, timeoutMs: Int, chunkSize: Int): List<String> {
-    throw UnsupportedOperationException("BLE_UNSUPPORTED_ON_DESKTOP")
+
+// ----- Bluetooth LE on Windows through a bundled PowerShell/WinRT helper (FR-9.1 d) -----
+
+private val isWindows: Boolean get() = System.getProperty("os.name").lowercase().contains("win")
+
+private val bleScript: File? by lazy {
+    if (!isWindows) return@lazy null
+    runCatching {
+        val bytes = object {}.javaClass.getResourceAsStream("/jarful-ble.ps1")?.readBytes() ?: return@runCatching null
+        val f = File(dataDirectory(), "jarful-ble.ps1")
+        if (!f.exists() || !f.readBytes().contentEquals(bytes)) f.writeBytes(bytes)
+        f
+    }.getOrNull()
 }
+
+private fun powershell(): String {
+    val root = System.getenv("SystemRoot") ?: "C:\\Windows"
+    val exe = File(root, "System32\\WindowsPowerShell\\v1.0\\powershell.exe")
+    return if (exe.exists()) exe.absolutePath else "powershell.exe"
+}
+
+/** Runs the helper and returns stdout; throws with the first stderr line on failure. */
+private fun runBle(vararg args: String, timeoutMs: Long = 30_000): String {
+    val script = bleScript ?: throw UnsupportedOperationException("BLE_UNSUPPORTED_ON_THIS_OS")
+    val pb = ProcessBuilder(listOf(powershell(), "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", script.absolutePath) + args)
+    val p = pb.start()
+    val out = StringBuilder(); val err = StringBuilder()
+    val tOut = thread(isDaemon = true) { p.inputStream.bufferedReader().useLines { it.forEach { l -> out.appendLine(l) } } }
+    val tErr = thread(isDaemon = true) { p.errorStream.bufferedReader().useLines { it.forEach { l -> err.appendLine(l) } } }
+    if (!p.waitFor(timeoutMs, TimeUnit.MILLISECONDS)) { p.destroyForcibly(); throw IllegalStateException("BLE_HELPER_TIMEOUT") }
+    tOut.join(1000); tErr.join(1000)
+    if (p.exitValue() != 0) throw IllegalStateException(err.toString().lines().firstOrNull { it.isNotBlank() }?.take(200) ?: "BLE_HELPER_FAILED(${p.exitValue()})")
+    return out.toString()
+}
+
+actual fun bleSupported(): Boolean = bleScript != null
+
+actual suspend fun listBleDevices(): List<PrinterEndpoint> = withContext(Dispatchers.IO) {
+    runCatching {
+        runBle("list").lines().filter { it.contains('|') }.map { val (a, n) = it.split('|', limit = 2); PrinterEndpoint(a.trim(), n.trim()) }
+            .distinctBy { it.id }.sortedBy { it.name }
+    }.getOrDefault(emptyList())
+}
+
+actual suspend fun sendBlePlan(address: String, plan: List<BleWrite>, timeoutMs: Int, chunkSize: Int): List<String> = withContext(Dispatchers.IO) {
+    val tmp = File.createTempFile("jarful-ble", ".bin")
+    try {
+        for (step in plan) {
+            tmp.writeBytes(step.bytes)
+            // Windows negotiates the MTU itself; 20-byte chunks are safe for every printer.
+            runBle("write", address, step.characteristic ?: "auto", tmp.absolutePath, minOf(chunkSize, 20).toString(), timeoutMs = timeoutMs.toLong() + 60_000)
+            if (step.delayMs > 0) Thread.sleep(step.delayMs)
+        }
+    } finally { tmp.delete() }
+    emptyList()
+}
+
 actual suspend fun listBluetoothDevices(): List<PrinterEndpoint> = emptyList()
 actual suspend fun sendBluetooth(address: String, bytes: ByteArray, timeoutMs: Int, chunkSize: Int) {
     throw UnsupportedOperationException("BLUETOOTH_UNSUPPORTED_USE_SERIAL")
 }
 
 actual fun serialSupported(): Boolean = true
-actual suspend fun diagnoseBluetooth(address: String): String = "Bluetooth diagnostics are available on Android only. On Windows use a COM port (see README section 6.5)."
+actual suspend fun diagnoseBluetooth(address: String): String = withContext(Dispatchers.IO) {
+    if (!bleSupported()) return@withContext "Bluetooth diagnostics: BLE helper unavailable on this OS. Use a COM port (README 6.5) or TCP."
+    val sb = StringBuilder("Jarful Bluetooth diagnostics (Windows, WinRT helper)\n")
+    sb.appendLine("ports: " + runCatching { SerialPort.getCommPorts().joinToString { it.systemPortName + " " + it.descriptivePortName } }.getOrDefault("?"))
+    sb.append(runCatching { runBle("services", address) }.getOrElse { "le: error " + (it.message ?: "?") + "\n" })
+    sb.toString()
+}
 
 actual suspend fun listSerialPorts(): List<PrinterEndpoint> = withContext(Dispatchers.IO) {
     runCatching {
