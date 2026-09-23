@@ -22,10 +22,13 @@ object TaskTree {
 
     /** Moves [id] to position [toIndex] among its siblings (drag and drop). */
     fun moveTo(tasks: List<Task>, id: String, toIndex: Int): List<Task> {
+        if (id == INBOX_ID) return tasks
         val task = byId(tasks, id) ?: return tasks
         val siblings = childrenOf(tasks, task.parentId).toMutableList()
         val i = siblings.indexOfFirst { it.id == id }
-        val j = toIndex.coerceIn(0, siblings.size - 1)
+        // The inbox is pinned to the top of the root column (FR-7): nothing can be dropped above it.
+        val floor = if (siblings.any { it.id == INBOX_ID }) 1 else 0
+        val j = toIndex.coerceIn(floor, siblings.size - 1)
         if (i < 0 || i == j) return tasks
         val item = siblings.removeAt(i); siblings.add(j, item)
         val reordered = siblings.mapIndexed { k, t -> t.copy(order = k) }
