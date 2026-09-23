@@ -133,6 +133,8 @@ data class PrinterSettings(
     val cutEnabled: Boolean = false,
     val labelHeightMm: Int = 40,
     val labelGapMm: Int = 2,
+    /** Print density 1 (light) … 5 (dark). 3 = printer default (FR-9.10). */
+    val density: Int = 4,
 )
 
 /** UI languages (NFR-4). [tag] is the BCP-47 prefix used to match the system locale; [rtl] flips the layout. */
