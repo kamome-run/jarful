@@ -29,7 +29,7 @@ data class Strings(
     val settings: String, val sound: String, val haptics: String, val prepareTime: String, val prepareTimeHint: String,
     val printer: String, val printerHost: String, val printerPort: String, val paperWidth: String, val charset: String, val testPrint: String,
     val printerNoHost: String, val printOk: String, val printFailed: (String) -> String,
-    val language: String, val langSystem: String, val langJa: String, val langEn: String, val showCompleted: String,
+    val language: String, val langSystem: String, val showCompleted: String,
     val dataTitle: String, val exportJson: String, val importJson: String, val importFailed: String, val importOk: String, val dataPath: String, val copied: String, val pasteJsonHint: String,
     val refocus: String, val refocusHint: String, val refocusPlaceholder: String, val refocusGo: String,
     val shortcuts: String, val shortcutsList: List<Pair<String, String>>,
@@ -68,9 +68,9 @@ val JA = Strings(
     sampleRoutinesAdd = "サンプルを追加", sampleRoutinesSkip = "あとで",
     stats = "統計", streak = { "$it 日連続" }, last90 = "過去 90 日のループ数", routineRates = "ルーチン達成率（30 日）", totalLoops = { "合計 $it ループ" }, bestDay = { "最高 $it ループ/日" }, noData = "まだデータがありません",
     settings = "設定", sound = "効果音", haptics = "触覚フィードバック", prepareTime = "翌日分の準備時刻", prepareTimeHint = "この時刻以降にアプリを開くと、翌日のルーチンチケットを準備します",
-    printer = "レシートプリンター（ESC/POS, TCP）", printerHost = "ホスト / IP アドレス", printerPort = "ポート", paperWidth = "用紙幅", charset = "文字コード", testPrint = "テスト印刷",
+    printer = "サーマルプリンター", printerHost = "ホスト / IP アドレス", printerPort = "ポート", paperWidth = "用紙幅", charset = "文字コード", testPrint = "テスト印刷",
     printerNoHost = "プリンターのホストを設定してください", printOk = "印刷しました", printFailed = { "印刷に失敗: $it" },
-    language = "言語", langSystem = "システム", langJa = "日本語", langEn = "English", showCompleted = "完了済みタスクを表示",
+    language = "言語", langSystem = "システムの言語", showCompleted = "完了済みタスクを表示",
     dataTitle = "データ", exportJson = "JSON をエクスポート（コピー）", importJson = "JSON をインポート", importFailed = "読み込めませんでした", importOk = "インポートしました", dataPath = "保存先", copied = "クリップボードにコピーしました", pasteJsonHint = "エクスポートした JSON を貼り付け",
     refocus = "リフォーカス", refocusHint = "先延ばしに気づいたら、次にやる 3〜5 個を 1 行ずつ書いて、すぐ始める。", refocusPlaceholder = "例:\n机の上を片付ける\nメールを 3 通返す\n10 分だけ書く", refocusGo = "始める",
     shortcuts = "キーボードショートカット",
@@ -122,9 +122,9 @@ val EN = Strings(
     sampleRoutinesAdd = "Add samples", sampleRoutinesSkip = "Later",
     stats = "Stats", streak = { "$it-day streak" }, last90 = "Loops over the last 90 days", routineRates = "Routine completion (30 days)", totalLoops = { "$it loops total" }, bestDay = { "best $it loops/day" }, noData = "No data yet",
     settings = "Settings", sound = "Sound effects", haptics = "Haptic feedback", prepareTime = "Prepare tomorrow at", prepareTimeHint = "Opening the app after this time prepares tomorrow's routine tickets",
-    printer = "Receipt printer (ESC/POS over TCP)", printerHost = "Host / IP address", printerPort = "Port", paperWidth = "Paper width", charset = "Charset", testPrint = "Test print",
+    printer = "Thermal printer", printerHost = "Host / IP address", printerPort = "Port", paperWidth = "Paper width", charset = "Charset", testPrint = "Test print",
     printerNoHost = "Set the printer host first", printOk = "Printed", printFailed = { "Print failed: $it" },
-    language = "Language", langSystem = "System", langJa = "日本語", langEn = "English", showCompleted = "Show completed tasks",
+    language = "Language", langSystem = "System language", showCompleted = "Show completed tasks",
     dataTitle = "Data", exportJson = "Export JSON (copy)", importJson = "Import JSON", importFailed = "Could not read the data", importOk = "Imported", dataPath = "Storage path", copied = "Copied to clipboard", pasteJsonHint = "Paste exported JSON",
     refocus = "Refocus", refocusHint = "Noticed you're procrastinating? Write the next 3–5 tasks, one per line, and start right away.", refocusPlaceholder = "e.g.\nClear the desk\nReply to 3 emails\nWrite for 10 minutes", refocusGo = "Start",
     shortcuts = "Keyboard shortcuts",
@@ -154,10 +154,28 @@ val EN = Strings(
     syncError = { code -> when (code) { "UNREACHABLE" -> "Cannot reach the host (same Wi-Fi? host running?)"; "PIN_MISMATCH" -> "Wrong PIN"; "VERSION_MISMATCH" -> "App versions differ"; "NO_PEER" -> "No host configured"; "BAD_RESPONSE" -> "Unreadable response"; else -> code } },
 )
 
-fun stringsFor(lang: Language): Strings = when (lang) {
+/** Resolves the effective UI language: explicit choice, or the best match for the system locale. */
+fun resolveLanguage(setting: Language): Language {
+    if (setting != Language.SYSTEM) return setting
+    val tag = systemLanguageTag().lowercase()
+    if (tag.startsWith("zh")) return if (tag.contains("tw") || tag.contains("hant") || tag.contains("hk") || tag.contains("mo")) Language.ZH_TW else Language.ZH_TW
+    return Language.entries.firstOrNull { it != Language.SYSTEM && tag.startsWith(it.tag.lowercase()) } ?: Language.EN
+}
+
+fun stringsFor(lang: Language): Strings = when (resolveLanguage(lang)) {
     Language.JA -> JA
     Language.EN -> EN
-    Language.SYSTEM -> if (systemLanguageTag().lowercase().startsWith("ja")) JA else EN
+    Language.FR -> FR
+    Language.AR -> AR
+    Language.RU -> RU
+    Language.ES -> ES
+    Language.DE -> DE
+    Language.VI -> VI
+    Language.PL -> PL
+    Language.UK -> UK
+    Language.ID -> ID
+    Language.ZH_TW -> ZH_TW
+    Language.SYSTEM -> EN
 }
 
 val LocalStrings = staticCompositionLocalOf { JA }

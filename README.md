@@ -3,15 +3,38 @@
 [![CI](https://github.com/kamome-run/jarful/actions/workflows/ci.yml/badge.svg)](https://github.com/kamome-run/jarful/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
+**日本語** · [English](README.en.md) · [Français](README.fr.md) · [العربية](README.ar.md) · [Русский](README.ru.md) · [Español](README.es.md) · [Deutsch](README.de.md) · [Tiếng Việt](README.vi.md) · [Polski](README.pl.md) · [Українська](README.uk.md) · [Bahasa Indonesia](README.id.md) · [繁體中文（台灣）](README.zh-TW.md)
+
 「ゲームには何時間でも集中できるのに、仕事や家事は先延ばしにしてしまう」——
-ADHD 起業家 Laurie Hérault 氏が編み出した **付箋 × 透明な瓶 × レシートプリンター** の手法
+ADHD 起業家 Laurie Hérault 氏が編み出した **付箋 × 透明な瓶 × サーマルプリンター** の手法
 （[ナゾロジー記事](https://nazology.kusuguru.co.jp/archives/180152) /
 [原典](https://www.laurieherault.com/articles/a-thermal-receipt-printer-cured-my-procrastination)）を、
-Android（Chromebook 対応）と Windows 11 で使えるアプリにしたものです。
+Android（Chromebook / Google 製ノート PC 含む）と Windows 11 で使えるアプリにしたものです。
 
 > **Jarful** = 「瓶いっぱい」。完了したチケットを丸めて、透明な瓶を満たしていく。
 
-## 仕組み（記事の手法をそのまま）
+---
+
+## 目次
+
+1. [仕組み](#1-仕組み)
+2. [用意するもの](#2-用意するもの)
+3. [対応プラットフォーム](#3-対応プラットフォーム)
+4. [インストール](#4-インストール)
+5. [初回起動と基本の流れ](#5-初回起動と基本の流れ)
+6. [プリンターの設定（詳細）](#6-プリンターの設定詳細)
+7. [Android ⇄ Windows の同期（詳細）](#7-android--windows-の同期詳細)
+8. [キーボードショートカット](#8-キーボードショートカット)
+9. [タッチ操作](#9-タッチ操作)
+10. [データとバックアップ](#10-データとバックアップ)
+11. [言語](#11-言語)
+12. [トラブルシューティング](#12-トラブルシューティング)
+13. [ソースからビルド](#13-ソースからビルド)
+14. [ライセンス・免責](#14-ライセンス免責)
+
+---
+
+## 1. 仕組み
 
 | 記事の手法 | Jarful での実装 |
 |-----------|----------------|
@@ -21,85 +44,251 @@ Android（Chromebook 対応）と Windows 11 で使えるアプリにしたも�
 | 先延ばしに気づいたら **次の 3〜5 個** を書いてすぐ始める | `Ctrl+K` **リフォーカス**: 1 行 1 件で入力→即チケット化→1 枚目を開始 |
 | 分解できないタスクは **時間で分解**（「10 分だけ」） | タイムボックス付きチケットのカウントダウン。終了時に「完了 / 5 分延長 / 分解」 |
 | 溜まったメールは「新着＋古いもの N 件」を **毎日** | **クォータ型ルーチン**（+1 カウンター、目標到達で完了） |
-| **レシートプリンター** で摩擦をなくす | Bluetooth Classic (SPP) / COM ポート / TCP で **ESC/POS・TSPL・CPCL** に印刷。1 チケット 1 枚 |
+| **サーマルプリンター** で摩擦をなくす | Bluetooth Classic / Bluetooth LE / COM / TCP で **ESC/POS・TSPL・CPCL** に印刷。1 チケット 1 枚 |
 
 ## スクリーンショット
 
-Windows 11 版は **Fluent Design System**（WinUI 3 準拠）、Android 版は **Material 3** で、ブランドカラー（付箋イエロー・紙色・インク色）は共通です。
+Windows 11 版は **Fluent Design System**（WinUI 3 準拠）、Android 版は **Material 3** で、ブランドカラーは共通です。
 
-| Windows 11（Fluent） | Windows 11 ダーク | Windows 11 狭い幅 |
+| Windows 11（Fluent） | Windows 11 ダーク | Windows 11 繁體中文 |
 |---|---|---|
-| ![windows](docs/screenshots/windows-fluent.png) | ![windows dark](docs/screenshots/windows-fluent-dark.png) | ![windows narrow](docs/screenshots/windows-fluent-narrow.png) |
+| ![windows](docs/screenshots/windows-fluent.png) | ![windows dark](docs/screenshots/windows-fluent-dark.png) | ![windows zh-TW](docs/screenshots/windows-fluent-zh-TW.png) |
 
-| Android / Chromebook タブレット（Material 3） | Android スマートフォン | Android ダーク | 印刷チケット（58mm ラスター） |
+| Android（Material 3） | Android ダーク | Android アラビア語（RTL） |
+|---|---|---|
+| ![phone](docs/screenshots/android-material-phone.png) | ![phone dark](docs/screenshots/android-material-phone-dark.png) | ![phone ar](docs/screenshots/android-material-phone-ar.png) |
+
+| 印刷チケット（日本語） | アラビア語 | 繁體中文 | ベトナム語 |
 |---|---|---|---|
-| ![tablet](docs/screenshots/android-material-tablet.png) | ![phone](docs/screenshots/android-material-phone.png) | ![phone dark](docs/screenshots/android-material-phone-dark.png) | ![ticket](docs/screenshots/ticket-raster.png) |
+| ![ticket](docs/screenshots/ticket-raster.png) | ![ticket ar](docs/screenshots/ticket-raster-ar.png) | ![ticket zh](docs/screenshots/ticket-raster-zh-TW.png) | ![ticket vi](docs/screenshots/ticket-raster-vi.png) |
 
-## 対応プラットフォーム
+## 2. 用意するもの
+
+**必須**
+- Android 端末（スマートフォン / タブレット / Chromebook / Google 製の ChromeOS・Android ノート PC）または Windows 11 PC。
+
+**推奨（記事の手法をフルに再現する場合）**
+- **サーマルプリンター**: 58mm または 80mm 幅の ESC/POS 互換機（Bluetooth Classic、Bluetooth LE、または有線 LAN / Wi-Fi 接続）。ラベル紙を使うなら TSPL / CPCL 対応機。
+- **感熱ロール紙**: 対応幅のもの。長時間手に触れるので **ビスフェノールフリー（BPA / BPS フリー）** の紙を推奨します。
+- **ホワイトボードと磁石**: 印刷したチケットは **ホワイトボードに磁石で貼り付けて**「今日やること」を目の前に並べます。終わったチケットを剥がして丸める動作が報酬になります。小さなマグネット（直径 10〜15mm 程度）を 20〜30 個用意しておくと便利です。
+- **透明な瓶**: 丸めたチケットを入れる容器。アプリ内の瓶でも代用できますが、実物があると効果が高まります。
+
+## 3. 対応プラットフォーム
 
 | プラットフォーム | 配布物 | 備考 |
 |------------------|--------|------|
-| Android 8.0+ | `jarful-android-*.apk` | スマートフォン / タブレット。Android 12 以降は Material You のダイナミックカラー対応 |
-| Chromebook (ChromeOS) | 同上 | タッチ非搭載機でもインストール可。キーボード・マウスで全操作 |
-| Windows 11 (x64) | `Jarful-*.msi` / `Jarful-*.exe` | インストーラ。Fluent Design System の UI。Bluetooth プリンターは仮想 COM ポート経由 |
+| Android 8.0 以降 | `androidApp-debug.apk` / `androidApp-release-unsigned.apk` | スマートフォン / タブレット。Material 3、Android 12 以降はダイナミックカラー |
+| Chromebook（ChromeOS）/ Google 製の ChromeOS・Android ノート PC | 同上 | タッチ非搭載機でもインストール可。キーボード・マウス・タッチパネルすべてに対応 |
+| Windows 11（x64） | `Jarful-*.msi` / `Jarful-*.exe` | Fluent Design System の UI。Bluetooth プリンターは仮想 COM ポート経由 |
 
-ビルド成果物は [GitHub Actions](https://github.com/kamome-run/jarful/actions) の Artifacts、
-またはリリースページから取得できます。
+配布物は [Releases](https://github.com/kamome-run/jarful/releases) から取得できます。
 
-## 対応プリンター
+## 4. インストール
 
-- 58mm / 80mm の ESC/POS 互換サーマルプリンター（Bluetooth SPP、シリアル COM、TCP 9100）。
-  日本語フォントを内蔵しない機種向けに、既定設定（Bluetooth / ESC/POS ラスター / 58mm）では画像として印刷します。
-- TSPL / CPCL 対応のラベルプリンター。
+### 4.1 Android（スマートフォン / タブレット）
 
-### Android / Chromebook（Bluetooth）
-1. OS の Bluetooth 設定でプリンターとペアリング。
-2. Jarful → 設定 → プリンター → `Bluetooth (SPP)` → 機器を選択 → **テスト印刷**。
+1. 端末のブラウザで [Releases](https://github.com/kamome-run/jarful/releases) を開き、最新版の `androidApp-debug.apk` をダウンロードします。
+2. 通知またはファイルアプリから APK をタップします。
+3. 「提供元不明のアプリ」の警告が出たら **設定 → このアプリからのインストールを許可** をオンにして戻ります（ブラウザ / ファイルアプリに対して 1 回だけ許可します）。
+4. **インストール** をタップし、完了したら **開く**。
+5. 初回起動時に「簡単な日課から始めましょう」と表示されるので、**サンプルを追加** を選ぶと朝のルーチンが登録されます（後から編集できます）。
 
-### Windows 11（Bluetooth → COM ポート）
-1. 設定 → Bluetooth とデバイス → デバイス → **その他のデバイスとプリンターの設定** → プリンターを右クリック → プロパティ → **サービス** で「シリアルポート (SPP)」にチェック。
-2. 「その他の Bluetooth 設定」→ **COM ポート** タブで発信用ポート（例 `COM5`）を確認。
-3. Jarful → 設定 → プリンター → `Serial / COM` → ポートを選択 → **テスト印刷**。
+> `release-unsigned.apk` は自分で署名してストア配布する開発者向けです。通常は `debug.apk` を使ってください。
 
-## Android ⇄ Windows の同期
+### 4.2 Chromebook / Google 製の ChromeOS・Android ノート PC
 
-クラウドもアカウントも使いません。**同じ Wi-Fi 上の端末同士が直接同期**します。
+ChromeOS では Google Play 以外の APK を入れる方法が 2 つあります。
 
-1. Windows 側: 設定 → 端末間の同期 → **「この端末をホストにする」をオン**。表示された IP アドレスと 6 桁の PIN を控える。
-2. Android 側: 設定 → 端末間の同期 → 接続先に **ホストの IP アドレスと PIN** を入力 → **今すぐ同期**。
-3. 以後、アプリ起動時と 5 分ごとに自動同期します（設定でオフにできます）。上部バーの同期アイコンで手動同期もできます。
+**方法 A: Linux 開発環境と adb を使う（推奨）**
+1. **設定 → 詳細設定 → デベロッパー → Linux 開発環境** を **オンにする**（初回は数分かかります）。
+2. 同じ画面で **Android アプリの開発 → ADB デバッグ** を **オン** にし、再起動します。
+3. Linux ターミナルで adb を入れ、端末に接続します。
+   ```bash
+   sudo apt update && sudo apt install -y adb
+   adb connect 100.115.92.2:5555      # 画面に出る許可ダイアログで「許可」を押す
+   adb install ~/Downloads/androidApp-debug.apk
+   ```
+4. ランチャーに **Jarful** が現れます。ウィンドウはリサイズでき、幅 840dp 以上で 3 ペイン表示になります。
 
-同期されるのはタスク・チケット・ルーチンです（プリンター設定などの端末固有設定は同期されません）。
-同じ項目を両方で変更した場合は後に変更した方が残り、削除も相手に伝わります。
-通信は LAN 内の平文 HTTP（既定ポート 47831）なので、自宅や職場など信頼できるネットワークで使ってください。
-Windows のファイアウォールで受信を求められたら許可してください。
+**方法 B: 管理者が Play ストアで配布する**（学校・職場の管理端末）: 管理コンソールから APK をプライベートアプリとして配布できます。
 
-## キーボードショートカット（抜粋）
+Bluetooth プリンターは **ChromeOS 側の設定 → Bluetooth** でペアリングしてから、アプリの設定で選択します（Classic・LE の両方に対応）。
+
+### 4.3 Windows 11
+
+1. [Releases](https://github.com/kamome-run/jarful/releases) から `Jarful-<version>.msi` をダウンロードします。
+2. ダブルクリックしてインストーラを起動します。**SmartScreen** の青い画面が出た場合は **詳細情報 → 実行** をクリックします（コード署名をしていないため表示されます。ソースは本リポジトリで公開されています）。
+3. インストール先を確認して **Install**。ユーザー単位でインストールされ、管理者権限は不要です。
+4. スタートメニューの **Jarful** から起動します。
+5. データは `%APPDATA%\Jarful\jarful-data.json` に保存されます（設定画面の「保存先」で確認できます）。
+
+アンインストールは **設定 → アプリ → インストールされているアプリ → Jarful** から行えます。データファイルは残るので、必要なら手動で削除してください。
+
+## 5. 初回起動と基本の流れ
+
+1. **ルーチンを整える**（ルーチンタブ）: 朝の簡単な日課（コーヒーを淹れる、窓を開ける…）を上から順に並べます。曜日ごとにオン / オフでき、「メールを 10 件処理」のような数を数える習慣は **クォータ** に件数を入れます。
+2. **前夜に準備される**: 設定の「翌日分の準備時刻」（既定 21:00）以降にアプリを開くと、翌日のルーチンチケットが自動で作られます。当日朝に開いても未生成なら即生成されます。
+3. **タスクを分解する**（カラムタブ）: 左の列に大きなタスク（「家の掃除」）を作り、選択して `Tab`（または「子タスクを追加」）で右の列に「キッチン」「浴室」…と分解します。さらに「皿を洗う」「台を拭く」のように **2〜5 分** まで分けます。3 日以上残っているタスクには「もっと細かく分解しましょう」と表示されます。
+4. **今日のチケットにする**: タスクを選んで `T`、列全体なら `Shift+T`（メニューの「この列を今日へ」）。今日タブにレシート風のカードとして並びます。
+5. **印刷して貼る**（任意）: `Ctrl+P` で今日のチケットを全部印刷し、1 枚ずつちぎって **ホワイトボードに磁石で貼ります**。
+6. **やる → 完了**: カードの **開始** で経過時間（タイムボックスがあればカウントダウン）を表示。終わったら **完了** を押す（またはカードを右にスワイプ）と、くしゃっと丸まって瓶に落ち、効果音と振動が返ってきます。実物のチケットも剥がして丸めて瓶へ。
+7. **先延ばしに気づいたら**: `Ctrl+K`（⚡ リフォーカス）で「次にやる 3〜5 個」を 1 行ずつ書いて **始める**。即チケット化され、1 枚目が開始状態になります。
+8. **統計**: 日別ループ数（90 日）、連続日数、ルーチン達成率を確認できます。
+
+## 6. プリンターの設定（詳細）
+
+設定タブ → **サーマルプリンター**。
+
+### 6.1 接続方式を選ぶ
+
+| 接続方式 | 対応 OS | 向いているプリンター |
+|---|---|---|
+| **Bluetooth Classic (SPP)** | Android / Chromebook | Bluetooth 2.1〜5.x のデュアルモード機（ペアリング時に PIN を求められる機種が多い） |
+| **Bluetooth LE (GATT)** | Android / Chromebook | Bluetooth 4.0〜5.x の LE 専用ポケットプリンター（スマホアプリ専用として売られている機種） |
+| **Serial / COM** | Windows 11 | Bluetooth Classic 機を仮想 COM ポート経由で使う場合、USB シリアル変換 |
+| **TCP/IP** | Android / Windows | 有線 LAN / Wi-Fi のレシートプリンター（ポート 9100） |
+
+どちらの Bluetooth か分からない場合: OS の Bluetooth 設定で **ペアリングできる**（PIN 入力や確認が出る）なら Classic、ペアリングできず「専用アプリから接続してください」となる機種は LE の可能性が高いです。両方試して **テスト印刷** が通る方を使ってください。
+
+### 6.2 印刷プロトコルを選ぶ
+
+| プロトコル | 用途 |
+|---|---|
+| **ESC/POS ラスター（既定）** | ほとんどの 58mm / 80mm レシートプリンター。チケットを画像として送るので **どの言語も内蔵フォントに関係なくきれいに印刷** できます |
+| ESC/POS ビットイメージ | ラスター（`GS v 0`）に対応しない古い機種 |
+| ESC/POS テキスト | プリンター内蔵フォントで印字したい場合。文字コード（UTF-8 / Shift_JIS / Big5 / GB18030 / Windows-125x / CP8xx 等）をプリンターに合わせます |
+| TSPL | ラベルプリンター（ラベル高さとギャップを mm で設定） |
+| CPCL | ラベルプリンター（CPCL 系） |
+
+用紙幅は **58mm（384 ドット）** または **80mm（576 ドット）**。カッター非搭載のポータブル機は **Cut をオフ**、フィード行数は 3〜5 が目安です。
+
+### 6.3 Android / Chromebook — Bluetooth Classic
+
+1. プリンターの電源を入れ、必要なら Bluetooth ボタンを長押ししてペアリングモードにします。
+2. **端末の設定 → Bluetooth → 新しいデバイスとペア設定** でプリンターを選びます。PIN を求められたら取扱説明書の値（`0000` や `1234` が一般的）を入力します。
+3. Jarful → 設定 → サーマルプリンター → **Bluetooth Classic (SPP)** を選択。
+4. 機器の一覧（ペアリング済み機器）からプリンターを選びます。表示されない場合は 🔄 で更新します。Android 12 以降では初回に **「付近のデバイス」権限** を求められるので **許可** してください。
+5. **テスト印刷** を押します。数秒で「Jarful / Test print OK」が印字されれば完了です。
+6. 印字が途中で止まる機種は、フィード行数を増やすか、印刷を 1 枚ずつ（チケットの ⋮ → 印刷）に分けてください。
+
+### 6.4 Android / Chromebook — Bluetooth LE
+
+1. 端末の **Bluetooth をオン** にします（ペアリングは不要な機種が多いです）。Android 11 以前では **位置情報もオン** にしてください（BLE スキャンに必要）。
+2. Jarful → 設定 → サーマルプリンター → **Bluetooth LE (GATT)** を選択。
+3. 🔄 を押すと約 4 秒スキャンし、見つかったプリンターが名前付きで一覧に出ます。選択します。
+4. **テスト印刷**。初回は接続に 5〜10 秒かかることがあります。
+5. 印字されない場合: プリンターを再起動する、専用アプリを完全に終了する（LE は同時に 1 つのアプリしか接続できません）、端末の Bluetooth をオフ→オンする、を試してください。
+
+### 6.5 Windows 11 — Bluetooth（仮想 COM ポート）
+
+1. **設定 → Bluetooth とデバイス → デバイスの追加 → Bluetooth** でプリンターをペアリングします（PIN は取扱説明書の値）。
+2. **設定 → Bluetooth とデバイス → デバイス** を一番下までスクロールし、**その他のデバイスとプリンターの設定** を開きます。
+3. プリンターを右クリック → **プロパティ → サービス** タブで **シリアル ポート (SPP)** にチェックを入れて **OK**。
+4. 同じ画面の **その他の Bluetooth 設定 → COM ポート** タブで、プリンター名の **発信（Outgoing）** に割り当てられた `COMx` を確認します。無い場合は **追加 → 発信 → デバイスを選択 → SPP** で作成します。
+5. Jarful → 設定 → サーマルプリンター → **Serial / COM** → 一覧から `COMx` を選択 → **テスト印刷**。
+6. 「PORT_OPEN_FAILED」が出る場合は、他のアプリ（専用ユーティリティ等）がポートを掴んでいないか確認し、プリンターの電源を入れ直してください。
+
+> Windows 版は Bluetooth LE 専用機には接続できません。LE 専用機は Android 端末から印刷するか、TCP 対応機をお使いください。
+
+### 6.6 ネットワークプリンター（TCP/IP）
+
+1. プリンターを LAN に接続し、**セルフテスト印刷**（電源投入時にフィードボタン長押しが一般的）で IP アドレスを確認します。
+2. Jarful → 設定 → **TCP/IP** → ホストに IP、ポートは `9100`（既定）。
+3. **テスト印刷**。ルーターで IP を固定（DHCP 予約）しておくと安定します。
+
+### 6.7 印刷して貼る運用
+
+- 朝: 今日タブ → **今日を全部印刷**（`Ctrl+P`）→ ちぎる → **ホワイトボードに上から順に磁石で貼る**。
+- 日中: 1 枚終えるごとに剥がして丸め、**透明な瓶へ**。アプリ側でも完了を押すと瓶に紙玉が増えます。
+- 夜: 翌日分が自動で準備されるので、翌朝はそのまま印刷するだけです。
+
+## 7. Android ⇄ Windows の同期（詳細）
+
+クラウドもアカウントも使いません。**同じ Wi-Fi 上の端末同士が直接同期** します（PIN 認証、既定ポート 47831）。
+
+### 7.1 ホスト側（Windows PC を推奨）
+
+1. 設定 → **端末間の同期** → **この端末をホストにする** をオン。
+2. 表示される **この端末のアドレス**（例 `192.168.1.20`）と **6 桁の PIN** を控えます。
+3. Windows の **ファイアウォール** から「Jarful がネットワークへのアクセスを求めています」と聞かれたら **プライベート ネットワーク** を許可します。
+4. アプリを開いている間、他の端末からの同期を受け付けます（「● 受付中」と表示されます）。
+
+### 7.2 クライアント側（Android など）
+
+1. 設定 → **端末間の同期** → **接続先** に **ホストの IP アドレス** と **PIN** を入力。
+2. **今すぐ同期** を押します。「同期しました」と出れば完了。上部バーの 🔄 でも同期できます。
+3. **自動同期** をオンにしておくと、起動時と 5 分ごとに自動で同期します。
+
+### 7.3 仕組みと注意
+
+- 同期されるのは **タスク・チケット・ルーチン**。プリンター設定などの端末固有設定は同期されません。
+- 同じ項目を両方で変更した場合は **後に変更した方** が残ります。削除も相手に伝わります（後から編集した方が勝ちます）。
+- 通信は LAN 内の平文 HTTP です。自宅・職場など信頼できるネットワークで使い、公衆 Wi-Fi ではホストをオフにしてください。
+- 3 台以上でも使えます。全員が同じホストに接続してください。
+
+## 8. キーボードショートカット
 
 | キー | 動作 |
 |------|------|
-| `N` / `Enter` | 新しいタスク |
+| `N` / `Enter` | 同じ列に新規タスク |
 | `Tab` / `Shift+Enter` | 子タスクを追加（分解） |
-| `↑ ↓ ← →` | 選択 / 列の移動 |
-| `Space` | 完了 |
+| `↑ ↓` | 同じ列で移動 |
+| `← →` | 列を移動 |
+| `Space` | 完了 / 未完了 |
 | `T` / `Shift+T` | 今日のチケットにする / 列全体を今日へ |
 | `P` / `Shift+P` / `Ctrl+P` | 印刷（タスク / 列 / 今日全部） |
 | `Ctrl+K` | リフォーカス |
+| `F2` | 名前を変更 |
+| `Delete` | 削除（`Ctrl+Z` で戻せます） |
+| `Alt+↑ ↓` | 並べ替え |
 | `Ctrl+Z` | 元に戻す |
+| `Ctrl+1〜5` | タブ切替 |
+| `Esc` | キャンセル |
 
-全リストは [docs/SPEC.md §8](docs/SPEC.md#8-キーボードショートカット) を参照。
+## 9. タッチ操作
 
-## ドキュメント
+| 操作 | 動作 |
+|---|---|
+| チケットを **右にスワイプ** | 完了（幅の 40% 以上引くと確定） |
+| タスクを **タップ** | 選択（スマートフォンでは子タスクの列へ移動） |
+| タスクを **長押し** | メニュー（子タスク追加 / 今日へ / 印刷 / 名前変更 / 移動 / 削除） |
+| **ダブルタップ** | 名前を変更 |
+| 左上の **←** | 上の列へ戻る |
 
-- [仕様・要件定義書](docs/SPEC.md)
-- [参照記事の要約](docs/SOURCES.md)
-- [開発ガイド](docs/DEVELOPMENT.md)
+Chromebook や Google 製ノート PC のタッチパネル、タブレットで動作します。マウス・キーボードと併用できます。
 
-## ビルド
+## 10. データとバックアップ
+
+- 保存先: Android は `filesDir/jarful-data.json`（アプリ専用領域）、Windows は `%APPDATA%\Jarful\jarful-data.json`。
+- **バックアップ**: 設定 → データ → **JSON をエクスポート（コピー）** でクリップボードにコピーし、メモ等に貼り付けて保存します。
+- **復元**: **JSON をインポート** に貼り付けます。既存データは置き換わります（`Ctrl+Z` で 1 回戻せます）。
+- 端末外へ自動送信されることはありません（同期先はあなたが設定した端末のみ）。
+
+## 11. 言語
+
+日本語 / English / Français / العربية / Русский / Español / Deutsch / Tiếng Việt / Polski / Українська / Bahasa Indonesia / 繁體中文（台灣）。
+既定はシステム言語に自動で合わせ、設定 → 言語で切り替えられます。アラビア語では画面全体が右から左のレイアウトになります。
+印刷はラスター方式ならどの言語でもそのまま印字できます（行ごとに最適なフォントを自動選択、アラビア語は右寄せ・字形結合）。
+
+## 12. トラブルシューティング
+
+| 症状 | 対処 |
+|---|---|
+| APK がインストールできない | 「提供元不明のアプリ」を許可。Android 8.0 以降か確認 |
+| Bluetooth 機器が一覧に出ない | OS 側で先にペアリング（Classic）。LE は 🔄 で再スキャン、位置情報オン（Android 11 以前） |
+| テスト印刷でタイムアウト | プリンターの電源・距離・他アプリの接続を確認。LE は専用アプリを終了 |
+| 印字が文字化け（テキストモード） | 文字コードをプリンターの内蔵フォントに合わせるか、**ESC/POS ラスター** に変更 |
+| 印字が薄い・かすれる | 感熱紙の裏表を確認（つるつるした面が印字面） |
+| Windows で COM ポートが無い | 6.5 の手順で **発信** ポートを追加。ペアリングをやり直す |
+| 同期で「接続できません」 | 同じ Wi-Fi か、ホストのアプリが開いているか、ファイアウォールを許可したか確認 |
+| 同期で「PIN が違います」 | ホストの設定画面に表示されている PIN を再入力 |
+| ルーチンのチケットが出ない | ルーチンの曜日設定と「有効」を確認。ルーチンタブの「今日分を再生成」 |
+
+## 13. ソースからビルド
 
 ```bash
-# 単体テスト
-./gradlew :shared:desktopTest
+# 単体テスト（ドメイン・印刷エンコード・同期・スクリーンショット）
+./gradlew :shared:desktopTest :desktopApp:test
 # Android APK (debug)
 ./gradlew :androidApp:assembleDebug
 # Windows インストーラ（Windows 上で実行）
@@ -108,22 +297,11 @@ Windows のファイアウォールで受信を求められたら許可してく
 ./gradlew :desktopApp:run
 ```
 
-要件: JDK 17、Android SDK (API 35)。詳細は [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)。
+要件: JDK 17、Android SDK（API 35）。詳細は [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)。
+仕様書は [docs/SPEC.md](docs/SPEC.md)、参照記事の要約は [docs/SOURCES.md](docs/SOURCES.md)。
 
-## ライセンス・免責
+## 14. ライセンス・免責
 
 MIT License。本プロジェクトは公開記事で紹介された手法に着想を得た **非公式の独立した実装** であり、
 Laurie Hérault 氏、同氏のアプリ Colonnes、ナゾロジー編集部とは一切関係がなく、承認・提携を受けていません。
-記事の本文・画像・同氏のソフトウェアは含まれていません。
-
----
-
-## English
-
-**Jarful** is a game-loop task manager for ADHD brains, built on Laurie Hérault's
-"[A receipt printer cured my procrastination](https://www.laurieherault.com/articles/a-thermal-receipt-printer-cured-my-procrastination)":
-break tasks into 2–5 minute pieces in Miller columns, crumple each finished ticket into a transparent jar
-(animation, sound, haptics), auto-prepare weekday routines the night before, refocus with the next 3–5 tasks,
-and print tickets to a thermal printer over Bluetooth Classic / COM / TCP using ESC/POS (text, raster, bit-image),
-TSPL or CPCL. Devices sync directly over the local network (no cloud, PIN-protected, last-writer-wins merge). Material 3 UI on Android (dynamic color on 12+) and a Fluent Design (WinUI 3) UI on Windows, sharing one screen implementation through a small design-system primitive layer. Android (incl. Chromebook) and Windows 11. Kotlin Multiplatform + Compose Multiplatform. MIT.
-Jarful is an independent, unofficial project and is not affiliated with or endorsed by Laurie Hérault or Colonnes.
+記事の本文・画像・同氏のソフトウェアは含まれていません。特定のプリンター製品との提携・保証もありません。

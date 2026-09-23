@@ -30,7 +30,9 @@ import dev.jarful.model.PrinterCharset
 import dev.jarful.model.PrinterSettings
 import dev.jarful.model.PrinterTransport
 import dev.jarful.platform.PrinterEndpoint
+import dev.jarful.platform.bleSupported
 import dev.jarful.platform.bluetoothSupported
+import dev.jarful.platform.listBleDevices
 import dev.jarful.platform.copyToClipboard
 import dev.jarful.platform.listBluetoothDevices
 import dev.jarful.platform.listSerialPorts
@@ -73,8 +75,7 @@ fun SettingsView(state: AppState, modifier: Modifier = Modifier) {
                 IntField("MM", settings.prepareMinute, { v -> if (v != null && v in 0..59) state.store.updateSettings { it.copy(prepareMinute = v) } })
             }
             SectionTitle(s.language)
-            val langs = listOf(Language.SYSTEM to s.langSystem, Language.JA to s.langJa, Language.EN to s.langEn)
-            DsSegmented(options = langs.map { it.second }, selected = langs.indexOfFirst { it.first == settings.language }.coerceAtLeast(0), onSelect = { i -> state.store.updateSettings { it.copy(language = langs[i].first) } }, modifier = Modifier.fillMaxWidth())
+            EnumDropdown(s.language, Language.entries, settings.language, { if (it == Language.SYSTEM) s.langSystem else it.nativeName }) { v -> state.store.updateSettings { it.copy(language = v) } }
         }
 
         item {
@@ -110,6 +111,7 @@ private fun PrinterSection(state: AppState, p: PrinterSettings, update: ((Printe
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     val transports = buildList {
         if (bluetoothSupported()) add(PrinterTransport.BLUETOOTH)
+        if (bleSupported()) add(PrinterTransport.BLUETOOTH_LE)
         if (serialSupported()) add(PrinterTransport.SERIAL)
         add(PrinterTransport.TCP)
     }
@@ -123,6 +125,11 @@ private fun PrinterSection(state: AppState, p: PrinterSettings, update: ((Printe
             PrinterTransport.BLUETOOTH -> EndpointPicker(
                 selectedId = p.bluetoothAddress, selectedName = p.bluetoothName,
                 load = { listBluetoothDevices() },
+                onSelect = { e -> update { it.copy(bluetoothAddress = e.id, bluetoothName = e.name) } },
+            )
+            PrinterTransport.BLUETOOTH_LE -> EndpointPicker(
+                selectedId = p.bluetoothAddress, selectedName = p.bluetoothName,
+                load = { listBleDevices() },
                 onSelect = { e -> update { it.copy(bluetoothAddress = e.id, bluetoothName = e.name) } },
             )
             PrinterTransport.SERIAL -> EndpointPicker(

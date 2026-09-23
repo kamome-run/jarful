@@ -44,6 +44,34 @@ class PrintEncodingTest {
     }
 
     @Test
+    fun codePagesSelectEscT() { // FR-9.2 text mode for Cyrillic / Arabic / Latin-2 / Vietnamese
+        assertContentEquals(b(0x1B, 0x40, 0x1B, 0x74, 46), EscPos(PrinterCharset.WIN1251).init().bytes())
+        assertContentEquals(b(0x1B, 0x40, 0x1B, 0x74, 50), EscPos(PrinterCharset.WIN1256).init().bytes())
+        assertContentEquals(b(0x1B, 0x40, 0x1B, 0x74, 45), EscPos(PrinterCharset.WIN1250).init().bytes())
+        assertContentEquals(b(0x1B, 0x40, 0x1B, 0x74, 52), EscPos(PrinterCharset.WIN1258).init().bytes())
+        assertContentEquals(b(0x1B, 0x40, 0x1C, 0x26), EscPos(PrinterCharset.BIG5).init().bytes())
+        assertContentEquals(b(0x1B, 0x40), EscPos(PrinterCharset.UTF8).init().bytes())
+        // Cyrillic text really is single-byte in windows-1251
+        val ru = EscPos(PrinterCharset.WIN1251).text("Привет").bytes()
+        assertEquals(6, ru.size)
+        assertContentEquals(b(0xCF, 0xF0, 0xE8, 0xE2, 0xE5, 0xF2), ru)
+        // Polish in windows-1250: ł = 0xB3
+        assertContentEquals(b(0xB3), EscPos(PrinterCharset.WIN1250).text("ł").bytes())
+    }
+
+    @Test
+    fun rtlDetectionAndAlignment() { // FR-9.4
+        assertTrue(dev.jarful.platform.isRtlText("غسل الأطباق"))
+        assertFalse(dev.jarful.platform.isRtlText("Wash the dishes"))
+        assertFalse(dev.jarful.platform.isRtlText("皿を洗う"))
+        val lines = TicketFormatter.ticketLines(Ticket(id = "a", date = "2026-09-23", category = "المطبخ", title = "غسل الأطباق"), "2026-09-23")
+        assertTrue(lines.first { it.sizePx == 30f }.rtl)
+        assertTrue(lines.last().rtl) // date line follows the ticket's direction
+        val ltr = TicketFormatter.ticketLines(Ticket(id = "b", date = "2026-09-23", category = "Küche", title = "Geschirr spülen"), "2026-09-23")
+        assertFalse(ltr.any { it.rtl })
+    }
+
+    @Test
     fun wrapCountsFullWidthAsTwo() {
         assertEquals(listOf("日本語日", "本語"), TicketFormatter.wrap("日本語日本語", 8))
         assertEquals(listOf("abcdefgh", "ij"), TicketFormatter.wrap("abcdefghij", 8))
