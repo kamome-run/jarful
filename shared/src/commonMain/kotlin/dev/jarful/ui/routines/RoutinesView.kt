@@ -2,6 +2,10 @@ package dev.jarful.ui.routines
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -92,6 +96,7 @@ fun RoutinesView(state: AppState, modifier: Modifier = Modifier) {
     state.editingRoutine?.let { r -> RoutineDialog(state, r) }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun RoutineDialog(state: AppState, initial: Routine) {
     val s = LocalStrings.current
@@ -101,16 +106,16 @@ private fun RoutineDialog(state: AppState, initial: Routine) {
         onDismissRequest = { state.editingRoutine = null },
         title = { Text(if (isNew) s.routineNew else r.title) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 DsTextField(value = r.title, onValueChange = { r = r.copy(title = it) }, label = s.routineTitle, singleLine = true, modifier = Modifier.fillMaxWidth())
                 DsTextField(value = r.category, onValueChange = { r = r.copy(category = it) }, label = s.routineCategory, singleLine = true, modifier = Modifier.fillMaxWidth())
                 Text(s.routineDays, style = MaterialTheme.typography.labelLarge)
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     DayOfWeek.entries.forEach { d ->
                         DsChip(selected = d in r.weekdays, onClick = { r = r.copy(weekdays = if (d in r.weekdays) r.weekdays - d else r.weekdays + d) }, label = s.dayShort(d))
                     }
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     IntField(s.estimate, r.estimateMin, { r = r.copy(estimateMin = it) }, suffix = s.minutes)
                     IntField(s.timebox, r.timeboxMin, { r = r.copy(timeboxMin = it) }, suffix = s.minutes)
                 }

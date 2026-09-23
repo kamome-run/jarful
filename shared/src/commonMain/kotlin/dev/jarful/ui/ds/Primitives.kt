@@ -311,11 +311,11 @@ fun DsDialog(
     Dialog(onDismissRequest = onDismissRequest, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         // WinUI ContentDialog: layer background, title, content, then a footer strip with equal-width buttons.
         Column(
-            Modifier.widthIn(min = 320.dp, max = 560.dp).clip(shape)
+            Modifier.widthIn(min = 320.dp, max = 560.dp).heightIn(max = 640.dp).clip(shape)
                 .background(if (t.dark) Color(0xFF2B2B2B) else Color(0xFFFFFFFF), shape)
                 .border(1.dp, t.cardStroke, shape),
         ) {
-            Column(Modifier.padding(24.dp)) {
+            Column(Modifier.padding(24.dp).weight(1f, fill = false)) {
                 CompositionLocalProvider(LocalTextStyle provides FluentType.subtitle.copy(color = t.textPrimary), LocalContentColor provides t.textPrimary) { title() }
                 if (text != null) {
                     Spacer(Modifier.height(12.dp))

@@ -55,4 +55,5 @@ val UK = Strings(
     syncHostRunning = "очікує підключень", syncHostError = { "Не вдалося запустити хост: $it" },
     syncError = { code -> when (code) { "UNREACHABLE" -> "Хост недоступний (та сама мережа Wi-Fi? хост запущено?)"; "PIN_MISMATCH" -> "Неправильний PIN"; "VERSION_MISMATCH" -> "Версії застосунку різняться"; "NO_PEER" -> "Хост не налаштовано"; "BAD_RESPONSE" -> "Нечитабельна відповідь"; else -> code } },
     printerDiagnose = "Діагностика підключення", printerDiagnoseTitle = "Діагностика Bluetooth", printerDiagnoseHint = "Показує тип пристрою, наявність SPP, служби GATT і результат кожного способу підключення. Якщо друк не працює, скопіюйте це в issue на GitHub.", copy = "Копіювати", printSwitchedTransport = { "Спосіб підключення перемкнено на $it" },
+    nothingToPrint = "Немає що друкувати. Зробіть завдання квитком на сьогодні або скористайтеся ⋮ → Друк.",
 )
