@@ -16,6 +16,8 @@ Add-Type -AssemblyName System.Runtime.WindowsRuntime
 [Windows.Devices.Bluetooth.GenericAttributeProfile.GattDeviceService,Windows.Devices.Bluetooth,ContentType=WindowsRuntime] | Out-Null
 [Windows.Devices.Enumeration.DeviceInformation,Windows.Devices.Enumeration,ContentType=WindowsRuntime] | Out-Null
 [Windows.Storage.Streams.DataWriter,Windows.Storage.Streams,ContentType=WindowsRuntime] | Out-Null
+[Windows.Storage.Streams.IBuffer,Windows.Storage.Streams,ContentType=WindowsRuntime] | Out-Null
+[Windows.Devices.Bluetooth.GenericAttributeProfile.GattWriteResult,Windows.Devices.Bluetooth,ContentType=WindowsRuntime] | Out-Null
 
 $asTaskGeneric = ([System.WindowsRuntimeSystemExtensions].GetMethods() | Where-Object {
     $_.Name -eq 'AsTask' -and $_.GetParameters().Count -eq 1 -and $_.GetParameters()[0].ParameterType.Name -eq 'IAsyncOperation`1'
@@ -51,6 +53,28 @@ function Get-Characteristics($dev) {
     return $all
 }
 
+$script:writeMode = ""
+
+# PowerShell 5.1 cannot always bind the 2-argument WriteValueAsync overload; try several ways.
+function Write-Buffer($target, $buffer, $option) {
+    if ($script:writeMode -eq "" -or $script:writeMode -eq "reflect2") {
+        $m2 = $target.GetType().GetMethod("WriteValueAsync", [Type[]]@([Windows.Storage.Streams.IBuffer], [Windows.Devices.Bluetooth.GenericAttributeProfile.GattWriteOption]))
+        if ($null -ne $m2) {
+            $status = Await ($m2.Invoke($target, @($buffer, $option))) ([Windows.Devices.Bluetooth.GenericAttributeProfile.GattCommunicationStatus])
+            $script:writeMode = "reflect2"; return $status
+        }
+    }
+    if ($script:writeMode -eq "" -or $script:writeMode -eq "withresult") {
+        try {
+            $res = Await ($target.WriteValueWithResultAsync($buffer, $option)) ([Windows.Devices.Bluetooth.GenericAttributeProfile.GattWriteResult])
+            $script:writeMode = "withresult"; return $res.Status
+        } catch { if ($script:writeMode -eq "withresult") { throw } }
+    }
+    $status = Await ($target.WriteValueAsync($buffer)) ([Windows.Devices.Bluetooth.GenericAttributeProfile.GattCommunicationStatus])
+    $script:writeMode = "one-arg"
+    return $status
+}
+
 function Write-Chunks($target, [byte[]] $bytes, [int] $chunkSize) {
     $noResp = ($target.CharacteristicProperties -band [Windows.Devices.Bluetooth.GenericAttributeProfile.GattCharacteristicProperties]::WriteWithoutResponse) -ne 0
     $option = if ($noResp) { [Windows.Devices.Bluetooth.GenericAttributeProfile.GattWriteOption]::WriteWithoutResponse } else { [Windows.Devices.Bluetooth.GenericAttributeProfile.GattWriteOption]::WriteWithResponse }
@@ -61,8 +85,8 @@ function Write-Chunks($target, [byte[]] $bytes, [int] $chunkSize) {
         [Array]::Copy($bytes, $i, $part, 0, $len)
         $writer = New-Object Windows.Storage.Streams.DataWriter
         $writer.WriteBytes($part)
-        $status = Await ($target.WriteValueAsync($writer.DetachBuffer(), $option)) ([Windows.Devices.Bluetooth.GenericAttributeProfile.GattCommunicationStatus])
-        if ($status -ne 'Success') { throw "WRITE_FAILED_$status at byte $i" }
+        $status = Write-Buffer $target ($writer.DetachBuffer()) $option
+        if ("$status" -ne 'Success') { throw "WRITE_FAILED_$status at byte $i (mode $script:writeMode)" }
         $i += $len
         if ($noResp) { Start-Sleep -Milliseconds 12 }
     }
@@ -98,7 +122,7 @@ switch ($Mode) {
         if ($null -ne $probe) {
             try {
                 Write-Chunks $probe ([byte[]](0x51, 0x78, 0xA3, 0x00, 0x01, 0x00, 0x00, 0x00, 0xFF)) 20
-                Write-Output ("probe write to {0}: OK" -f $probe.Uuid)
+                Write-Output ("probe write to {0}: OK (mode {1})" -f $probe.Uuid, $script:writeMode)
             } catch { Write-Output ("probe write to {0}: FAILED {1}" -f $probe.Uuid, $_.Exception.Message) }
         }
     }
@@ -116,7 +140,7 @@ switch ($Mode) {
         $bytes = [System.IO.File]::ReadAllBytes($DataFile)
         Write-Chunks $target $bytes $Chunk
         Start-Sleep -Milliseconds 400
-        Write-Output "OK $($bytes.Length)"
+        Write-Output "OK $($bytes.Length) (mode $script:writeMode)"
     }
     default { throw "USAGE: list | services <addr> | write <addr> <char|auto> <file> <chunk>" }
 }
