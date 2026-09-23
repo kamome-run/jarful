@@ -305,10 +305,13 @@ class AppState(val store: Store, val scope: CoroutineScope, var strings: Strings
         printing = true
         scope.launch {
             val report = StringBuilder("MXW01 darkness probe\n")
-            for ((name, plan) in TicketFormatter.mxw01ProbeJobs()) {
+            val jobs = TicketFormatter.mxw01ProbeJobs()
+            for ((i, entry) in jobs.withIndex()) {
+                val (name, plan) = entry
+                showToast("${name.take(1)} / ${jobs.size} …")
                 val r = withContext(Dispatchers.Default) { runCatching { dev.jarful.platform.sendBlePlan(s.bluetoothAddress, plan, 15_000, 512) } }
                 report.appendLine("$name: ${if (r.isSuccess) "sent" else "error " + (r.exceptionOrNull()?.message ?: "?")}")
-                kotlinx.coroutines.delay(1500)
+                if (i < jobs.lastIndex) kotlinx.coroutines.delay(3000) // let the printer finish before the next job
             }
             printing = false
             diagnosis = report.toString()
