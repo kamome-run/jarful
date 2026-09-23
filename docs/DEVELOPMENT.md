@@ -37,6 +37,9 @@ jarful/
 - **UI 状態**: `AppState`（選択パス、フォーカス列、ダイアログ、コンボ、瓶の投入シグナル）。
 - **印刷**: `TicketFormatter` が `PrinterSettings.protocol` に応じて ESC/POS テキスト、または 1bit 画像（`renderTextBitmap` の expect/actual）を各プロトコルにエンコード。`PrinterClient` がトランスポートを切り替え、512 バイト単位で送信。
 - **デザインシステム**: `ui/ds` の `Ds*` プリミティブ（Button / IconButton / Switch / Checkbox / TextField / Card / ListItem / Dialog / Menu / Segmented / Chip / Progress / Divider / AppShell）が `LocalDesignSystem` に応じて Material 3（Android）または自前実装の Fluent / WinUI 3（デスクトップ）で描画する。画面は `Ds*` と foundation のレイアウトだけを使う。Fluent のトークンは `DesignSystem.kt` の `fluentTokens()`。
+- **多言語**: `ui/i18n/Strings.kt` の `Strings` データクラスに全文言を持ち、`Strings.<lang>.kt` が 1 言語 1 ファイル（ja / en / fr / ar / ru / es / de / vi / pl / uk / id / zh-TW）。`resolveLanguage()` がシステムロケールを解決し、`Language.rtl` が `LocalLayoutDirection` を切り替える。文言を追加するときは全ファイルに同じ名前付き引数を追加する（コンパイルエラーで漏れが分かる）。README も `README.<lang>.md` で 1 言語 1 ファイル。
+- **印刷の多言語**: ラスター描画は行ごとに `printerFontFamily()`（デスクトップ）／Android の標準フォールバックでフォントを選び、`isRtlText()` で右寄せ。テキストモードは `PrinterCharset.codePage`（`ESC t n`）と `kanji`（`FS &`）で切り替える。
+- **Bluetooth**: Classic は `sendBluetooth()`（RFCOMM/SPP）、LE は `sendBle()`（GATT、既知キャラクタリスティック優先、MTU 分割書き込み）。Windows は `sendSerial()`（jSerialComm）。
 - **同期**: `SyncMerge`（純粋関数、最終更新優先＋トゥームストーン）、`SyncServer`/`SyncClient`（`src/jvmShared` の最小 HTTP 実装を Android・デスクトップで共用）。`Store.mutate` が変更差分から `updatedAt` とトゥームストーンを自動付与する。
 - **効果音**: `CrumpleSound` が PCM を手続き生成（バイナリ資産なし）。
 - **Chromebook**: `uses-feature touchscreen required=false`、`resizeableActivity`、幅 840dp 以上で 3 ペイン。
