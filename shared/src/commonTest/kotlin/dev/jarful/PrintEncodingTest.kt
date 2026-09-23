@@ -195,6 +195,15 @@ class PrintEncodingTest {
         assertTrue(one is TicketFormatter.PrintJob.Bytes)
     }
 
+    @Test
+    fun estimatedPrintTimeGrowsWithRows() {
+        val cat = PrinterSettings(protocol = PrintProtocol.CATPRINTER, feedLines = 3)
+        val short = TicketFormatter.estimatedPrintMs(ticket, cat, "d")
+        val long = TicketFormatter.estimatedPrintMs(ticket.copy(title = ticket.title.repeat(6)), cat, "d")
+        assertTrue(short in 2000..8000, "short=$short"); assertTrue(long > short)
+        assertEquals(0, TicketFormatter.estimatedPrintMs(ticket, PrinterSettings(protocol = PrintProtocol.ESCPOS_TEXT), "d"))
+    }
+
     private fun countSeq(hay: ByteArray, needle: ByteArray): Int { var n = 0; var i = 0; while (true) { val j = hay.copyOfRange(i, hay.size).indexOf(needle); if (j < 0) return n; n++; i += j + needle.size } }
 
     @Test
