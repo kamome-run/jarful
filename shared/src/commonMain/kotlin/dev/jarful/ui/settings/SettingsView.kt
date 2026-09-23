@@ -33,6 +33,7 @@ import dev.jarful.model.PrinterCharset
 import dev.jarful.model.PrinterSettings
 import dev.jarful.model.PrinterTransport
 import dev.jarful.platform.PrinterEndpoint
+import dev.jarful.print.Density
 import dev.jarful.platform.bleSupported
 import dev.jarful.platform.bluetoothSupported
 import dev.jarful.platform.listBleDevices
@@ -152,6 +153,9 @@ private fun PrinterSection(state: AppState, p: PrinterSettings, update: ((Printe
                 EnumDropdown(s.charset, PrinterCharset.entries, p.charset, { it.label }, Modifier.weight(1f)) { v -> update { it.copy(charset = v) } }
             }
         }
+        Text(s.printDensity, style = MaterialTheme.typography.labelLarge)
+        DsSegmented(options = listOf("1", "2", "3", "4", "5"), selected = Density.clamp(p.density) - 1, onSelect = { i -> update { it.copy(density = i + 1) } }, modifier = Modifier.fillMaxWidth())
+        Text(s.printDensityHint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             IntField("Feed", p.feedLines, { v -> if (v != null) update { it.copy(feedLines = v.coerceIn(0, 20)) } })
             Text("Cut (GS V)"); DsSwitch(checked = p.cutEnabled, onCheckedChange = { v -> update { it.copy(cutEnabled = v) } })

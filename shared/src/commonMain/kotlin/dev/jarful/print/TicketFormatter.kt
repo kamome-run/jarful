@@ -46,8 +46,8 @@ object TicketFormatter {
 
     // ---------- ESC/POS text (§10.1) ----------
 
-    fun encodeTicketText(t: Ticket, paper: PaperWidth, charset: PrinterCharset, dateLabel: String, feedLines: Int, cut: Boolean): ByteArray {
-        val e = EscPos(charset).init()
+    fun encodeTicketText(t: Ticket, paper: PaperWidth, charset: PrinterCharset, dateLabel: String, feedLines: Int, cut: Boolean, density: Int = 3): ByteArray {
+        val e = EscPos(charset).init().density(density)
         val cols = paper.columns
         e.alignCenter().doubleSize(true)
         wrap(t.category.ifBlank { "-" }, cols / 2).forEach { e.line(it) }
@@ -96,7 +96,7 @@ object TicketFormatter {
     fun encodeJob(tickets: List<Ticket>, s: PrinterSettings, dateLabel: (Ticket) -> String): PrintJob {
         if (s.protocol == PrintProtocol.CATPRINTER_MXW01) {
             val bitmaps = tickets.map { t -> renderTextBitmap(ticketLines(t, dateLabel(t)) + TextLine("", 0f), widthPx = Mxw01.WIDTH, paddingPx = 8) }
-            return PrintJob.Ble(Mxw01.plan(stack(bitmaps), s.feedLines))
+            return PrintJob.Ble(Mxw01.plan(stack(bitmaps), s.feedLines, Density.mxw01Intensity(s.density)))
         }
         return PrintJob.Bytes(encodeAll(tickets, s, dateLabel))
     }
@@ -104,7 +104,7 @@ object TicketFormatter {
     fun encodeTestJob(s: PrinterSettings): PrintJob {
         if (s.protocol == PrintProtocol.CATPRINTER_MXW01) {
             val bmp = renderTextBitmap(listOf(TextLine("Jarful", 40f, bold = true, center = true), TextLine("", 0f), TextLine("Test print OK / テスト印刷", 26f), TextLine("MXW01 / 384px", 20f)), Mxw01.WIDTH, 8)
-            return PrintJob.Ble(Mxw01.plan(bmp, s.feedLines))
+            return PrintJob.Ble(Mxw01.plan(bmp, s.feedLines, Density.mxw01Intensity(s.density)))
         }
         return PrintJob.Bytes(encodeTestPage(s))
     }
@@ -117,17 +117,17 @@ object TicketFormatter {
     }
 
     fun encodeBitmap(bmp: MonoBitmap, s: PrinterSettings): ByteArray = when (s.protocol) {
-        PrintProtocol.ESCPOS_RASTER -> EscPos(s.charset).init().alignCenter().raster(bmp).feed(s.feedLines).also { if (s.cutEnabled) it.partialCut() }.bytes()
-        PrintProtocol.ESCPOS_BITIMAGE -> EscPos(s.charset).init().alignCenter().bitImage(bmp).feed(s.feedLines).also { if (s.cutEnabled) it.partialCut() }.bytes()
+        PrintProtocol.ESCPOS_RASTER -> EscPos(s.charset).init().density(s.density).alignCenter().raster(bmp).feed(s.feedLines).also { if (s.cutEnabled) it.partialCut() }.bytes()
+        PrintProtocol.ESCPOS_BITIMAGE -> EscPos(s.charset).init().density(s.density).alignCenter().bitImage(bmp).feed(s.feedLines).also { if (s.cutEnabled) it.partialCut() }.bytes()
         PrintProtocol.TSPL -> Tspl.label(bmp, s.paperWidth.mm, s.labelHeightMm, s.labelGapMm)
         PrintProtocol.CPCL -> Cpcl.label(bmp)
-        PrintProtocol.CATPRINTER -> CatPrinter.encode(bmp, s.feedLines)
+        PrintProtocol.CATPRINTER -> CatPrinter.encode(bmp, s.feedLines, Density.catEnergy(s.density))
         PrintProtocol.CATPRINTER_MXW01 -> error("MXW01 uses a BLE plan, see encodeJob")
         PrintProtocol.ESCPOS_TEXT -> error("not a bitmap protocol")
     }
 
     fun encodeTicket(t: Ticket, s: PrinterSettings, dateLabel: String): ByteArray =
-        if (s.protocol == PrintProtocol.ESCPOS_TEXT) encodeTicketText(t, s.paperWidth, s.charset, dateLabel, s.feedLines, s.cutEnabled)
+        if (s.protocol == PrintProtocol.ESCPOS_TEXT) encodeTicketText(t, s.paperWidth, s.charset, dateLabel, s.feedLines, s.cutEnabled, s.density)
         else encodeBitmap(renderFor(t, s, dateLabel), s)
 
     fun encodeAll(tickets: List<Ticket>, s: PrinterSettings, dateLabel: (Ticket) -> String): ByteArray {
@@ -138,7 +138,7 @@ object TicketFormatter {
 
     fun encodeTestPage(s: PrinterSettings): ByteArray {
         if (s.protocol == PrintProtocol.ESCPOS_TEXT) {
-            val e = EscPos(s.charset).init()
+            val e = EscPos(s.charset).init().density(s.density)
             e.alignCenter().doubleSize(true).line("Jarful").doubleSize(false)
             e.line("Test print OK / テスト印刷")
             e.alignLeft().line("-".repeat(s.paperWidth.columns))

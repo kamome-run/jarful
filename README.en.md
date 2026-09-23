@@ -161,7 +161,7 @@ Not sure which Bluetooth you have? If the OS Bluetooth settings can **pair** the
 | Cat printer | 57 mm pocket printers that do not speak ESC/POS (GB01 / GT01 / MX06 family, sold with the “iPrint” / “Fun Print” apps). Connects over BLE |
 | Cat printer MXW01 | Newer generation of the above (MXW01 / X5h family; the diagnostics list AE01–AE04). BLE only |
 
-Paper width is **58 mm (384 dots)** or **80 mm (576 dots)**. Pocket printers without a cutter should keep **Cut off**; 3–5 feed lines is a good default.
+Paper width is **58 mm (384 dots)** or **80 mm (576 dots)**. **Print density** (1–5, default 4) darkens faint output. Pocket printers without a cutter should keep **Cut off**; 3–5 feed lines is a good default.
 
 ### 6.3 Android / Chromebook — Bluetooth Classic
 
