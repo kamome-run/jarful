@@ -40,10 +40,21 @@ expect suspend fun ensureBluetoothPermission(scan: Boolean = false): Boolean
 expect suspend fun listBleDevices(): List<PrinterEndpoint>
 
 /**
- * Sends bytes to a BLE printer over GATT: connects, negotiates the MTU, picks a writable
- * characteristic (well-known printer services first) and writes in MTU-sized chunks (FR-9.1 d).
+ * One step of a BLE print job: write [bytes] (chunked to the MTU) to [characteristic] (UUID string, or
+ * null = auto-detect a well-known printer characteristic), then optionally wait up to ~3 s for a
+ * notification on [awaitNotify] and sleep [delayMs].
  */
-expect suspend fun sendBle(address: String, bytes: ByteArray, timeoutMs: Int, chunkSize: Int)
+class BleWrite(val characteristic: String?, val bytes: ByteArray, val awaitNotify: String? = null, val delayMs: Long = 0)
+
+/**
+ * Runs a BLE print job over GATT: connects, negotiates the MTU, then executes [plan] in order (FR-9.1 d).
+ * Protocols that need a control channel plus a data channel (MXW01) use several writes.
+ */
+expect suspend fun sendBlePlan(address: String, plan: List<BleWrite>, timeoutMs: Int, chunkSize: Int)
+
+/** Sends bytes to a BLE printer's auto-detected write characteristic. */
+suspend fun sendBle(address: String, bytes: ByteArray, timeoutMs: Int, chunkSize: Int) =
+    sendBlePlan(address, listOf(BleWrite(null, bytes)), timeoutMs, chunkSize)
 
 /** Lists serial ports (Windows COM ports / Linux tty). Empty where unsupported. */
 expect suspend fun listSerialPorts(): List<PrinterEndpoint>

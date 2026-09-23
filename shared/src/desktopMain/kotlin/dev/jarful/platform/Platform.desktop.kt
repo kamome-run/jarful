@@ -60,7 +60,7 @@ actual fun bluetoothSupported(): Boolean = false
 actual fun bleSupported(): Boolean = false
 actual suspend fun ensureBluetoothPermission(scan: Boolean): Boolean = true
 actual suspend fun listBleDevices(): List<PrinterEndpoint> = emptyList()
-actual suspend fun sendBle(address: String, bytes: ByteArray, timeoutMs: Int, chunkSize: Int) {
+actual suspend fun sendBlePlan(address: String, plan: List<BleWrite>, timeoutMs: Int, chunkSize: Int) {
     throw UnsupportedOperationException("BLE_UNSUPPORTED_ON_DESKTOP")
 }
 actual suspend fun listBluetoothDevices(): List<PrinterEndpoint> = emptyList()

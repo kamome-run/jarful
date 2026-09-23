@@ -159,6 +159,7 @@ Pestaña Ajustes → **Impresora térmica**.
 | TSPL | Impresoras de etiquetas (alto y separación en mm) |
 | CPCL | Impresoras de etiquetas CPCL |
 | Cat printer | Impresoras de bolsillo de 57 mm que no hablan ESC/POS (familia GB01 / GT01 / MX06, vendidas con las apps «iPrint» / «Fun Print»). Se conectan por BLE |
+| Cat printer MXW01 | Generación más reciente (familia MXW01 / X5h; el diagnóstico muestra AE01–AE04). Solo BLE |
 
 El ancho de papel es **58 mm (384 puntos)** u **80 mm (576 puntos)**. En impresoras de bolsillo sin cuchilla, deja **Cut desactivado**; 3–5 líneas de avance es un buen valor.
 
