@@ -180,6 +180,8 @@ data class Settings(
     /** Set once the first-run routine suggestion has been shown (FR-6.6). */
     val onboardingDone: Boolean = false,
     val sync: SyncSettings = SyncSettings(),
+    /** Tickets still to print after an interruption (ticket ids, or "task:<id>" for tasks printed directly). FR-9.12 */
+    val printQueue: List<String> = emptyList(),
 )
 
 @Serializable
