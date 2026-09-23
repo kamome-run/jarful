@@ -56,4 +56,5 @@ val RU = Strings(
     syncError = { code -> when (code) { "UNREACHABLE" -> "Хост недоступен (та же сеть Wi-Fi? хост запущен?)"; "PIN_MISMATCH" -> "Неверный PIN"; "VERSION_MISMATCH" -> "Версии приложения различаются"; "NO_PEER" -> "Хост не настроен"; "BAD_RESPONSE" -> "Нечитаемый ответ"; else -> code } },
     printerDiagnose = "Диагностика подключения", printerDiagnoseTitle = "Диагностика Bluetooth", printerDiagnoseHint = "Показывает тип устройства, наличие SPP, службы GATT и результат каждого способа подключения. Если печать не идёт, скопируйте это в issue на GitHub.", copy = "Копировать", printSwitchedTransport = { "Способ подключения переключён на $it" },
     nothingToPrint = "Нечего печатать. Сделайте задачу билетом на сегодня или используйте ⋮ → Печать.",
+    printBusy = "Уже идёт печать", printPaused = { "Печать прервана (осталось $it)" }, printProgress = { d, n -> "Печать $d / $n" }, printResume = "Продолжить печать", printDiscard = "Отменить остаток", printStop = "Остановить", printPaperHint = "Кончилась бумага? Замените рулон и нажмите «Продолжить печать».",
 )

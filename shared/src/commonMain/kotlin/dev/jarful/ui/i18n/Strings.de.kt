@@ -56,4 +56,5 @@ val DE = Strings(
     syncError = { code -> when (code) { "UNREACHABLE" -> "Host nicht erreichbar (gleiches WLAN? Host gestartet?)"; "PIN_MISMATCH" -> "Falsche PIN"; "VERSION_MISMATCH" -> "App-Versionen unterscheiden sich"; "NO_PEER" -> "Kein Host konfiguriert"; "BAD_RESPONSE" -> "Antwort nicht lesbar"; else -> code } },
     printerDiagnose = "Verbindung diagnostizieren", printerDiagnoseTitle = "Bluetooth-Diagnose", printerDiagnoseHint = "Zeigt Gerätetyp, SPP-Verfügbarkeit, GATT-Dienste und das Ergebnis jeder Verbindungsmethode. Schlägt der Druck fehl, kopiere dies in ein GitHub-Issue.", copy = "Kopieren", printSwitchedTransport = { "Verbindungsart auf $it umgestellt" },
     nothingToPrint = "Nichts zu drucken. Lege das Heute-Ticket der Aufgabe an oder nutze ⋮ → Drucken.",
+    printBusy = "Es wird bereits gedruckt", printPaused = { "Druck unterbrochen ($it verbleibend)" }, printProgress = { d, n -> "Drucke $d / $n" }, printResume = "Druck fortsetzen", printDiscard = "Rest verwerfen", printStop = "Stopp", printPaperHint = "Papier leer? Rolle wechseln und „Druck fortsetzen“ drücken.",
 )

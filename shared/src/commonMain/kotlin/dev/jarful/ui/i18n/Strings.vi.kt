@@ -56,4 +56,5 @@ val VI = Strings(
     syncError = { code -> when (code) { "UNREACHABLE" -> "Không kết nối được máy chủ (cùng Wi-Fi chưa? máy chủ đang chạy chưa?)"; "PIN_MISMATCH" -> "Sai mã PIN"; "VERSION_MISMATCH" -> "Phiên bản ứng dụng khác nhau"; "NO_PEER" -> "Chưa cấu hình máy chủ"; "BAD_RESPONSE" -> "Phản hồi không đọc được"; else -> code } },
     printerDiagnose = "Chẩn đoán kết nối", printerDiagnoseTitle = "Chẩn đoán Bluetooth", printerDiagnoseHint = "Hiển thị loại thiết bị, có SPP hay không, các dịch vụ GATT và kết quả của từng cách kết nối. Nếu không in được, hãy sao chép nội dung này và dán vào issue trên GitHub.", copy = "Sao chép", printSwitchedTransport = { "Đã chuyển cách kết nối sang $it" },
     nothingToPrint = "Không có gì để in. Hãy tạo phiếu hôm nay cho việc đó hoặc dùng ⋮ → In.",
+    printBusy = "Đang in", printPaused = { "In bị gián đoạn (còn $it)" }, printProgress = { d, n -> "Đang in $d / $n" }, printResume = "In tiếp", printDiscard = "Bỏ phần còn lại", printStop = "Dừng", printPaperHint = "Hết giấy? Thay cuộn giấy rồi nhấn “In tiếp”.",
 )

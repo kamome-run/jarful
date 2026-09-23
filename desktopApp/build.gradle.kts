@@ -33,7 +33,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Msi, TargetFormat.Exe)
             packageName = "Jarful"
-            packageVersion = "1.5.4"
+            packageVersion = "1.6.0"
             description = "Game-loop task manager for ADHD brains"
             vendor = "Jarful contributors"
             licenseFile.set(rootProject.file("LICENSE"))
