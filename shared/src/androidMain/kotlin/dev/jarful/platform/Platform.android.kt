@@ -126,7 +126,9 @@ actual suspend fun listBleDevices(): List<PrinterEndpoint> {
 private val CCCD_UUID: UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
 
 @Suppress("MissingPermission")
-actual suspend fun sendBlePlan(address: String, plan: List<BleWrite>, timeoutMs: Int, chunkSize: Int): Unit = withContext(Dispatchers.IO) {
+actual suspend fun sendBlePlan(address: String, plan: List<BleWrite>, timeoutMs: Int, chunkSize: Int): List<String> = withContext(Dispatchers.IO) {
+    val received = java.util.Collections.synchronizedList(ArrayList<String>())
+    fun record(c: android.bluetooth.BluetoothGattCharacteristic, v: ByteArray?) { received += c.uuid.toString().substring(4, 8) + ":" + (v ?: ByteArray(0)).joinToString("") { "%02x".format(it) } }
     val a = adapter() ?: throw IllegalStateException("BLUETOOTH_UNAVAILABLE")
     if (!a.isEnabled) throw IllegalStateException("BLUETOOTH_OFF")
     val device = a.getRemoteDevice(address)
@@ -153,9 +155,11 @@ actual suspend fun sendBlePlan(address: String, plan: List<BleWrite>, timeoutMs:
         override fun onDescriptorWrite(g: android.bluetooth.BluetoothGatt, d: android.bluetooth.BluetoothGattDescriptor, status: Int) { descLatch.countDown() }
         @Deprecated("pre-33 callback")
         override fun onCharacteristicChanged(g: android.bluetooth.BluetoothGatt, c: android.bluetooth.BluetoothGattCharacteristic) {
+            if (Build.VERSION.SDK_INT < 33) record(c, @Suppress("DEPRECATION") c.value)
             if (notifyFilter == null || c.uuid == notifyFilter) notifyLatch.countDown()
         }
         override fun onCharacteristicChanged(g: android.bluetooth.BluetoothGatt, c: android.bluetooth.BluetoothGattCharacteristic, value: ByteArray) {
+            record(c, value)
             if (notifyFilter == null || c.uuid == notifyFilter) notifyLatch.countDown()
         }
     }
@@ -215,6 +219,7 @@ actual suspend fun sendBlePlan(address: String, plan: List<BleWrite>, timeoutMs:
             if (step.delayMs > 0) Thread.sleep(step.delayMs)
         }
         Thread.sleep(400)
+        received.toList()
     } finally {
         runCatching { gatt.disconnect() }; runCatching { gatt.close() }
     }
