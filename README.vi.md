@@ -159,6 +159,7 @@ Không rõ máy in dùng Bluetooth nào? Nếu cài đặt Bluetooth của hệ 
 | TSPL | Máy in nhãn (đặt chiều cao nhãn và khoảng cách theo mm) |
 | CPCL | Máy in nhãn dùng CPCL |
 | Cat printer | Máy in bỏ túi 57 mm không hỗ trợ ESC/POS (dòng GB01 / GT01 / MX06, bán kèm ứng dụng “iPrint” / “Fun Print”). Kết nối qua BLE |
+| Cat printer MXW01 | Thế hệ mới hơn (dòng MXW01 / X5h; chẩn đoán liệt kê AE01–AE04). Chỉ BLE |
 
 Khổ giấy là **58 mm (384 chấm)** hoặc **80 mm (576 chấm)**. Máy in bỏ túi không có dao cắt nên giữ **Cut tắt**; 3–5 dòng đẩy giấy là hợp lý.
 

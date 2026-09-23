@@ -159,6 +159,7 @@ Tidak yakin Bluetooth yang mana? Jika pengaturan Bluetooth OS bisa **menyandingk
 | TSPL | Printer label (tinggi label dan jarak dalam mm) |
 | CPCL | Printer label yang memakai CPCL |
 | Cat printer | Printer saku 57 mm yang tidak mendukung ESC/POS (keluarga GB01 / GT01 / MX06, dijual dengan aplikasi “iPrint” / “Fun Print”). Terhubung lewat BLE |
+| Cat printer MXW01 | Generasi lebih baru (keluarga MXW01 / X5h; diagnosis menampilkan AE01–AE04). Hanya BLE |
 
 Lebar kertas **58 mm (384 titik)** atau **80 mm (576 titik)**. Printer saku tanpa pemotong: biarkan **Cut mati**; 3–5 baris umpan kertas sudah pas.
 
