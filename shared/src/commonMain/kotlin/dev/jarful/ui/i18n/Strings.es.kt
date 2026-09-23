@@ -54,4 +54,5 @@ val ES = Strings(
     syncAuto = "Sincronización automática (al abrir y cada 5 min)", syncNow = "Sincronizar ahora", syncOk = "Sincronizado", syncFailed = { "Error de sincronización: $it" }, syncLast = "Última sincronización", syncNever = "nunca",
     syncHostRunning = "a la escucha", syncHostError = { "No se pudo iniciar el anfitrión: $it" },
     syncError = { code -> when (code) { "UNREACHABLE" -> "No se puede contactar con el anfitrión (¿misma Wi-Fi? ¿está abierto?)"; "PIN_MISMATCH" -> "PIN incorrecto"; "VERSION_MISMATCH" -> "Las versiones de la app no coinciden"; "NO_PEER" -> "No hay anfitrión configurado"; "BAD_RESPONSE" -> "Respuesta ilegible"; else -> code } },
+    printerDiagnose = "Diagnosticar conexión", printerDiagnoseTitle = "Diagnóstico Bluetooth", printerDiagnoseHint = "Muestra el tipo de dispositivo, si hay SPP, los servicios GATT y el resultado de cada método de conexión. Si no imprime, copia esto y pégalo en un issue de GitHub.", copy = "Copiar", printSwitchedTransport = { "Conexión cambiada a $it" },
 )

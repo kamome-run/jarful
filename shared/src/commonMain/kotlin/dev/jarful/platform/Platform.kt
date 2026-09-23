@@ -54,6 +54,13 @@ expect suspend fun sendSerial(portId: String, bytes: ByteArray, timeoutMs: Int, 
 /** Whether serial ports are available on this platform. */
 expect fun serialSupported(): Boolean
 
+/**
+ * Human-readable Bluetooth connection diagnostics for [address]: adapter state, device type and bond
+ * state, SPP/SDP UUIDs, every Classic connect strategy with its error, and the GATT services /
+ * characteristics found over LE. Used by the "Diagnose" button so users can paste the result into an issue.
+ */
+expect suspend fun diagnoseBluetooth(address: String): String
+
 /** Encodes text for the printer in the given Java charset name (e.g. "UTF-8", "Shift_JIS", "windows-1256"). */
 expect fun encodeText(text: String, charsetName: String): ByteArray
 

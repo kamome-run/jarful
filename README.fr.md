@@ -158,6 +158,7 @@ Vous ne savez pas quel Bluetooth vous avez ? Si les réglages Bluetooth du syst�
 | ESC/POS texte | Impression avec la police interne. Choisissez le jeu de caractères (UTF-8 / Shift_JIS / Big5 / GB18030 / Windows-125x / CP8xx…) correspondant à l'imprimante |
 | TSPL | Imprimantes d'étiquettes (hauteur et espacement en mm) |
 | CPCL | Imprimantes d'étiquettes CPCL |
+| Cat printer | Imprimantes de poche 57 mm qui ne parlent pas ESC/POS (famille GB01 / GT01 / MX06, livrées avec les applis « iPrint » / « Fun Print »). Connexion en BLE |
 
 Largeur de papier : **58 mm (384 points)** ou **80 mm (576 points)**. Sur les imprimantes de poche sans massicot, laissez **Cut désactivé** ; 3 à 5 lignes d'avance papier conviennent.
 
@@ -281,6 +282,8 @@ L'impression raster fonctionne dans toutes les langues (police adaptée choisie 
 | Pas de port COM sous Windows | Ajoutez un port **Sortant** comme en 6.5 ; refaites l'appairage |
 | Synchro : « hôte injoignable » | Même Wi-Fi ? Application hôte ouverte ? Pare-feu autorisé ? |
 | Synchro : « PIN incorrect » | Ressaisissez le PIN affiché sur l'écran des réglages de l'hôte |
+| S'appaire mais ne se connecte jamais (l'appli du fabricant échoue aussi) | Certaines **imprimantes LE ne se connectent plus une fois appairées dans le système**. Dissociez-la dans les réglages Bluetooth → redémarrez l'imprimante → choisissez **Bluetooth LE** dans Jarful → 🔄 → Impression test. Fermez complètement l'appli du fabricant. En cas d'échec, collez le rapport **Diagnostiquer la connexion** dans un ticket |
+| Connexion impossible sur OPPO / Xiaomi / Huawei | Accordez « Appareils à proximité » et « Localisation », activez la localisation, exemptez Jarful de l'optimisation de batterie. Un échec en Classic bascule automatiquement en LE et le mode qui fonctionne est mémorisé |
 | Tickets de routine absents | Vérifiez les jours et l'interrupteur « Activée » ; utilisez « Régénérer aujourd'hui » |
 
 ## 13. Compilation depuis les sources

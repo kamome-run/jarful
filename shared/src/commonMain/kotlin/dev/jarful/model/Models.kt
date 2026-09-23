@@ -112,6 +112,8 @@ enum class PrintProtocol(val label: String, val raster: Boolean) {
     ESCPOS_BITIMAGE("ESC/POS bit image (ESC *)", true),
     TSPL("TSPL (label)", true),
     CPCL("CPCL (label)", true),
+    /** "Cat printer" pocket printers (GB01/GB02/GB03/GT01/MX05/MX06/YT01…): proprietary 0x51 0x78 packets over BLE AE01. */
+    CATPRINTER("Cat printer (GB01/GT01/MX06)", true),
 }
 
 @Serializable
