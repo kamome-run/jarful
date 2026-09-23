@@ -159,6 +159,7 @@ Vous ne savez pas quel Bluetooth vous avez ? Si les réglages Bluetooth du syst�
 | TSPL | Imprimantes d'étiquettes (hauteur et espacement en mm) |
 | CPCL | Imprimantes d'étiquettes CPCL |
 | Cat printer | Imprimantes de poche 57 mm qui ne parlent pas ESC/POS (famille GB01 / GT01 / MX06, livrées avec les applis « iPrint » / « Fun Print »). Connexion en BLE |
+| Cat printer MXW01 | Génération plus récente (famille MXW01 / X5h ; le diagnostic liste AE01–AE04). BLE uniquement |
 
 Largeur de papier : **58 mm (384 points)** ou **80 mm (576 points)**. Sur les imprimantes de poche sans massicot, laissez **Cut désactivé** ; 3 à 5 lignes d'avance papier conviennent.
 

@@ -146,6 +146,25 @@ class PrintEncodingTest {
         assertEquals(2, countSeq(job, b(0x51, 0x78, 0xA2, 0x00, 48, 0x00)))
     }
 
+    @Test
+    fun mxw01PacketsAndPlan() { // FR-9.2 MXW01
+        val req = dev.jarful.print.Mxw01.printRequest(300)
+        assertContentEquals(b(0x22, 0x21, 0xA9, 0x00, 0x04, 0x00, 0x2C, 0x01, 0x30, 0x00), req.copyOfRange(0, 10))
+        assertEquals(dev.jarful.print.CatPrinter.crc8(b(0x2C, 0x01, 0x30, 0x00)), req[10].toInt() and 0xFF)
+        assertEquals(0xFF, req.last().toInt() and 0xFF)
+        val bmp = MonoBitmap(384, 3, arrayOf(ByteArray(48), ByteArray(48).also { it[0] = 0x80.toByte() }, ByteArray(48)))
+        val plan = dev.jarful.print.Mxw01.plan(bmp, feedLines = 1)
+        assertEquals(5, plan.size)
+        assertEquals(dev.jarful.print.Mxw01.CHAR_CONTROL, plan[0].characteristic)
+        assertEquals(dev.jarful.print.Mxw01.CHAR_NOTIFY, plan[0].awaitNotify)
+        assertEquals(dev.jarful.print.Mxw01.CHAR_DATA, plan[3].characteristic)
+        assertEquals((3 + 24) * 48, plan[3].bytes.size) // rows + feed rows, 48 bytes each
+        assertEquals(0x01, plan[3].bytes[48].toInt() and 0xFF) // second row, leftmost pixel -> bit 0
+        val lines = plan[2].bytes[6].toInt() and 0xFF or ((plan[2].bytes[7].toInt() and 0xFF) shl 8)
+        assertEquals(27, lines)
+        assertEquals(dev.jarful.print.Mxw01.CHAR_DONE, plan[4].awaitNotify)
+    }
+
     private fun countSeq(hay: ByteArray, needle: ByteArray): Int { var n = 0; var i = 0; while (true) { val j = hay.copyOfRange(i, hay.size).indexOf(needle); if (j < 0) return n; n++; i += j + needle.size } }
 
     @Test
