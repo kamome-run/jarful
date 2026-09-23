@@ -44,6 +44,7 @@ data class Strings(
     val syncPort: String, val syncPin: String, val syncRegeneratePin: String, val syncPeer: String, val syncPeerHost: String, val syncPeerPin: String,
     val syncAuto: String, val syncNow: String, val syncOk: String, val syncFailed: (String) -> String, val syncLast: String, val syncNever: String,
     val syncHostRunning: String, val syncHostError: (String) -> String, val syncError: (String) -> String,
+    val printerDiagnose: String, val printerDiagnoseTitle: String, val printerDiagnoseHint: String, val copy: String, val printSwitchedTransport: (String) -> String,
 )
 
 val JA = Strings(
@@ -98,6 +99,7 @@ val JA = Strings(
     syncAuto = "自動同期（起動時・5 分ごと）", syncNow = "今すぐ同期", syncOk = "同期しました", syncFailed = { "同期に失敗: $it" }, syncLast = "最終同期", syncNever = "未同期",
     syncHostRunning = "受付中", syncHostError = { "ホストを開始できません: $it" },
     syncError = { code -> when (code) { "UNREACHABLE" -> "接続できません（同じ Wi-Fi か、ホストが起動しているか確認）"; "PIN_MISMATCH" -> "PIN が違います"; "VERSION_MISMATCH" -> "アプリのバージョンが違います"; "NO_PEER" -> "接続先が未設定"; "BAD_RESPONSE" -> "応答を読めません"; else -> code } },
+    printerDiagnose = "接続診断", printerDiagnoseTitle = "Bluetooth 接続診断", printerDiagnoseHint = "機器の種類・SPP の有無・GATT サービス・各接続方式の結果を表示します。うまく接続できないときは、この結果をコピーして GitHub の Issue に貼ってください。", copy = "コピー", printSwitchedTransport = { "接続方式を $it に切り替えました" },
 )
 
 val EN = Strings(
@@ -152,6 +154,7 @@ val EN = Strings(
     syncAuto = "Auto sync (on launch and every 5 min)", syncNow = "Sync now", syncOk = "Synced", syncFailed = { "Sync failed: $it" }, syncLast = "Last sync", syncNever = "never",
     syncHostRunning = "listening", syncHostError = { "Cannot start host: $it" },
     syncError = { code -> when (code) { "UNREACHABLE" -> "Cannot reach the host (same Wi-Fi? host running?)"; "PIN_MISMATCH" -> "Wrong PIN"; "VERSION_MISMATCH" -> "App versions differ"; "NO_PEER" -> "No host configured"; "BAD_RESPONSE" -> "Unreadable response"; else -> code } },
+    printerDiagnose = "Diagnose connection", printerDiagnoseTitle = "Bluetooth diagnostics", printerDiagnoseHint = "Shows the device type, SPP availability, GATT services and the result of every connection strategy. If printing fails, copy this and paste it into a GitHub issue.", copy = "Copy", printSwitchedTransport = { "Switched transport to $it" },
 )
 
 /** Resolves the effective UI language: explicit choice, or the best match for the system locale. */
