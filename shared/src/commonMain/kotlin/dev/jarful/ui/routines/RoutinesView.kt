@@ -84,7 +84,7 @@ fun RoutinesView(state: AppState, modifier: Modifier = Modifier) {
                         }.joinToString(" · ")
                         Text(meta, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    DsSwitch(checked = r.enabled, onCheckedChange = { state.store.upsertRoutine(r.copy(enabled = it)) })
+                    DsSwitch(checked = r.enabled, onCheckedChange = { state.store.upsertRoutine(r.copy(enabled = it)); state.store.regenerateToday() })
                     Spacer(Modifier.width(8.dp))
                     DsIconButton(onClick = { state.store.moveRoutine(r.id, -1) }, icon = Icons.Default.KeyboardArrowUp, contentDescription = s.moveUp)
                     DsIconButton(onClick = { state.store.moveRoutine(r.id, +1) }, icon = Icons.Default.KeyboardArrowDown, contentDescription = s.moveDown)

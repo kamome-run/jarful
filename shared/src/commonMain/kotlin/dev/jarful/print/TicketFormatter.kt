@@ -106,6 +106,17 @@ object TicketFormatter {
         return PrintJob.Bytes(encodeAll(tickets, s, dateLabel))
     }
 
+    /**
+     * Rough time the printer needs to finish [t] after the data arrived (raster protocols only): pocket
+     * printers print ~40 dot rows per second at the dark/slow speed, plus the paper feed. Used so the next
+     * label is only sent once this one is out (their receive buffer overflows after ~5 queued jobs).
+     */
+    fun estimatedPrintMs(t: Ticket, s: PrinterSettings, dateLabel: String): Long {
+        if (!s.protocol.raster) return 0
+        val rows = renderFor(t, s, dateLabel).height + s.feedLines * 24
+        return rows * 25L
+    }
+
     fun encodeTestJob(s: PrinterSettings): PrintJob {
         if (s.protocol == PrintProtocol.CATPRINTER_MXW01) {
             val bmp = renderTextBitmap(listOf(TextLine("Jarful", 40f, bold = true, center = true), TextLine("", 0f), TextLine("Test print OK / テスト印刷", 26f), TextLine("MXW01 / 384px", 20f)), Mxw01.WIDTH, 8)
