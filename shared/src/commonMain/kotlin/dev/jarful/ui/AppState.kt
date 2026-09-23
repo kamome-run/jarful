@@ -298,6 +298,23 @@ class AppState(val store: Store, val scope: CoroutineScope, var strings: Strings
         }
     }
 
+    /** Runs the MXW01 darkness probe: each variant in its own BLE session; results shown like the diagnostics. */
+    fun probeDarkness() {
+        val s = data.settings.printer
+        if (s.bluetoothAddress.isBlank() || printing) return
+        printing = true
+        scope.launch {
+            val report = StringBuilder("MXW01 darkness probe\n")
+            for ((name, plan) in TicketFormatter.mxw01ProbeJobs()) {
+                val r = withContext(Dispatchers.Default) { runCatching { dev.jarful.platform.sendBlePlan(s.bluetoothAddress, plan, 15_000, 512) } }
+                report.appendLine("$name: ${if (r.isSuccess) "sent" else "error " + (r.exceptionOrNull()?.message ?: "?")}")
+                kotlinx.coroutines.delay(1500)
+            }
+            printing = false
+            diagnosis = report.toString()
+        }
+    }
+
     var diagnosis by mutableStateOf<String?>(null)
     var diagnosing by mutableStateOf(false)
 

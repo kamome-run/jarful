@@ -173,10 +173,12 @@ class PrintEncodingTest {
         val rows = arrayOf(ByteArray(48).also { it[0] = 0xC0.toByte() }) // pixels 0 and 1 black
         val plan = dev.jarful.print.Mxw01.plan(MonoBitmap(384, 1, rows), 0)
         assertEquals(0xE0, plan[1].bytes[6].toInt() and 0xFF) // max intensity
-        assertEquals(0x02, plan[2].bytes[9].toInt() and 0xFF) // 4-bpp mode
-        assertEquals(192, plan[3].bytes.size) // 384 px * 4 bit = 192 bytes per row
-        assertEquals(0xFF, plan[3].bytes[0].toInt() and 0xFF) // both nibbles black
-        assertEquals(0x00, plan[3].bytes[1].toInt() and 0xFF)
+        assertEquals(0x00, plan[2].bytes[9].toInt() and 0xFF) // 1-bpp mode (the one known to print)
+        assertEquals(48, plan[3].bytes.size)
+        val gray = dev.jarful.print.Mxw01.plan(MonoBitmap(384, 1, rows), 0, gray = true)
+        assertEquals(192, gray[3].bytes.size); assertEquals(0xFF, gray[3].bytes[0].toInt() and 0xFF)
+        val probe = dev.jarful.print.Mxw01.variantPlans(MonoBitmap(384, 1, rows)) { MonoBitmap(384, 1, arrayOf(ByteArray(48))) }
+        assertEquals(8, probe.size); assertTrue(probe.all { it.second.size >= 8 })
         val cat = dev.jarful.print.CatPrinter.encode(MonoBitmap(384, 1, arrayOf(ByteArray(48))), 0, dev.jarful.print.Density.CAT_ENERGY)
         assertEquals(1, countSeq(cat, b(0x51, 0x78, 0xAF, 0x00, 0x02, 0x00, 0x30, 0x75)))
     }
