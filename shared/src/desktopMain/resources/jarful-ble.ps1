@@ -10,6 +10,7 @@ param(
     [Parameter(Position = 4)] [int] $Chunk = 20
 )
 $ErrorActionPreference = "Stop"
+try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch { }
 Add-Type -AssemblyName System.Runtime.WindowsRuntime
 [Windows.Devices.Bluetooth.BluetoothLEDevice,Windows.Devices.Bluetooth,ContentType=WindowsRuntime] | Out-Null
 [Windows.Devices.Bluetooth.GenericAttributeProfile.GattDeviceService,Windows.Devices.Bluetooth,ContentType=WindowsRuntime] | Out-Null
@@ -50,6 +51,24 @@ function Get-Characteristics($dev) {
     return $all
 }
 
+function Write-Chunks($target, [byte[]] $bytes, [int] $chunkSize) {
+    $noResp = ($target.CharacteristicProperties -band [Windows.Devices.Bluetooth.GenericAttributeProfile.GattCharacteristicProperties]::WriteWithoutResponse) -ne 0
+    $option = if ($noResp) { [Windows.Devices.Bluetooth.GenericAttributeProfile.GattWriteOption]::WriteWithoutResponse } else { [Windows.Devices.Bluetooth.GenericAttributeProfile.GattWriteOption]::WriteWithResponse }
+    $i = 0
+    while ($i -lt $bytes.Length) {
+        $len = [Math]::Min($chunkSize, $bytes.Length - $i)
+        $part = New-Object byte[] $len
+        [Array]::Copy($bytes, $i, $part, 0, $len)
+        $writer = New-Object Windows.Storage.Streams.DataWriter
+        $writer.WriteBytes($part)
+        $status = Await ($target.WriteValueAsync($writer.DetachBuffer(), $option)) ([Windows.Devices.Bluetooth.GenericAttributeProfile.GattCommunicationStatus])
+        if ($status -ne 'Success') { throw "WRITE_FAILED_$status at byte $i" }
+        $i += $len
+        if ($noResp) { Start-Sleep -Milliseconds 12 }
+    }
+}
+
+try {
 switch ($Mode) {
     "list" {
         foreach ($paired in @($true, $false)) {
@@ -68,9 +87,19 @@ switch ($Mode) {
     "services" {
         $dev = Get-Device $Address
         Write-Output "device: $($dev.Name) [$Address] connection=$($dev.ConnectionStatus)"
-        foreach ($c in (Get-Characteristics $dev)) {
+        $chars = Get-Characteristics $dev
+        foreach ($c in $chars) {
             $mark = if ($known -contains $c.Uuid.ToString().ToLower()) { " <- known printer characteristic" } else { "" }
             Write-Output ("  char {0} [{1}]{2}" -f $c.Uuid, $c.CharacteristicProperties, $mark)
+        }
+        # probe: write one harmless GB01 "get device state" packet to the first known printer characteristic
+        $probe = $null
+        foreach ($k in $known) { if ($null -eq $probe) { $probe = $chars | Where-Object { $_.Uuid.ToString().ToLower() -eq $k } | Select-Object -First 1 } }
+        if ($null -ne $probe) {
+            try {
+                Write-Chunks $probe ([byte[]](0x51, 0x78, 0xA3, 0x00, 0x01, 0x00, 0x00, 0x00, 0xFF)) 20
+                Write-Output ("probe write to {0}: OK" -f $probe.Uuid)
+            } catch { Write-Output ("probe write to {0}: FAILED {1}" -f $probe.Uuid, $_.Exception.Message) }
         }
     }
     "write" {
@@ -84,22 +113,16 @@ switch ($Mode) {
             if ($null -eq $target) { $target = $chars | Where-Object { ($_.CharacteristicProperties -band 12) -ne 0 } | Select-Object -First 1 }
         }
         if ($null -eq $target) { throw "NO_WRITABLE_CHARACTERISTIC" }
-        $noResp = ($target.CharacteristicProperties -band [Windows.Devices.Bluetooth.GenericAttributeProfile.GattCharacteristicProperties]::WriteWithoutResponse) -ne 0
-        $option = if ($noResp) { [Windows.Devices.Bluetooth.GenericAttributeProfile.GattWriteOption]::WriteWithoutResponse } else { [Windows.Devices.Bluetooth.GenericAttributeProfile.GattWriteOption]::WriteWithResponse }
         $bytes = [System.IO.File]::ReadAllBytes($DataFile)
-        $i = 0
-        while ($i -lt $bytes.Length) {
-            $len = [Math]::Min($Chunk, $bytes.Length - $i)
-            $writer = New-Object Windows.Storage.Streams.DataWriter
-            $slice = $bytes[$i..($i + $len - 1)]
-            $writer.WriteBytes([byte[]]$slice)
-            $status = Await ($target.WriteValueAsync($writer.DetachBuffer(), $option)) ([Windows.Devices.Bluetooth.GenericAttributeProfile.GattCommunicationStatus])
-            if ($status -ne 'Success') { throw "WRITE_FAILED_$status" }
-            $i += $len
-            if ($noResp) { Start-Sleep -Milliseconds 12 }
-        }
+        Write-Chunks $target $bytes $Chunk
         Start-Sleep -Milliseconds 400
         Write-Output "OK $($bytes.Length)"
     }
     default { throw "USAGE: list | services <addr> | write <addr> <char|auto> <file> <chunk>" }
+}
+} catch {
+    $msg = $_.Exception.Message
+    $pos = if ($_.InvocationInfo) { $_.InvocationInfo.PositionMessage -replace "`r?`n", " " } else { "" }
+    Write-Output ("ERROR: {0} {1}" -f $msg, $pos)
+    exit 1
 }
