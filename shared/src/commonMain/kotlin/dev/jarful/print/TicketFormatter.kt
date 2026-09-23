@@ -7,6 +7,7 @@ import dev.jarful.model.PrinterSettings
 import dev.jarful.model.Ticket
 import dev.jarful.platform.MonoBitmap
 import dev.jarful.platform.TextLine
+import dev.jarful.platform.isRtlText
 import dev.jarful.platform.renderTextBitmap
 
 /** Turns tickets into printer bytes for every supported protocol (FR-9.2, §10). */
@@ -66,12 +67,13 @@ object TicketFormatter {
     /** Layout used by every raster protocol so the ticket looks the same everywhere. */
     fun ticketLines(t: Ticket, dateLabel: String): List<TextLine> {
         val lines = ArrayList<TextLine>()
-        lines.add(TextLine(t.category.ifBlank { "-" }, sizePx = 40f, bold = true, center = true))
+        val rtl = isRtlText(t.title) || isRtlText(t.category)
+        lines.add(TextLine(t.category.ifBlank { "-" }, sizePx = 40f, bold = true, center = true, rtl = isRtlText(t.category)))
         lines.add(TextLine("", sizePx = 0f)) // rule
-        lines.add(TextLine(t.title, sizePx = 30f, bold = true))
+        lines.add(TextLine(t.title, sizePx = 30f, bold = true, rtl = isRtlText(t.title)))
         val meta = metaLine(t)
-        if (meta.isNotEmpty()) lines.add(TextLine(meta, sizePx = 22f))
-        lines.add(TextLine(dateLabel, sizePx = 20f))
+        if (meta.isNotEmpty()) lines.add(TextLine(meta, sizePx = 22f, rtl = rtl))
+        lines.add(TextLine(dateLabel, sizePx = 20f, rtl = rtl))
         return lines
     }
 

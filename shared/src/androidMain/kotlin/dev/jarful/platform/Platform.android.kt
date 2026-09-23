@@ -31,6 +31,7 @@ import java.net.Socket
 import java.nio.charset.Charset
 import java.util.Locale
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 
 actual val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 
@@ -66,19 +67,128 @@ private fun hasConnectPermission(): Boolean =
 
 actual fun bluetoothSupported(): Boolean = ctx.packageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH) && adapter() != null
 
-actual suspend fun ensureBluetoothPermission(): Boolean {
-    if (hasConnectPermission()) return true
+private fun granted(p: String) = ContextCompat.checkSelfPermission(ctx, p) == PackageManager.PERMISSION_GRANTED
+
+actual suspend fun ensureBluetoothPermission(scan: Boolean): Boolean {
+    val needed = ArrayList<String>()
+    if (Build.VERSION.SDK_INT >= 31) {
+        if (!granted(Manifest.permission.BLUETOOTH_CONNECT)) needed += Manifest.permission.BLUETOOTH_CONNECT
+        if (scan && !granted(Manifest.permission.BLUETOOTH_SCAN)) needed += Manifest.permission.BLUETOOTH_SCAN
+    } else if (scan && !granted(Manifest.permission.ACCESS_FINE_LOCATION)) {
+        needed += Manifest.permission.ACCESS_FINE_LOCATION // BLE scanning needs location before Android 12
+    }
+    if (needed.isEmpty()) return true
     val requester = AndroidPlatform.permissionRequester ?: return false
     val deferred = CompletableDeferred<Boolean>()
-    withContext(Dispatchers.Main) {
-        requester(arrayOf(Manifest.permission.BLUETOOTH_CONNECT)) { deferred.complete(it) }
-    }
+    withContext(Dispatchers.Main) { requester(needed.toTypedArray()) { deferred.complete(it) } }
     return deferred.await()
+}
+
+actual fun bleSupported(): Boolean = ctx.packageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE) && adapter() != null
+
+/** Well-known writable characteristics of BLE thermal printers, tried in order before a generic search. */
+private val BLE_PRINTER_CHARACTERISTICS = listOf(
+    UUID.fromString("0000ff02-0000-1000-8000-00805f9b34fb"), // generic FF00 service (most 58mm pocket printers)
+    UUID.fromString("0000ae01-0000-1000-8000-00805f9b34fb"), // "cat" printers (AE30 service)
+    UUID.fromString("00002af1-0000-1000-8000-00805f9b34fb"), // BLE printer profile (18F0 service)
+    UUID.fromString("49535343-8841-43f4-a8d4-ecbe34729bb3"), // ISSC / Microchip transparent UART
+    UUID.fromString("bef8d6c9-9c21-4c9e-b632-bd58c1009f9f"), // Phomemo / Peripage family
+    UUID.fromString("6e400002-b5a3-f393-e0a9-e50e24dcca9e"), // Nordic UART TX
+)
+
+@Suppress("MissingPermission")
+actual suspend fun listBleDevices(): List<PrinterEndpoint> {
+    if (!bleSupported() || !ensureBluetoothPermission(scan = true)) return emptyList()
+    val a = adapter() ?: return emptyList()
+    if (!a.isEnabled) return emptyList()
+    val found = LinkedHashMap<String, PrinterEndpoint>()
+    runCatching {
+        a.bondedDevices.filter { it.type == android.bluetooth.BluetoothDevice.DEVICE_TYPE_LE || it.type == android.bluetooth.BluetoothDevice.DEVICE_TYPE_DUAL }
+            .forEach { found[it.address] = PrinterEndpoint(it.address, it.name ?: it.address) }
+    }
+    val scanner = a.bluetoothLeScanner ?: return found.values.toList()
+    val done = CompletableDeferred<Unit>()
+    val cb = object : android.bluetooth.le.ScanCallback() {
+        override fun onScanResult(callbackType: Int, result: android.bluetooth.le.ScanResult) {
+            val d = result.device ?: return
+            val name = result.scanRecord?.deviceName ?: d.name ?: return // unnamed devices are rarely printers
+            found[d.address] = PrinterEndpoint(d.address, name)
+        }
+        override fun onScanFailed(errorCode: Int) { done.complete(Unit) }
+    }
+    val settings = android.bluetooth.le.ScanSettings.Builder().setScanMode(android.bluetooth.le.ScanSettings.SCAN_MODE_LOW_LATENCY).build()
+    withContext(Dispatchers.Main) { runCatching { scanner.startScan(null, settings, cb) }.onFailure { done.complete(Unit) } }
+    kotlinx.coroutines.withTimeoutOrNull(4_000) { done.await() }
+    withContext(Dispatchers.Main) { runCatching { scanner.stopScan(cb) } }
+    return found.values.sortedBy { it.name }
+}
+
+@Suppress("MissingPermission")
+actual suspend fun sendBle(address: String, bytes: ByteArray, timeoutMs: Int, chunkSize: Int): Unit = withContext(Dispatchers.IO) {
+    val a = adapter() ?: throw IllegalStateException("BLUETOOTH_UNAVAILABLE")
+    if (!a.isEnabled) throw IllegalStateException("BLUETOOTH_OFF")
+    val device = a.getRemoteDevice(address)
+    val connected = java.util.concurrent.CountDownLatch(1)
+    val discovered = java.util.concurrent.CountDownLatch(1)
+    val mtuLatch = java.util.concurrent.CountDownLatch(1)
+    var writeLatch = java.util.concurrent.CountDownLatch(1)
+    var mtu = 23
+    var failure: String? = null
+    val cb = object : android.bluetooth.BluetoothGattCallback() {
+        override fun onConnectionStateChange(g: android.bluetooth.BluetoothGatt, status: Int, newState: Int) {
+            if (newState == android.bluetooth.BluetoothProfile.STATE_CONNECTED) connected.countDown()
+            else if (newState == android.bluetooth.BluetoothProfile.STATE_DISCONNECTED) { failure = failure ?: "DISCONNECTED($status)"; connected.countDown(); discovered.countDown(); mtuLatch.countDown(); writeLatch.countDown() }
+        }
+        override fun onServicesDiscovered(g: android.bluetooth.BluetoothGatt, status: Int) { discovered.countDown() }
+        override fun onMtuChanged(g: android.bluetooth.BluetoothGatt, m: Int, status: Int) { if (status == android.bluetooth.BluetoothGatt.GATT_SUCCESS) mtu = m; mtuLatch.countDown() }
+        override fun onCharacteristicWrite(g: android.bluetooth.BluetoothGatt, c: android.bluetooth.BluetoothGattCharacteristic, status: Int) {
+            if (status != android.bluetooth.BluetoothGatt.GATT_SUCCESS) failure = "WRITE_FAILED($status)"
+            writeLatch.countDown()
+        }
+    }
+    val gatt = device.connectGatt(ctx, false, cb, android.bluetooth.BluetoothDevice.TRANSPORT_LE)
+        ?: throw IllegalStateException("GATT_CONNECT_FAILED")
+    try {
+        if (!connected.await(timeoutMs.toLong(), TimeUnit.MILLISECONDS) || failure != null) throw IllegalStateException(failure ?: "CONNECT_TIMEOUT")
+        if (!gatt.requestMtu(512)) mtuLatch.countDown()
+        mtuLatch.await(3, TimeUnit.SECONDS)
+        gatt.discoverServices()
+        if (!discovered.await(timeoutMs.toLong(), TimeUnit.MILLISECONDS) || failure != null) throw IllegalStateException(failure ?: "DISCOVERY_TIMEOUT")
+        val all = gatt.services.flatMap { it.characteristics }
+        val writable = { c: android.bluetooth.BluetoothGattCharacteristic ->
+            c.properties and (android.bluetooth.BluetoothGattCharacteristic.PROPERTY_WRITE or android.bluetooth.BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE) != 0
+        }
+        val target = BLE_PRINTER_CHARACTERISTICS.firstNotNullOfOrNull { u -> all.firstOrNull { it.uuid == u && writable(it) } }
+            ?: all.firstOrNull { writable(it) && it.service.uuid.toString().let { u -> !u.startsWith("00001800") && !u.startsWith("00001801") } }
+            ?: throw IllegalStateException("NO_WRITABLE_CHARACTERISTIC")
+        val noResponse = target.properties and android.bluetooth.BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE != 0
+        target.writeType = if (noResponse) android.bluetooth.BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE else android.bluetooth.BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+        val chunk = minOf(chunkSize, (mtu - 3).coerceAtLeast(20))
+        var off = 0
+        while (off < bytes.size) {
+            val n = minOf(chunk, bytes.size - off)
+            val part = bytes.copyOfRange(off, off + n)
+            writeLatch = java.util.concurrent.CountDownLatch(1)
+            val ok = if (Build.VERSION.SDK_INT >= 33) {
+                gatt.writeCharacteristic(target, part, target.writeType) == android.bluetooth.BluetoothStatusCodes.SUCCESS
+            } else {
+                @Suppress("DEPRECATION") run { target.value = part; gatt.writeCharacteristic(target) }
+            }
+            if (!ok) throw IllegalStateException("WRITE_REJECTED")
+            if (!writeLatch.await(timeoutMs.toLong(), TimeUnit.MILLISECONDS)) throw IllegalStateException("WRITE_TIMEOUT")
+            failure?.let { throw IllegalStateException(it) }
+            off += n
+            if (noResponse) Thread.sleep(12) // pace writes for printers without flow control
+        }
+        Thread.sleep(400)
+    } finally {
+        runCatching { gatt.disconnect() }; runCatching { gatt.close() }
+    }
 }
 
 @Suppress("MissingPermission")
 actual suspend fun listBluetoothDevices(): List<PrinterEndpoint> {
-    if (!bluetoothSupported() || !ensureBluetoothPermission()) return emptyList()
+    if (!bluetoothSupported() || !ensureBluetoothPermission(scan = false)) return emptyList()
     val a = adapter() ?: return emptyList()
     return runCatching { a.bondedDevices.map { PrinterEndpoint(it.address, it.name ?: it.address) } }.getOrDefault(emptyList())
         .sortedBy { it.name }
@@ -132,9 +242,10 @@ actual fun renderTextBitmap(lines: List<TextLine>, widthPx: Int, paddingPx: Int)
         val lineH = (fm.descent - fm.ascent) * 1.1f
         var rest = l.text.ifEmpty { " " }
         while (rest.isNotEmpty()) {
-            val n = paint.breakText(rest, true, inner, null).coerceAtLeast(1)
-            placed.add(Placed(rest.substring(0, n), l, y - fm.ascent))
-            rest = rest.substring(n)
+            var n = paint.breakText(rest, true, inner, null).coerceAtLeast(1)
+            if (n < rest.length) { val cut = rest.lastIndexOf(' ', n - 1); if (cut > 0 && n - cut <= 24) n = cut + 1 }
+            placed.add(Placed(rest.substring(0, n).trimEnd(), l, y - fm.ascent))
+            rest = rest.substring(n).trimStart()
             y += lineH
         }
         y += 4f
@@ -150,7 +261,12 @@ actual fun renderTextBitmap(lines: List<TextLine>, widthPx: Int, paddingPx: Int)
         paint.textSize = p.line.sizePx
         paint.typeface = if (p.line.bold) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
         val w = paint.measureText(p.text)
-        val x = if (p.line.center) (widthPx - w) / 2f else paddingPx.toFloat()
+        // Android applies script fallback fonts, Arabic shaping and bidi inside drawText; we only choose alignment.
+        val x = when {
+            p.line.center -> (widthPx - w) / 2f
+            p.line.rtl -> (widthPx - paddingPx) - w
+            else -> paddingPx.toFloat()
+        }
         c.drawText(p.text, x, p.y, paint)
     }
     val px = IntArray(widthPx * height); bmp.getPixels(px, 0, widthPx, 0, 0, widthPx, height)

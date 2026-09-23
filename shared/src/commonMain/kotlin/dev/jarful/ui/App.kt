@@ -57,7 +57,10 @@ import dev.jarful.ui.ds.JarfulDesignTheme
 import dev.jarful.ui.ds.ShellNavItem
 import dev.jarful.ui.ds.platformDesignSystem
 import dev.jarful.ui.i18n.LocalStrings
+import dev.jarful.ui.i18n.resolveLanguage
 import dev.jarful.ui.i18n.stringsFor
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import dev.jarful.ui.jar.JarView
 import dev.jarful.ui.routines.RoutinesView
 import dev.jarful.ui.settings.SettingsView
@@ -100,7 +103,8 @@ fun JarfulApp(store: Store, darkTheme: Boolean? = null, designSystemOverride: De
     }
 
     val designSystem = remember { platformDesignSystem() }
-    CompositionLocalProvider(LocalStrings provides strings) {
+    val layoutDirection = if (resolveLanguage(data.settings.language).rtl) LayoutDirection.Rtl else LayoutDirection.Ltr
+    CompositionLocalProvider(LocalStrings provides strings, LocalLayoutDirection provides layoutDirection) {
         JarfulDesignTheme(system = designSystemOverride ?: designSystem, dark = darkTheme ?: isSystemInDarkTheme()) {
             BoxWithConstraints(
                 Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
