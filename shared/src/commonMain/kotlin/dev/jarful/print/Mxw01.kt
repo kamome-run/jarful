@@ -32,8 +32,8 @@ object Mxw01 {
 
     fun getStatus(): ByteArray = packet(CMD_GET_STATUS, byteArrayOf(0x00))
     fun setIntensity(v: Int = 0x5D): ByteArray = packet(CMD_SET_INTENSITY, byteArrayOf(v.toByte()))
-    /** Print request: line count (LE), 0x30, mode 0 = 1 bit per pixel. */
-    fun printRequest(lines: Int): ByteArray = packet(CMD_PRINT, byteArrayOf((lines and 0xFF).toByte(), ((lines shr 8) and 0xFF).toByte(), 0x30, 0x00))
+    /** Print request: line count (LE), 0x30, mode 0x00 = 1 bpp, 0x02 = 4 bpp grayscale. */
+    fun printRequest(lines: Int, mode: Int = 0x00): ByteArray = packet(CMD_PRINT, byteArrayOf((lines and 0xFF).toByte(), ((lines shr 8) and 0xFF).toByte(), 0x30, mode.toByte()))
     fun flush(): ByteArray = packet(CMD_FLUSH, byteArrayOf(0x00))
 
     /** Bitmap rows (LSB-first like GB01) followed by blank rows used as paper feed. */
@@ -45,15 +45,31 @@ object Mxw01 {
         return out
     }
 
-    /** The BLE job for one bitmap: status → intensity → print request (wait reply) → rows → flush (wait done). */
-    fun plan(bmp: MonoBitmap, feedLines: Int, intensity: Int = 0x5D): List<BleWrite> {
+    /** 4-bpp rows: two pixels per byte (even pixel in the low nibble), 0x0 = white, 0xF = black; blank rows as feed. */
+    fun rowData4bpp(bmp: MonoBitmap, feedRows: Int): ByteArray {
+        val rowBytes = WIDTH / 2
+        val out = ByteArray((bmp.height + feedRows) * rowBytes)
+        for (y in 0 until bmp.height) for (x in 0 until WIDTH) {
+            if (x < bmp.width && bmp.isBlack(x, y)) {
+                val i = y * rowBytes + x / 2
+                out[i] = (out[i].toInt() or (if (x % 2 == 0) 0x0F else 0xF0)).toByte()
+            }
+        }
+        return out
+    }
+
+    /**
+     * The BLE job for one bitmap: status → intensity → print request (wait reply) → rows → flush (wait done).
+     * Always uses the darkest configuration (FR-9.10): maximum intensity and the 4-bpp mode with full-black pixels.
+     */
+    fun plan(bmp: MonoBitmap, feedLines: Int, intensity: Int = Density.MXW01_INTENSITY, gray: Boolean = true): List<BleWrite> {
         val feedRows = (feedLines * 24).coerceIn(0, 400)
         val lines = bmp.height + feedRows
         return listOf(
             BleWrite(CHAR_CONTROL, getStatus(), awaitNotify = CHAR_NOTIFY),
             BleWrite(CHAR_CONTROL, setIntensity(intensity), delayMs = 50),
-            BleWrite(CHAR_CONTROL, printRequest(lines), awaitNotify = CHAR_NOTIFY),
-            BleWrite(CHAR_DATA, rowData(bmp, feedRows)),
+            BleWrite(CHAR_CONTROL, printRequest(lines, if (gray) Density.MXW01_MODE_GRAY else 0x00), awaitNotify = CHAR_NOTIFY),
+            BleWrite(CHAR_DATA, if (gray) rowData4bpp(bmp, feedRows) else rowData(bmp, feedRows)),
             BleWrite(CHAR_CONTROL, flush(), awaitNotify = CHAR_DONE, delayMs = 300),
         )
     }

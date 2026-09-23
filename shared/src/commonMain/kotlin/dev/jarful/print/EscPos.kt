@@ -16,13 +16,11 @@ class EscPos(private val charset: PrinterCharset = PrinterCharset.UTF8) {
         if (charset.codePage >= 0) raw(0x1B, 0x74, charset.codePage) // ESC t n: select code page
         if (charset.kanji) raw(0x1C, 0x26) // FS &: 2-byte (kanji/hanzi) mode
     }
-    /** Print density (FR-9.10): standard `GS ( K` plus the `ESC 7` / `DC2 #` variants used by pocket printers. Skipped at the default level. */
-    fun density(level: Int): EscPos = apply {
-        val d = Density.clamp(level)
-        if (d == 3) return@apply
-        raw(0x1D, 0x28, 0x4B, 0x02, 0x00, 0x31, Density.escposGsK(d))
-        raw(0x1B, 0x37, 0x07, Density.escposHeatTime(d), 0x02)
-        raw(0x12, 0x23, Density.escposDc2(d))
+    /** Maximum print density (FR-9.10): standard `GS ( K` plus the `ESC 7` / `DC2 #` variants used by pocket printers. */
+    fun maxDensity(): EscPos = apply {
+        raw(0x1D, 0x28, 0x4B, 0x02, 0x00, 0x31, Density.ESCPOS_GS_K)
+        raw(0x1B, 0x37, 0x07, Density.ESCPOS_HEAT_TIME, 0x02)
+        raw(0x12, 0x23, Density.ESCPOS_DC2)
     }
     fun alignCenter(): EscPos = apply { raw(0x1B, 0x61, 1) }
     fun alignLeft(): EscPos = apply { raw(0x1B, 0x61, 0) }
