@@ -309,7 +309,11 @@ class AppState(val store: Store, val scope: CoroutineScope, var strings: Strings
                         store.markPrinted(listOf(ticket.id)); adoptTransport(result.usedTransport)
                         store.updateSettings { it.copy(printQueue = it.printQueue.drop(1)) }
                         done++; printProgress = done to total
-                        if (data.settings.printQueue.isNotEmpty()) kotlinx.coroutines.delay(1000) // 1 s gap between labels
+                        if (data.settings.printQueue.isNotEmpty()) {
+                            // wait until this label is physically out, then leave the 1 s gap for tearing it off
+                            val printMs = withContext(Dispatchers.Default) { TicketFormatter.estimatedPrintMs(ticket, settings, dateLabel(ticket.date)) }
+                            kotlinx.coroutines.delay(printMs + 1000)
+                        }
                     }
                     is PrintResult.Error -> { failure = result.message; break }
                 }
