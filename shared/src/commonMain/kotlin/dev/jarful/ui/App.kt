@@ -57,6 +57,8 @@ import dev.jarful.ui.ds.DsIconButton
 import dev.jarful.ui.ds.JarfulDesignTheme
 import dev.jarful.ui.ds.ShellNavItem
 import dev.jarful.ui.ds.platformDesignSystem
+import dev.jarful.ui.common.PrintQueueBanner
+import dev.jarful.ui.common.printBannerVisible
 import dev.jarful.ui.i18n.LocalStrings
 import dev.jarful.ui.i18n.resolveLanguage
 import dev.jarful.ui.i18n.stringsFor
@@ -139,7 +141,10 @@ fun JarfulApp(store: Store, darkTheme: Boolean? = null, designSystemOverride: De
                     onPrimaryAction = { state.refocusOpen = true },
                     snackbar = snackbar,
                 ) {
-                    if (wide) WideContent(state) else CompactContent(state)
+                    Column(Modifier.fillMaxSize()) {
+                        if (state.printBannerVisible()) PrintQueueBanner(state, Modifier.padding(horizontal = 12.dp, vertical = 6.dp))
+                        Box(Modifier.weight(1f)) { if (wide) WideContent(state) else CompactContent(state) }
+                    }
                 }
                 AppDialogs(state)
             }

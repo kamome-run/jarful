@@ -58,4 +58,5 @@ val ZH_TW = Strings(
     nothingToPrint = "沒有可列印的內容。請先把任務加入今天的票券，或使用 ⋮ → 列印。",
     printBusy = "正在列印", printPaused = { "列印已中斷（剩餘 $it 張）" }, printProgress = { d, n -> "列印中 $d / $n 張" }, printResume = "從中斷處繼續列印", printDiscard = "捨棄剩餘", printStop = "中斷", printPaperHint = "紙用完時，請更換紙卷後按「從中斷處繼續列印」。",
     routinePrintDate = "選擇日期列印", printDateTitle = "要列印的日期", printDateHint = "可在前一晚列印隔天早上的例行事項：所選日期的例行事項會變成票券並列印。", today = "今天", tomorrow = "明天", selectMode = "批次選取", selectAll = "全選", selectNone = "取消選取", selectedCount = { "已選取 $it 項" }, enableSelected = "開啟所選", disableSelected = "關閉所選", duplicate = "複製", duplicateCount = "複製數量", duplicateHint = "子任務也會一併複製（最多 50）。", dragToReorder = "拖曳 ≡ 以排序", depthLimitHint = "已到曾孫任務層級，無法再細分。", uncategorized = "未分類",
+    printRetrying = { n, max -> "正在重新連線（$n / $max）…" }, printLastError = { "最後的錯誤：$it" },
 )

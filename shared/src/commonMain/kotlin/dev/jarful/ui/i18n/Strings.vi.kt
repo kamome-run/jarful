@@ -58,4 +58,5 @@ val VI = Strings(
     nothingToPrint = "Không có gì để in. Hãy tạo phiếu hôm nay cho việc đó hoặc dùng ⋮ → In.",
     printBusy = "Đang in", printPaused = { "In bị gián đoạn (còn $it)" }, printProgress = { d, n -> "Đang in $d / $n" }, printResume = "In tiếp", printDiscard = "Bỏ phần còn lại", printStop = "Dừng", printPaperHint = "Hết giấy? Thay cuộn giấy rồi nhấn “In tiếp”.",
     routinePrintDate = "In cho một ngày…", printDateTitle = "Ngày cần in", printDateHint = "In tối nay các thói quen của sáng mai: thói quen của ngày đã chọn sẽ thành vé và được in.", today = "Hôm nay", tomorrow = "Ngày mai", selectMode = "Chọn nhiều", selectAll = "Chọn tất cả", selectNone = "Bỏ chọn", selectedCount = { "Đã chọn $it" }, enableSelected = "Bật mục đã chọn", disableSelected = "Tắt mục đã chọn", duplicate = "Nhân bản", duplicateCount = "Số bản sao", duplicateHint = "Việc con cũng được nhân bản (tối đa 50).", dragToReorder = "Kéo ≡ để sắp xếp", depthLimitHint = "Đã đến cấp chắt; không thể chia nhỏ thêm.", uncategorized = "Chưa phân loại",
+    printRetrying = { n, max -> "Đang kết nối lại ($n / $max)…" }, printLastError = { "Lỗi gần nhất: $it" },
 )
