@@ -161,7 +161,7 @@ Nie wiesz, który Bluetooth masz? Jeśli w ustawieniach Bluetooth systemu da si�
 | Cat printer | Drukarki kieszonkowe 57 mm bez ESC/POS (rodzina GB01 / GT01 / MX06, sprzedawane z aplikacjami „iPrint” / „Fun Print”). Łączą się przez BLE |
 | Cat printer MXW01 | Nowsza generacja (rodzina MXW01 / X5h; diagnostyka pokazuje AE01–AE04). Tylko BLE |
 
-Szerokość papieru to **58 mm (384 punkty)** lub **80 mm (576 punktów)**. **Gęstość druku** (1–5, domyślnie 4) przyciemnia blady wydruk. W drukarkach kieszonkowych bez obcinacza zostaw **Cut wyłączone**; 3–5 wierszy wysuwu to dobra wartość.
+Szerokość papieru to **58 mm (384 punkty)** lub **80 mm (576 punktów)**. Druk zawsze odbywa się z maksymalną gęstością (bez ustawienia). W drukarkach kieszonkowych bez obcinacza zostaw **Cut wyłączone**; 3–5 wierszy wysuwu to dobra wartość.
 
 ### 6.3 Android / Chromebook — Bluetooth Classic
 

@@ -161,7 +161,7 @@ Pestaña Ajustes → **Impresora térmica**.
 | Cat printer | Impresoras de bolsillo de 57 mm que no hablan ESC/POS (familia GB01 / GT01 / MX06, vendidas con las apps «iPrint» / «Fun Print»). Se conectan por BLE |
 | Cat printer MXW01 | Generación más reciente (familia MXW01 / X5h; el diagnóstico muestra AE01–AE04). Solo BLE |
 
-El ancho de papel es **58 mm (384 puntos)** u **80 mm (576 puntos)**. La **densidad de impresión** (1–5, por defecto 4) oscurece las impresiones tenues. En impresoras de bolsillo sin cuchilla, deja **Cut desactivado**; 3–5 líneas de avance es un buen valor.
+El ancho de papel es **58 mm (384 puntos)** u **80 mm (576 puntos)**. Siempre se imprime con la densidad máxima (sin ajuste). En impresoras de bolsillo sin cuchilla, deja **Cut desactivado**; 3–5 líneas de avance es un buen valor.
 
 ### 6.3 Android / Chromebook — Bluetooth Classic
 
