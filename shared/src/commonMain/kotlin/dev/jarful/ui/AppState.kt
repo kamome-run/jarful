@@ -304,14 +304,27 @@ class AppState(val store: Store, val scope: CoroutineScope, var strings: Strings
         if (s.bluetoothAddress.isBlank() || printing) return
         printing = true
         scope.launch {
-            val report = StringBuilder("MXW01 darkness probe\n")
-            val jobs = TicketFormatter.mxw01ProbeJobs()
-            for ((i, entry) in jobs.withIndex()) {
-                val (name, plan) = entry
-                showToast("${name.take(1)} / ${jobs.size} …")
-                val r = withContext(Dispatchers.Default) { runCatching { dev.jarful.platform.sendBlePlan(s.bluetoothAddress, plan, 15_000, 512) } }
-                report.appendLine("$name: ${if (r.isSuccess) "sent; replies=" + r.getOrDefault(emptyList()).joinToString(" ").ifBlank { "none" } else "error " + (r.exceptionOrNull()?.message ?: "?")}")
-                if (i < jobs.lastIndex) kotlinx.coroutines.delay(3000) // let the printer finish before the next job
+            val report = StringBuilder()
+            if (s.protocol == dev.jarful.model.PrintProtocol.CATPRINTER) {
+                report.appendLine("GB01 darkness probe")
+                val jobs = TicketFormatter.catProbeJobs()
+                for ((i, entry) in jobs.withIndex()) {
+                    val (name, bytes) = entry
+                    showToast("${name.take(1)} / ${jobs.size} …")
+                    val r = withContext(Dispatchers.Default) { printer.send(s, bytes) }
+                    report.appendLine("$name: ${if (r is PrintResult.Ok) "sent" else "error " + (r as PrintResult.Error).message}")
+                    if (i < jobs.lastIndex) kotlinx.coroutines.delay(4000)
+                }
+            } else {
+                report.appendLine("MXW01 darkness probe")
+                val jobs = TicketFormatter.mxw01ProbeJobs()
+                for ((i, entry) in jobs.withIndex()) {
+                    val (name, plan) = entry
+                    showToast("${name.take(1)} / ${jobs.size} …")
+                    val r = withContext(Dispatchers.Default) { runCatching { dev.jarful.platform.sendBlePlan(s.bluetoothAddress, plan, 15_000, 512) } }
+                    report.appendLine("$name: ${if (r.isSuccess) "sent; replies=" + r.getOrDefault(emptyList()).joinToString(" ").ifBlank { "none" } else "error " + (r.exceptionOrNull()?.message ?: "?")}")
+                    if (i < jobs.lastIndex) kotlinx.coroutines.delay(3000)
+                }
             }
             printing = false
             diagnosis = report.toString()
