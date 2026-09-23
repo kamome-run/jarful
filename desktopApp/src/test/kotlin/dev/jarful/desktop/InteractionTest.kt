@@ -7,6 +7,7 @@ import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.runComposeUiTest
 import dev.jarful.data.Store
 import dev.jarful.model.Language
@@ -40,6 +41,18 @@ class InteractionTest {
         onAllNodes(isToggleable()).onFirst().performClick()
         waitForIdle()
         assertEquals(before, store.data.value.settings.soundEnabled)
+    }
+
+    @Test
+    fun bluetoothMacFieldIsShownForBluetoothTransports() = runComposeUiTest {
+        val store = store()
+        store.updateSettings { it.copy(printer = it.printer.copy(transport = dev.jarful.model.PrinterTransport.BLUETOOTH_LE)) }
+        setContent { JarfulApp(store, darkTheme = false, designSystemOverride = DesignSystem.MATERIAL) }
+        onNodeWithText("Settings").performClick(); waitForIdle()
+        onNodeWithText("Bluetooth MAC").performScrollTo().assertIsDisplayed()
+        store.updateSettings { it.copy(printer = it.printer.copy(transport = dev.jarful.model.PrinterTransport.TCP)) }
+        waitForIdle()
+        assertTrue(onAllNodes(hasText("Bluetooth MAC")).fetchSemanticsNodes().isEmpty())
     }
 
     @Test
