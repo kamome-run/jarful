@@ -160,6 +160,7 @@ private fun TaskColumn(state: AppState, index: Int, modifier: Modifier, compact:
         val reorder = rememberReorderState(listState, keys = { tasks.map { it.id } }) { from, to ->
             val moving = tasks.getOrNull(from) ?: return@rememberReorderState
             val target = tasks.getOrNull(to) ?: return@rememberReorderState
+            if (moving.id == INBOX_ID || target.id == INBOX_ID) return@rememberReorderState
             state.store.moveTaskTo(moving.id, TaskTree.childrenOf(state.data.tasks, parentId).indexOfFirst { it.id == target.id })
         }
         val canAdd = TaskTree.canAddChild(state.data.tasks, parentId)
