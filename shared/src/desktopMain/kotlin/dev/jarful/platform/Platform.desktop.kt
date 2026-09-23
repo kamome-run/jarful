@@ -64,15 +64,23 @@ actual suspend fun ensureBluetoothPermission(scan: Boolean): Boolean = true
 
 private val isWindows: Boolean get() = System.getProperty("os.name").lowercase().contains("win")
 
+@Volatile private var bleUnavailableReason: String = ""
+
 private val bleScript: File? by lazy {
-    if (!isWindows) return@lazy null
-    runCatching {
-        val bytes = object {}.javaClass.getResourceAsStream("/jarful-ble.ps1")?.readBytes() ?: return@runCatching null
+    if (!isWindows) { bleUnavailableReason = "not Windows (" + System.getProperty("os.name") + ")"; return@lazy null }
+    try {
+        val bytes = object {}.javaClass.getResourceAsStream("/jarful-ble.ps1")?.readBytes()
+        if (bytes == null) { bleUnavailableReason = "helper script missing from the build"; return@lazy null }
         val f = File(dataDirectory(), "jarful-ble.ps1")
         if (!f.exists() || !f.readBytes().contentEquals(bytes)) f.writeBytes(bytes)
         f
-    }.getOrNull()
+    } catch (e: Throwable) { bleUnavailableReason = "cannot extract helper: " + (e.message ?: e::class.simpleName); null }
 }
+
+actual fun bluetoothCapabilityNote(): String =
+    if (bleSupported()) "Bluetooth LE: available (PowerShell/WinRT helper at " + bleScript?.absolutePath + ")"
+    else "Bluetooth LE: unavailable — " + bleUnavailableReason.ifBlank { "unknown" } + ". Use a COM port or TCP."
+
 
 private fun powershell(): String {
     val root = System.getenv("SystemRoot") ?: "C:\\Windows"
