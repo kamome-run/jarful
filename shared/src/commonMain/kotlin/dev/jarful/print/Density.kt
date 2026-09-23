@@ -5,8 +5,8 @@ package dev.jarful.print
  * adjustment: tickets must be readable on a whiteboard from a distance.
  */
 object Density {
-    /** MXW01 `A2` intensity byte (vendor default 0x5D). */
-    const val MXW01_INTENSITY = 0xE0
+    /** MXW01 `A2` intensity byte. 0x5D is the vendor default and the only value confirmed to print; higher values made the printer drop the job. */
+    const val MXW01_INTENSITY = 0x5D
     /** MXW01 print mode 0x02 = 4 bpp grayscale. Rejected by some firmware (nothing prints); 1 bpp is the default. */
     const val MXW01_MODE_GRAY = 0x02
     /** GB01-family `AF` energy (vendor default 0x2EE0; "high quality" apps use ~0x7530). */

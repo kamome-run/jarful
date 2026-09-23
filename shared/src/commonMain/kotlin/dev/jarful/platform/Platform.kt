@@ -49,12 +49,14 @@ class BleWrite(val characteristic: String?, val bytes: ByteArray, val awaitNotif
 /**
  * Runs a BLE print job over GATT: connects, negotiates the MTU, then executes [plan] in order (FR-9.1 d).
  * Protocols that need a control channel plus a data channel (MXW01) use several writes.
+ * Returns every notification received during the job as "<char short id>:<hex>" for diagnostics.
  */
-expect suspend fun sendBlePlan(address: String, plan: List<BleWrite>, timeoutMs: Int, chunkSize: Int)
+expect suspend fun sendBlePlan(address: String, plan: List<BleWrite>, timeoutMs: Int, chunkSize: Int): List<String>
 
 /** Sends bytes to a BLE printer's auto-detected write characteristic. */
-suspend fun sendBle(address: String, bytes: ByteArray, timeoutMs: Int, chunkSize: Int) =
+suspend fun sendBle(address: String, bytes: ByteArray, timeoutMs: Int, chunkSize: Int) {
     sendBlePlan(address, listOf(BleWrite(null, bytes)), timeoutMs, chunkSize)
+}
 
 /** Lists serial ports (Windows COM ports / Linux tty). Empty where unsupported. */
 expect suspend fun listSerialPorts(): List<PrinterEndpoint>
