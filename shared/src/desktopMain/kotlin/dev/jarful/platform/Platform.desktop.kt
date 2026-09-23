@@ -69,6 +69,7 @@ actual suspend fun sendBluetooth(address: String, bytes: ByteArray, timeoutMs: I
 }
 
 actual fun serialSupported(): Boolean = true
+actual suspend fun diagnoseBluetooth(address: String): String = "Bluetooth diagnostics are available on Android only. On Windows use a COM port (see README section 6.5)."
 
 actual suspend fun listSerialPorts(): List<PrinterEndpoint> = withContext(Dispatchers.IO) {
     runCatching {

@@ -158,6 +158,7 @@ Không rõ máy in dùng Bluetooth nào? Nếu cài đặt Bluetooth của hệ 
 | ESC/POS text | In bằng font tích hợp của máy. Chọn bảng mã (UTF-8 / Shift_JIS / Big5 / GB18030 / Windows-125x / CP8xx…) khớp với máy in |
 | TSPL | Máy in nhãn (đặt chiều cao nhãn và khoảng cách theo mm) |
 | CPCL | Máy in nhãn dùng CPCL |
+| Cat printer | Máy in bỏ túi 57 mm không hỗ trợ ESC/POS (dòng GB01 / GT01 / MX06, bán kèm ứng dụng “iPrint” / “Fun Print”). Kết nối qua BLE |
 
 Khổ giấy là **58 mm (384 chấm)** hoặc **80 mm (576 chấm)**. Máy in bỏ túi không có dao cắt nên giữ **Cut tắt**; 3–5 dòng đẩy giấy là hợp lý.
 
@@ -281,6 +282,8 @@ In raster hoạt động với mọi ngôn ngữ (font phù hợp được chọ
 | Windows không có cổng COM | Thêm cổng **Outgoing** như mục 6.5; ghép nối lại |
 | Đồng bộ báo “không kết nối được máy chủ” | Cùng Wi-Fi chưa? Ứng dụng máy chủ đang mở? Đã cho phép tường lửa? |
 | Đồng bộ báo “sai PIN” | Nhập lại PIN đang hiển thị trên màn hình cài đặt của máy chủ |
+| Ghép nối được nhưng không bao giờ kết nối (ứng dụng của hãng cũng không) | Một số **máy in chỉ có LE sẽ không kết nối được sau khi ghép nối trong hệ thống**. Huỷ ghép nối trong cài đặt Bluetooth → bật lại máy in → chọn **Bluetooth LE** trong Jarful → 🔄 → In thử. Đóng hẳn ứng dụng của hãng. Nếu vẫn không được, dán báo cáo **Chẩn đoán kết nối** vào issue |
+| Không kết nối được trên OPPO / Xiaomi / Huawei | Cấp quyền “Thiết bị lân cận” và “Vị trí”, bật Vị trí, loại Jarful khỏi tối ưu pin. Nếu Classic thất bại sẽ tự thử LE và lưu cách kết nối thành công |
 | Không có phiếu thói quen | Kiểm tra ngày trong tuần và công tắc “Bật”; dùng “Tạo lại cho hôm nay” |
 
 ## 13. Build từ mã nguồn

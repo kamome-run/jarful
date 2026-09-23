@@ -158,6 +158,7 @@ Not sure which Bluetooth you have? If the OS Bluetooth settings can **pair** the
 | ESC/POS text | Printing with the printer's built-in font. Set the charset (UTF-8 / Shift_JIS / Big5 / GB18030 / Windows-125x / CP8xx…) to match the printer |
 | TSPL | Label printers (set label height and gap in mm) |
 | CPCL | Label printers using CPCL |
+| Cat printer | 57 mm pocket printers that do not speak ESC/POS (GB01 / GT01 / MX06 family, sold with the “iPrint” / “Fun Print” apps). Connects over BLE |
 
 Paper width is **58 mm (384 dots)** or **80 mm (576 dots)**. Pocket printers without a cutter should keep **Cut off**; 3–5 feed lines is a good default.
 
@@ -281,6 +282,8 @@ Raster printing works in every language (a suitable font is chosen per line; Ara
 | No COM port on Windows | Add an **Outgoing** port as in 6.5; re-pair the printer |
 | Sync says "cannot reach the host" | Same Wi-Fi? Host app open? Firewall allowed? |
 | Sync says "wrong PIN" | Re-enter the PIN shown on the host's settings screen |
+| Pairs but never connects (vendor app fails too) | Some **LE-only printers stop connecting once paired in the OS**. Unpair in the OS Bluetooth settings → power-cycle the printer → choose **Bluetooth LE** in Jarful → 🔄 → Test print. Fully close the vendor app. If it still fails, paste the **Diagnose connection** report into an issue |
+| Cannot connect on OPPO / Xiaomi / Huawei | Grant “Nearby devices” and “Location”, turn Location on, exempt Jarful from battery optimisation. Classic failures fall back to LE automatically and the working transport is saved |
 | Routine tickets missing | Check the weekdays and the Enabled switch; use "Regenerate today" |
 
 ## 13. Building from source

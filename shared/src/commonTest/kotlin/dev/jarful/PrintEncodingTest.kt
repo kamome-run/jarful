@@ -132,6 +132,23 @@ class PrintEncodingTest {
     }
 
     @Test
+    fun catPrinterPacketsAndCrc() { // FR-9.2 cat printer
+        val p = dev.jarful.print.CatPrinter.packet(0xA1, b(0x19, 0x00))
+        assertContentEquals(b(0x51, 0x78, 0xA1, 0x00, 0x02, 0x00, 0x19, 0x00), p.copyOfRange(0, 8))
+        assertEquals(0xFF, p.last().toInt() and 0xFF)
+        assertEquals(dev.jarful.print.CatPrinter.crc8(b(0x19, 0x00)), p[8].toInt() and 0xFF)
+        assertEquals(0xF4, dev.jarful.print.CatPrinter.crc8("123456789".encodeToByteArray())) // CRC-8 poly 0x07 check value
+        val rows = arrayOf(ByteArray(48).also { it[0] = 0x80.toByte() })
+        val row = dev.jarful.print.CatPrinter.rowBytes(MonoBitmap(384, 1, rows), 0)
+        assertEquals(0x01, row[0].toInt() and 0xFF) // leftmost pixel -> bit 0 (LSB first)
+        val job = dev.jarful.print.CatPrinter.encode(MonoBitmap(384, 2, arrayOf(ByteArray(48), ByteArray(48))), feedLines = 1)
+        assertContentEquals(b(0x51, 0x78, 0xA3), job.copyOfRange(0, 3))
+        assertEquals(2, countSeq(job, b(0x51, 0x78, 0xA2, 0x00, 48, 0x00)))
+    }
+
+    private fun countSeq(hay: ByteArray, needle: ByteArray): Int { var n = 0; var i = 0; while (true) { val j = hay.copyOfRange(i, hay.size).indexOf(needle); if (j < 0) return n; n++; i += j + needle.size } }
+
+    @Test
     fun encodeAllUsesProtocol() {
         val s = PrinterSettings(protocol = PrintProtocol.ESCPOS_TEXT, cutEnabled = true)
         val two = TicketFormatter.encodeAll(listOf(ticket, ticket.copy(id = "k2")), s) { "d" }

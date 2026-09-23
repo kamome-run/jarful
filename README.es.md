@@ -158,6 +158,7 @@ Pestaña Ajustes → **Impresora térmica**.
 | ESC/POS texto | Imprime con la fuente interna. Ajusta el juego de caracteres (UTF-8 / Shift_JIS / Big5 / GB18030 / Windows-125x / CP8xx…) al de la impresora |
 | TSPL | Impresoras de etiquetas (alto y separación en mm) |
 | CPCL | Impresoras de etiquetas CPCL |
+| Cat printer | Impresoras de bolsillo de 57 mm que no hablan ESC/POS (familia GB01 / GT01 / MX06, vendidas con las apps «iPrint» / «Fun Print»). Se conectan por BLE |
 
 El ancho de papel es **58 mm (384 puntos)** u **80 mm (576 puntos)**. En impresoras de bolsillo sin cuchilla, deja **Cut desactivado**; 3–5 líneas de avance es un buen valor.
 
@@ -281,6 +282,8 @@ La impresión ráster funciona en todos los idiomas (se elige una fuente adecuad
 | No hay puerto COM en Windows | Añade un puerto **Saliente** como en 6.5; vuelve a emparejar |
 | Sincronización: «no se puede contactar con el anfitrión» | ¿Misma Wi-Fi? ¿App anfitriona abierta? ¿Firewall permitido? |
 | Sincronización: «PIN incorrecto» | Vuelve a introducir el PIN que muestra la pantalla de ajustes del anfitrión |
+| Se empareja pero nunca conecta (la app del fabricante también falla) | Algunas **impresoras solo LE dejan de conectar tras emparejarlas en el sistema**. Desempareja en los ajustes Bluetooth → reinicia la impresora → elige **Bluetooth LE** en Jarful → 🔄 → Impresión de prueba. Cierra del todo la app del fabricante. Si sigue fallando, pega el informe de **Diagnosticar conexión** en un issue |
+| No conecta en OPPO / Xiaomi / Huawei | Concede «Dispositivos cercanos» y «Ubicación», activa la ubicación, excluye Jarful de la optimización de batería. Si Classic falla se prueba LE automáticamente y se guarda el modo que funciona |
 | Faltan tickets de rutina | Revisa los días y el interruptor «Activada»; usa «Regenerar hoy» |
 
 ## 13. Compilar desde el código fuente

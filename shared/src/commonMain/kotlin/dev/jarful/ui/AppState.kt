@@ -14,6 +14,7 @@ import dev.jarful.model.Routine
 import dev.jarful.model.Task
 import dev.jarful.model.Ticket
 import dev.jarful.platform.SoundPlayer
+import dev.jarful.platform.diagnoseBluetooth
 import dev.jarful.platform.nowMillis
 import dev.jarful.platform.vibrateShort
 import dev.jarful.print.PrintResult
@@ -257,7 +258,7 @@ class AppState(val store: Store, val scope: CoroutineScope, var strings: Strings
             }
             printing = false
             when (result) {
-                PrintResult.Ok -> { store.markPrinted(tickets.map { it.id }); showToast(strings.printOk) }
+                is PrintResult.Ok -> { store.markPrinted(tickets.map { it.id }); adoptTransport(result.usedTransport); showToast(strings.printOk) }
                 is PrintResult.Error -> showToast(strings.printFailed(result.message))
             }
         }
@@ -269,7 +270,33 @@ class AppState(val store: Store, val scope: CoroutineScope, var strings: Strings
         scope.launch {
             val result = withContext(Dispatchers.Default) { printer.send(settings, TicketFormatter.encodeTestPage(settings)) }
             printing = false
-            showToast(when (result) { PrintResult.Ok -> strings.printOk; is PrintResult.Error -> strings.printFailed(result.message) })
+            when (result) {
+                is PrintResult.Ok -> { adoptTransport(result.usedTransport); showToast(strings.printOk) }
+                is PrintResult.Error -> showToast(strings.printFailed(result.message))
+            }
+        }
+    }
+
+    /** When the Classic ⇄ LE fallback succeeded, remember the transport that actually worked. */
+    private fun adoptTransport(used: dev.jarful.model.PrinterTransport) {
+        val cur = data.settings.printer.transport
+        if (cur != used && (cur == dev.jarful.model.PrinterTransport.BLUETOOTH || cur == dev.jarful.model.PrinterTransport.BLUETOOTH_LE)) {
+            store.updateSettings { it.copy(printer = it.printer.copy(transport = used)) }
+            showToast(strings.printSwitchedTransport(used.label))
+        }
+    }
+
+    var diagnosis by mutableStateOf<String?>(null)
+    var diagnosing by mutableStateOf(false)
+
+    /** Runs the Bluetooth diagnostics for the configured device (FR-9.11). */
+    fun diagnosePrinter() {
+        val addr = data.settings.printer.bluetoothAddress
+        if (addr.isBlank() || diagnosing) return
+        diagnosing = true
+        scope.launch {
+            diagnosis = withContext(Dispatchers.Default) { runCatching { diagnoseBluetooth(addr) }.getOrElse { "ERROR: ${it.message}" } }
+            diagnosing = false
         }
     }
 

@@ -158,6 +158,7 @@ Unsicher, welches Bluetooth du hast? Lässt sich der Drucker in den Bluetooth-Ei
 | ESC/POS Text | Druck mit der eingebauten Druckerschrift. Zeichensatz (UTF-8 / Shift_JIS / Big5 / GB18030 / Windows-125x / CP8xx …) passend zum Drucker wählen |
 | TSPL | Etikettendrucker (Etikettenhöhe und Abstand in mm) |
 | CPCL | Etikettendrucker mit CPCL |
+| Cat printer | 57-mm-Taschendrucker ohne ESC/POS (Familie GB01 / GT01 / MX06, mit den Apps „iPrint“ / „Fun Print“ verkauft). Verbindung über BLE |
 
 Papierbreite **58 mm (384 Punkte)** oder **80 mm (576 Punkte)**. Taschendrucker ohne Schneidwerk: **Cut aus** lassen; 3–5 Vorschubzeilen sind ein guter Wert.
 
@@ -281,6 +282,8 @@ Rasterdruck funktioniert in jeder Sprache (pro Zeile wird eine passende Schrift 
 | Kein COM-Port unter Windows | **Ausgehenden** Port wie in 6.5 anlegen; neu koppeln |
 | Sync: „Host nicht erreichbar“ | Gleiches WLAN? Host-App offen? Firewall erlaubt? |
 | Sync: „Falsche PIN“ | Die auf dem Host angezeigte PIN erneut eingeben |
+| Koppelt, verbindet aber nie (Hersteller-App scheitert ebenfalls) | Manche **reinen LE-Drucker verbinden sich nach dem Koppeln im System nicht mehr**. In den Bluetooth-Einstellungen entkoppeln → Drucker neu starten → in Jarful **Bluetooth LE** wählen → 🔄 → Testdruck. Hersteller-App vollständig beenden. Hilft das nicht, den Bericht aus **Verbindung diagnostizieren** in ein Issue einfügen |
+| Keine Verbindung auf OPPO / Xiaomi / Huawei | „Geräte in der Nähe“ und „Standort“ erlauben, Standort einschalten, Jarful von der Akku-Optimierung ausnehmen. Scheitert Classic, wird automatisch LE versucht und die funktionierende Art gespeichert |
 | Routine-Tickets fehlen | Wochentage und Schalter „Aktiv“ prüfen; „Heute neu erzeugen“ verwenden |
 
 ## 13. Aus dem Quellcode bauen
