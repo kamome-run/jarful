@@ -147,6 +147,17 @@ private fun PrinterSection(state: AppState, p: PrinterSettings, update: ((Printe
                 onSelect = { e -> update { it.copy(serialPort = e.id) } },
             )
         }
+        if (p.transport == PrinterTransport.BLUETOOTH || p.transport == PrinterTransport.BLUETOOTH_LE) {
+            // Manual address entry for devices the OS does not list (e.g. Windows without pairing).
+            DsTextField(
+                value = p.bluetoothAddress,
+                onValueChange = { v ->
+                    val clean = v.uppercase().filter { c -> c.isLetterOrDigit() || c == ':' }.take(17)
+                    update { it.copy(bluetoothAddress = clean, bluetoothName = if (clean == it.bluetoothAddress) it.bluetoothName else "") }
+                },
+                label = "Bluetooth MAC", placeholder = "00:11:22:33:44:55", singleLine = true, modifier = Modifier.fillMaxWidth(),
+            )
+        }
         EnumDropdown("Protocol", PrintProtocol.entries, p.protocol, { it.label }) { v -> update { it.copy(protocol = v) } }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             EnumDropdown(s.paperWidth, PaperWidth.entries, p.paperWidth, { it.label }, Modifier.weight(1f)) { v -> update { it.copy(paperWidth = v) } }
