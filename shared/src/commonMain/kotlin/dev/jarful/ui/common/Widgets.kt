@@ -15,6 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -83,4 +84,25 @@ fun LabeledRow(label: String, content: @Composable () -> Unit) {
         Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
         content()
     }
+}
+
+/** Asks how many copies to make (1..50) before duplicating a routine or a task subtree (FR-2.8, FR-6.9). */
+@Composable
+fun DuplicateDialog(title: String, onDismiss: () -> Unit, onConfirm: (Int) -> Unit) {
+    val s = LocalStrings.current
+    var count by remember { mutableStateOf<Int?>(1) }
+    DsDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("${s.duplicate}: $title") },
+        text = {
+            androidx.compose.foundation.layout.Column {
+                IntField(s.duplicateCount, count, { count = it }, modifier = Modifier.testTag("duplicateCount"))
+                Text(s.duplicateHint, style = androidx.compose.material3.MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 6.dp))
+            }
+        },
+        confirmButton = {
+            DsButton(onClick = { onConfirm(count!!.coerceIn(1, 50)) }, enabled = (count ?: 0) in 1..50, kind = ButtonKind.Accent, modifier = Modifier.fillMaxWidth().testTag("duplicateOk")) { Text(s.duplicate) }
+        },
+        dismissButton = { DsButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) { Text(s.cancel) } },
+    )
 }

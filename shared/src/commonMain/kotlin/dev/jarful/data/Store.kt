@@ -167,6 +167,7 @@ class Store(
         if (title.isBlank()) return null
         var created: Task? = null
         mutate(undoable = true) { d ->
+            if (!TaskTree.canAddChild(d.tasks, parentId)) return@mutate d
             val (tasks, t) = TaskTree.add(d.tasks, parentId, title, nowMillis(), afterId)
             created = t
             d.copy(tasks = tasks)
@@ -175,7 +176,7 @@ class Store(
     }
 
     fun addTasksFromText(parentId: String?, text: String) =
-        mutate(undoable = true) { it.copy(tasks = TaskTree.addManyFromText(it.tasks, parentId, text, nowMillis())) }
+        mutate(undoable = true) { if (TaskTree.canAddChild(it.tasks, parentId)) it.copy(tasks = TaskTree.addManyFromText(it.tasks, parentId, text, nowMillis())) else it }
 
     fun renameTask(id: String, title: String) {
         if (title.isBlank()) return
@@ -208,6 +209,8 @@ class Store(
     }
 
     fun moveTask(id: String, delta: Int) = mutate(undoable = true) { it.copy(tasks = TaskTree.moveWithinSiblings(it.tasks, id, delta)) }
+    fun moveTaskTo(id: String, toIndex: Int) = mutate(undoable = true) { it.copy(tasks = TaskTree.moveTo(it.tasks, id, toIndex)) }
+    fun copyTask(id: String, count: Int) = mutate(undoable = true) { it.copy(tasks = TaskTree.copy(it.tasks, id, count, nowMillis())) }
 
     fun reparentTask(id: String, newParentId: String?) =
         mutate(undoable = true) { it.copy(tasks = TaskTree.reparent(it.tasks, id, newParentId, nowMillis())) }
@@ -350,6 +353,33 @@ class Store(
 
     fun deleteRoutine(id: String) = mutate(undoable = true) { d -> d.copy(routines = d.routines.filter { it.id != id }) }
 
+    /** Duplicates a routine [count] times right after it (FR-6.9). */
+    fun copyRoutine(id: String, count: Int) = mutate(undoable = true) { d ->
+        val src = d.routines.firstOrNull { it.id == id } ?: return@mutate d
+        val sorted = d.routines.sortedBy { it.order }.toMutableList()
+        val at = sorted.indexOfFirst { it.id == id } + 1
+        val copies = (1..count.coerceIn(1, 50)).map { src.copy(id = Ids.next("r")) }
+        sorted.addAll(at, copies)
+        d.copy(routines = sorted.mapIndexed { i, r -> r.copy(order = i) })
+    }
+
+    fun moveRoutineTo(id: String, toIndex: Int) = mutate(undoable = true) { d ->
+        val list = d.routines.sortedBy { it.order }.toMutableList()
+        val i = list.indexOfFirst { it.id == id }; val j = toIndex.coerceIn(0, list.size - 1)
+        if (i < 0 || i == j) return@mutate d
+        val item = list.removeAt(i); list.add(j, item)
+        d.copy(routines = list.mapIndexed { k, r -> r.copy(order = k) })
+    }
+
+    /** Enables or disables several routines at once (FR-6.8). */
+    fun setRoutinesEnabled(ids: Collection<String>, enabled: Boolean) {
+        val set = ids.toSet()
+        mutate(undoable = true) { d -> d.copy(routines = d.routines.map { if (it.id in set) it.copy(enabled = enabled) else it }) }
+        regenerateToday()
+    }
+
+
+
     fun moveRoutine(id: String, delta: Int) = mutate(undoable = true) { d ->
         val list = d.routines.sortedBy { it.order }.toMutableList()
         val i = list.indexOfFirst { it.id == id }; val j = i + delta
@@ -359,11 +389,14 @@ class Store(
     }
 
     /** Regenerates today's routine tickets after the routine list changed (keeps completed ones). */
-    fun regenerateToday() = mutate { d ->
-        val today = Dates.iso(Dates.today())
-        val kept = d.tickets.filter { !(it.date == today && it.routineId != null && !it.isDone) }
-        val base = d.copy(tickets = kept, routineGeneratedDates = d.routineGeneratedDates - today)
-        RoutineScheduler.generateFor(base, Dates.today(), nowMillis())
+    fun regenerateToday() = regenerateFor(Dates.today())
+
+    /** Drops the unfinished routine tickets of [date] and generates them again from the current routines (FR-6.0, FR-6.7). */
+    fun regenerateFor(date: kotlinx.datetime.LocalDate) = mutate { d ->
+        val iso = Dates.iso(date)
+        val kept = d.tickets.filter { !(it.date == iso && it.routineId != null && !it.isDone) }
+        val base = d.copy(tickets = kept, routineGeneratedDates = d.routineGeneratedDates - iso)
+        RoutineScheduler.generateFor(base, date, nowMillis())
     }
 
     // ----- Settings -----

@@ -35,6 +35,7 @@ import dev.jarful.model.INBOX_ID
 import dev.jarful.ui.common.ConfirmDialog
 import dev.jarful.ui.common.IntField
 import dev.jarful.ui.common.TextAreaDialog
+import dev.jarful.ui.common.DuplicateDialog
 import dev.jarful.ui.i18n.LocalStrings
 
 /** All modal dialogs, driven by [AppState] flags. */
@@ -66,6 +67,11 @@ fun AppDialogs(state: AppState) {
 
     state.detailTaskId?.let { id -> TaskDetailDialog(state, id) }
     state.moveTaskId?.let { id -> MoveTaskDialog(state, id) }
+    state.duplicateTaskId?.let { id ->
+        val t = TaskTree.byId(state.data.tasks, id)
+        if (t == null) state.duplicateTaskId = null
+        else DuplicateDialog(title = t.title, onDismiss = { state.duplicateTaskId = null }) { n -> state.store.copyTask(id, n); state.duplicateTaskId = null }
+    }
 
     if (state.showShortcuts) {
         DsDialog(

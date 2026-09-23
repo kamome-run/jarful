@@ -176,6 +176,7 @@ class AppState(val store: Store, val scope: CoroutineScope, var strings: Strings
     fun startAdd(parentId: String?) { renamingId = null; addingIn = parentId }
     fun startAddChildOfSelection() {
         val id = selectedTaskId ?: return
+        if (!TaskTree.canAddChild(data.tasks, id)) return
         val col = focusedColumn + 1
         select(focusedColumn, id)
         focusedColumn = col; compactColumnIndex = col
@@ -240,12 +241,13 @@ class AppState(val store: Store, val scope: CoroutineScope, var strings: Strings
     fun refocus(text: String) {
         val created = store.refocus(text.lines())
         refocusOpen = false
-        if (created.isNotEmpty()) { tab = Tab.TODAY; store.startTicket(created.first().id) }
+        if (created.isNotEmpty()) tab = Tab.TODAY
     }
 
     fun ticketsToPrint(kind: PrintTarget): List<Ticket> = when (kind) {
         PrintTarget.Today -> todayTickets().filter { !it.isDone }
         PrintTarget.Routines -> todayTickets().filter { !it.isDone && it.routineId != null }
+        is PrintTarget.RoutinesOn -> data.tickets.filter { it.date == kind.date && !it.isDone && it.routineId != null }.sortedBy { it.order }
         is PrintTarget.Column -> visibleChildren(kind.parentId).filter { !it.done && it.id != INBOX_ID }.map { virtualTicket(it) }
         is PrintTarget.Task -> listOfNotNull(TaskTree.byId(data.tasks, kind.id)?.let { virtualTicket(it) })
         is PrintTarget.Tickets -> kind.tickets
@@ -369,6 +371,25 @@ class AppState(val store: Store, val scope: CoroutineScope, var strings: Strings
     fun showToast(msg: String) { toast = msg }
 
     // ----- Routines -----
+
+    /** Which date the "print for a date" dialog is open for; null = closed. */
+    var printDateDialog by mutableStateOf(false)
+    /** Ids of routines selected in bulk-select mode (FR-6.8); empty set + selectMode=false = normal mode. */
+    var routineSelectMode by mutableStateOf(false)
+    val selectedRoutineIds = mutableStateListOf<String>()
+    /** Item (routine or task id) for which the duplicate dialog is open. */
+    var duplicateRoutineId by mutableStateOf<String?>(null)
+    var duplicateTaskId by mutableStateOf<String?>(null)
+
+    /** Regenerates the routine tickets of [iso] from the current routines and prints them (FR-6.7). */
+    fun printRoutinesOn(iso: String) {
+        store.regenerateFor(Dates.parse(iso))
+        print(PrintTarget.RoutinesOn(iso))
+    }
+
+    fun toggleRoutineSelected(id: String) { if (id in selectedRoutineIds) selectedRoutineIds.remove(id) else selectedRoutineIds.add(id) }
+    fun setSelectedRoutinesEnabled(enabled: Boolean) { store.setRoutinesEnabled(selectedRoutineIds.toList(), enabled) }
+    fun exitRoutineSelect() { routineSelectMode = false; selectedRoutineIds.clear() }
     fun newRoutine(): Routine = Routine(id = Ids.next("r"), title = "", category = "", weekdays = DayOfWeek.entries.toSet())
 
     fun addSampleRoutines() {
@@ -390,6 +411,8 @@ class AppState(val store: Store, val scope: CoroutineScope, var strings: Strings
 sealed class PrintTarget {
     data object Today : PrintTarget()
     data object Routines : PrintTarget()
+    /** Routine tickets of an arbitrary date (yyyy-MM-dd), e.g. tomorrow morning printed tonight (FR-6.7). */
+    data class RoutinesOn(val date: String) : PrintTarget()
     data class Column(val parentId: String?) : PrintTarget()
     data class Task(val id: String) : PrintTarget()
     data class Tickets(val tickets: List<Ticket>) : PrintTarget()

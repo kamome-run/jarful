@@ -40,7 +40,7 @@ eine App für Android (einschließlich Chromebooks und Googles ChromeOS/Android-
 | Aufgaben in **2–5-Minuten-Mikroaufgaben** zerlegen, damit sich die Schleife oft wiederholt | Hierarchische Aufgaben in **nebeneinanderliegenden Spalten**; `Tab` fügt sofort eine Teilaufgabe hinzu |
 | Eine Haftnotiz = eine Aufgabe; erledigt wird sie **zerknüllt ins durchsichtige Glas geworfen** | Ein „Heute-Ticket“ abzuschließen spielt eine **Zerknüll-Animation + Papiergeräusch + Vibration** und lässt eine Papierkugel ins Glas fallen |
 | Den Tag mit leichten Gewohnheiten beginnen; **morgen schon am Vorabend vorbereiten** | **Routinen** je Wochentag erzeugen die Tickets für morgen nach der Vorbereitungszeit (Standard 21:00) |
-| Beim Aufschieben **die nächsten 3–5 Aufgaben** aufschreiben und loslegen | `Strg+K` **Neu fokussieren**: eine Aufgabe pro Zeile → sofort Tickets → die erste läuft |
+| Beim Aufschieben **die nächsten 3–5 Aufgaben** aufschreiben und loslegen | `Strg+K` **Neu fokussieren**: eine Aufgabe pro Zeile → sofort Tickets im Tab Heute |
 | Unteilbare Aufgaben werden **nach Zeit zerlegt** („nur 10 Minuten“) | Tickets mit Zeitbox zählen herunter; am Ende: „abschließen / +5 Min / zerlegen“ |
 | Ein Rückstau (tausende E-Mails) wird zu „**alles Neue + N alte, jeden Tag**“ | **Kontingent-Routinen** (+1-Zähler, abgeschlossen beim Ziel) |
 | Ein **Thermodrucker** nimmt die Reibung | Druck über Bluetooth Classic / Bluetooth LE / COM / TCP mit **ESC/POS, TSPL oder CPCL**, ein Ticket pro Bon |
@@ -125,13 +125,13 @@ Deinstallation über **Einstellungen → Apps → Installierte Apps → Jarful**
 
 ## 5. Erster Start und Tagesablauf
 
-1. **Routinen anlegen** (Tab Routinen): Liste leichte Morgengewohnheiten von oben nach unten auf (Kaffee kochen, Fenster öffnen …). Wochentage je Routine ein- oder ausschalten; für gezählte Gewohnheiten wie „10 E-Mails abarbeiten“ die Zahl als **Kontingent** eintragen.
-2. **Am Vorabend vorbereitet**: Öffnest du die App nach der Zeit „Morgen vorbereiten um“ (Standard 21:00), entstehen die Routine-Tickets für morgen. Morgens werden die heutigen erzeugt, falls sie fehlen.
-3. **Aufgaben zerlegen** (Tab Spalten): Lege in der linken Spalte eine große Aufgabe an („Wohnung putzen“), wähle sie und drücke `Tab` (oder „Teilaufgabe hinzufügen“), um in der nächsten Spalte „Küche“, „Bad“ … anzulegen, und zerlege weiter bis zu **2–5-Minuten**-Stücken („Geschirr spülen“). Aufgaben, die länger als 3 Tage offen sind, zeigen den Hinweis „weiter zerlegen“.
+1. **Routinen anlegen** (Tab Routinen): Liste leichte Morgengewohnheiten von oben nach unten auf (Kaffee kochen, Fenster öffnen …). Wochentage je Routine ein- oder ausschalten; für gezählte Gewohnheiten wie „10 E-Mails abarbeiten“ die Zahl als **Kontingent** eintragen. Routinen sind unter **Kategorie-Überschriften** gruppiert; ziehe am Griff ≡, um zu sortieren (Ziehen unter eine andere Überschrift ändert die Kategorie), **dupliziere** eine Routine mit Anzahl oder **wähle mehrere aus** und schalte sie gemeinsam ein oder aus.
+2. **Am Vorabend vorbereitet**: Öffnest du die App nach der Zeit „Morgen vorbereiten um“ (Standard 21:00), entstehen die Routine-Tickets für morgen. Morgens werden die heutigen erzeugt, falls sie fehlen. Um **abends die Tickets für morgen früh zu drucken**, wähle im Tab Routinen „Für ein Datum drucken…“ und dann morgen.
+3. **Aufgaben zerlegen** (Tab Spalten): Lege in der linken Spalte eine große Aufgabe an („Wohnung putzen“), wähle sie und drücke `Tab` (oder „Teilaufgabe hinzufügen“), um in der nächsten Spalte „Küche“, „Bad“ … anzulegen, und zerlege weiter bis zu **2–5-Minuten**-Stücken („Geschirr spülen“). Aufgaben, die länger als 3 Tage offen sind, zeigen den Hinweis „weiter zerlegen“. Die Hierarchie reicht bis zur **Urenkel-Ebene** (vier Spalten). Ziehe am Griff ≡, um Zeilen zu sortieren, und nutze **Duplizieren** im Menü, um eine Aufgabe samt Unteraufgaben beliebig oft zu kopieren. Lange Titel werden umgebrochen.
 4. **Heute-Tickets anlegen**: Aufgabe wählen und `T` drücken; für eine ganze Spalte `Umschalt+T` (oder das Spaltenmenü). Sie erscheinen als Bon-Karten im Tab Heute.
 5. **Drucken und anheften** (optional): `Strg+P` druckt alle heutigen Tickets; abreißen und **mit Magneten ans Whiteboard heften**.
-6. **Machen → abschließen**: **Start** zeigt die verstrichene Zeit (bei Zeitbox einen Countdown). **Erledigt** drücken (oder die Karte nach rechts wischen): Sie zerknüllt mit Geräusch und Vibration ins Glas. Das Papierticket abnehmen, zerknüllen und ins echte Glas werfen.
-7. **Wenn du dich beim Aufschieben ertappst**: `Strg+K` (⚡ Neu fokussieren), die nächsten 3–5 Aufgaben je Zeile aufschreiben und **Loslegen** drücken. Sie werden sofort Tickets, das erste läuft.
+6. **Machen → abschließen**: **Erledigt** drücken (oder die Karte nach rechts wischen): Sie zerknüllt mit Geräusch und Vibration ins Glas. Das Papierticket abnehmen, zerknüllen und ins echte Glas werfen.
+7. **Wenn du dich beim Aufschieben ertappst**: `Strg+K` (⚡ Neu fokussieren), die nächsten 3–5 Aufgaben je Zeile aufschreiben und **Loslegen** drücken. Sie werden sofort Tickets im Tab Heute.
 8. **Statistik**: Runden pro Tag (90 Tage), Serie und Routinen-Erfüllung.
 
 ## 6. Drucker einrichten (ausführlich)
