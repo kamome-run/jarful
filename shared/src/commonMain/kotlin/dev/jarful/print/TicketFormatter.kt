@@ -89,6 +89,8 @@ object TicketFormatter {
     /** A print job: a byte stream for stream transports, or a multi-step BLE plan (MXW01). */
     sealed class PrintJob {
         class Bytes(val bytes: ByteArray) : PrintJob()
+        /** Several independent jobs sent one after another with a pause (pocket printers choke on back-to-back jobs). */
+        class Batches(val batches: List<ByteArray>) : PrintJob()
         class Ble(val plan: List<BleWrite>) : PrintJob()
     }
 
@@ -97,6 +99,9 @@ object TicketFormatter {
         if (s.protocol == PrintProtocol.CATPRINTER_MXW01) {
             val bitmaps = tickets.map { t -> renderTextBitmap(ticketLines(t, dateLabel(t)) + TextLine("", 0f), widthPx = Mxw01.WIDTH, paddingPx = 8) }
             return PrintJob.Ble(Mxw01.plan(stack(bitmaps), s.feedLines))
+        }
+        if (s.protocol == PrintProtocol.CATPRINTER && tickets.size > 1) {
+            return PrintJob.Batches(tickets.map { t -> encodeTicket(t, s, dateLabel(t)) })
         }
         return PrintJob.Bytes(encodeAll(tickets, s, dateLabel))
     }

@@ -134,7 +134,7 @@ fun JarfulApp(store: Store, darkTheme: Boolean? = null, designSystemOverride: De
                 DsAppShell(
                     wide = wide, items = items, selectedId = selected, onSelect = { state.tab = Tab.valueOf(it) },
                     title = title,
-                    actions = { TopActions(state) },
+                    actions = { TopActions(state, wide) },
                     primaryAction = if (wide || state.tab == Tab.TODAY || state.tab == Tab.COLUMNS) (s.refocus to Icons.Default.Bolt) else null,
                     onPrimaryAction = { state.refocusOpen = true },
                     snackbar = snackbar,
@@ -149,11 +149,11 @@ fun JarfulApp(store: Store, darkTheme: Boolean? = null, designSystemOverride: De
 
 /** Shared top-bar / command-bar actions: sync, print today, shortcuts (§8). */
 @Composable
-private fun TopActions(state: AppState) {
+private fun TopActions(state: AppState, wide: Boolean) {
     val s = LocalStrings.current
     val hasPeer = state.data.settings.sync.peerHost.isNotBlank()
     if (hasPeer) DsIconButton(onClick = { state.syncNow() }, icon = Icons.Default.Sync, contentDescription = s.syncNow, enabled = !state.syncing)
-    DsIconButton(onClick = { state.print(PrintTarget.Today) }, icon = Icons.Default.Print, contentDescription = s.printToday, enabled = !state.printing)
+    DsIconButton(onClick = { state.printFromTopBar(wide) }, icon = Icons.Default.Print, contentDescription = if (!wide && state.tab == Tab.COLUMNS) s.printColumn else s.printToday, enabled = !state.printing)
     if (hasHardwareKeyboard()) DsIconButton(onClick = { state.showShortcuts = true }, icon = Icons.Default.Keyboard, contentDescription = s.shortcuts)
 }
 

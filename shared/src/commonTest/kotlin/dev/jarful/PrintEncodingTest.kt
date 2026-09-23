@@ -186,6 +186,15 @@ class PrintEncodingTest {
         assertEquals(1, countSeq(cat, b(0x51, 0x78, 0xA4, 0x00, 0x01, 0x00, 0x35)))
     }
 
+    @Test
+    fun catPrinterSendsTicketsAsSeparateJobs() {
+        val s = PrinterSettings(protocol = PrintProtocol.CATPRINTER)
+        val two = TicketFormatter.encodeJob(listOf(ticket, ticket.copy(id = "k2", title = "Second")), s) { "d" }
+        assertTrue(two is TicketFormatter.PrintJob.Batches && two.batches.size == 2)
+        val one = TicketFormatter.encodeJob(listOf(ticket), s) { "d" }
+        assertTrue(one is TicketFormatter.PrintJob.Bytes)
+    }
+
     private fun countSeq(hay: ByteArray, needle: ByteArray): Int { var n = 0; var i = 0; while (true) { val j = hay.copyOfRange(i, hay.size).indexOf(needle); if (j < 0) return n; n++; i += j + needle.size } }
 
     @Test
