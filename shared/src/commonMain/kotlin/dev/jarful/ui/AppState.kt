@@ -298,39 +298,6 @@ class AppState(val store: Store, val scope: CoroutineScope, var strings: Strings
         }
     }
 
-    /** Runs the MXW01 darkness probe: each variant in its own BLE session; results shown like the diagnostics. */
-    fun probeDarkness() {
-        val s = data.settings.printer
-        if (s.bluetoothAddress.isBlank() || printing) return
-        printing = true
-        scope.launch {
-            val report = StringBuilder()
-            if (s.protocol == dev.jarful.model.PrintProtocol.CATPRINTER) {
-                report.appendLine("GB01 darkness probe")
-                val jobs = TicketFormatter.catProbeJobs()
-                for ((i, entry) in jobs.withIndex()) {
-                    val (name, bytes) = entry
-                    showToast("${name.take(1)} / ${jobs.size} …")
-                    val r = withContext(Dispatchers.Default) { printer.send(s, bytes) }
-                    report.appendLine("$name: ${if (r is PrintResult.Ok) "sent" else "error " + (r as PrintResult.Error).message}")
-                    if (i < jobs.lastIndex) kotlinx.coroutines.delay(4000)
-                }
-            } else {
-                report.appendLine("MXW01 darkness probe")
-                val jobs = TicketFormatter.mxw01ProbeJobs()
-                for ((i, entry) in jobs.withIndex()) {
-                    val (name, plan) = entry
-                    showToast("${name.take(1)} / ${jobs.size} …")
-                    val r = withContext(Dispatchers.Default) { runCatching { dev.jarful.platform.sendBlePlan(s.bluetoothAddress, plan, 15_000, 512) } }
-                    report.appendLine("$name: ${if (r.isSuccess) "sent; replies=" + r.getOrDefault(emptyList()).joinToString(" ").ifBlank { "none" } else "error " + (r.exceptionOrNull()?.message ?: "?")}")
-                    if (i < jobs.lastIndex) kotlinx.coroutines.delay(3000)
-                }
-            }
-            printing = false
-            diagnosis = report.toString()
-        }
-    }
-
     var diagnosis by mutableStateOf<String?>(null)
     var diagnosing by mutableStateOf(false)
 

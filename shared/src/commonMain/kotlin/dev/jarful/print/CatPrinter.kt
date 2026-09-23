@@ -55,7 +55,7 @@ object CatPrinter {
     }
 
     /** Full print job: header, one packet per row, paper feed, footer (FR-9.2). [speed] (0xBD) is sent only when given. */
-    fun encode(bmp: MonoBitmap, feedLines: Int, energy: Int = Density.CAT_ENERGY, quality: Int = 0x33, speed: Int? = null, drawingMode: Int = 0x00): ByteArray {
+    fun encode(bmp: MonoBitmap, feedLines: Int, energy: Int = Density.CAT_ENERGY, quality: Int = Density.CAT_QUALITY, speed: Int? = Density.CAT_SPEED, drawingMode: Int = 0x00): ByteArray {
         val parts = ArrayList<ByteArray>()
         parts += packet(CMD_GET_DEV_STATE, byteArrayOf(0x00))
         parts += packet(CMD_SET_QUALITY, byteArrayOf(quality.toByte()))
@@ -72,26 +72,5 @@ object CatPrinter {
         val out = ByteArray(total); var off = 0
         for (p in parts) { p.copyInto(out, off); off += p.size }
         return out
-    }
-
-    /**
-     * Darkness probe (temporary diagnostic) for GB01-family printers: each variant is one complete job with
-     * its label stacked above the sample, so the user can report which one prints darkest.
-     */
-    fun variantJobs(sample: MonoBitmap, label: (String) -> MonoBitmap): List<Pair<String, ByteArray>> {
-        fun stacked(tag: String): MonoBitmap {
-            val l = label(tag); val rows = (l.rows.toList() + sample.rows.toList()).toTypedArray()
-            return MonoBitmap(WIDTH, rows.size, rows)
-        }
-        return listOf(
-            "A energy 0x2EE0 (baseline)" to encode(stacked("A"), 1, 0x2EE0),
-            "B energy 0x4E20" to encode(stacked("B"), 1, 0x4E20),
-            "C energy 0x7530" to encode(stacked("C"), 1, 0x7530),
-            "D energy 0xA028" to encode(stacked("D"), 1, 0xA028),
-            "E energy 0xFFFF" to encode(stacked("E"), 1, 0xFFFF),
-            "F energy 0x2EE0 + quality 0x35" to encode(stacked("F"), 1, 0x2EE0, quality = 0x35),
-            "G energy 0x2EE0 + speed 0x0A" to encode(stacked("G"), 1, 0x2EE0, speed = 0x0A),
-            "H energy 0x4E20 + quality 0x35 + speed 0x0A" to encode(stacked("H"), 1, 0x4E20, quality = 0x35, speed = 0x0A),
-        )
     }
 }
