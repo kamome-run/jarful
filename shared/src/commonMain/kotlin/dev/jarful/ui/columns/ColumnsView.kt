@@ -18,6 +18,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.platform.testTag
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.DragHandle
+import dev.jarful.ui.common.rememberReorderState
+import dev.jarful.ui.common.reorderHandle
+import dev.jarful.ui.common.reorderItem
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -148,12 +156,21 @@ private fun TaskColumn(state: AppState, index: Int, modifier: Modifier, compact:
             Row(Modifier.fillMaxWidth().padding(end = 4.dp), horizontalArrangement = Arrangement.End) { ColumnMenu(state, parentId, menu, { menu = it }) }
         }
         DsDivider()
-        LazyColumn(Modifier.weight(1f)) {
+        val listState = rememberLazyListState()
+        val reorder = rememberReorderState(listState, keys = { tasks.map { it.id } }) { from, to ->
+            val moving = tasks.getOrNull(from) ?: return@rememberReorderState
+            val target = tasks.getOrNull(to) ?: return@rememberReorderState
+            state.store.moveTaskTo(moving.id, TaskTree.childrenOf(state.data.tasks, parentId).indexOfFirst { it.id == target.id })
+        }
+        val canAdd = TaskTree.canAddChild(state.data.tasks, parentId)
+        LazyColumn(Modifier.weight(1f), state = listState) {
             items(tasks, key = { it.id }) { t ->
-                TaskRow(state, t, index, selected = t.id == selectedId, focusedColumn = focused, compact = compact)
+                TaskRow(state, t, index, selected = t.id == selectedId, focusedColumn = focused, compact = compact, modifier = Modifier.reorderItem(reorder, t.id), handle = Modifier.reorderHandle(reorder, t.id))
             }
             item {
-                if (state.addingIn == parentId) {
+                if (!canAdd) {
+                    Text(s.depthLimitHint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(12.dp))
+                } else if (state.addingIn == parentId) {
                     NewTaskField(state, parentId)
                 } else {
                     DsButton(onClick = { state.focusedColumn = index; state.startAdd(parentId) }, kind = ButtonKind.Subtle, modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
@@ -176,7 +193,7 @@ private fun ColumnMenu(state: AppState, parentId: String?, open: Boolean, setOpe
         DsMenu(expanded = open, onDismissRequest = { setOpen(false) }) {
             DsMenuItem(s.columnToToday, icon = Icons.Default.Today, onClick = { setOpen(false); state.ticketizeColumn(parentId) })
             DsMenuItem(s.printColumn, icon = Icons.Default.Print, onClick = { setOpen(false); state.print(PrintTarget.Column(parentId)) })
-            if (parentId != null) {
+            if (parentId != null && TaskTree.canAddChild(state.data.tasks, parentId)) {
                 DsMenuItem(s.pasteLines, icon = Icons.Default.Add, onClick = { setOpen(false); state.breakDownTaskId = parentId })
             }
         }
@@ -185,7 +202,7 @@ private fun ColumnMenu(state: AppState, parentId: String?, open: Boolean, setOpe
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun TaskRow(state: AppState, t: Task, column: Int, selected: Boolean, focusedColumn: Boolean, compact: Boolean) {
+private fun TaskRow(state: AppState, t: Task, column: Int, selected: Boolean, focusedColumn: Boolean, compact: Boolean, modifier: Modifier = Modifier, handle: Modifier = Modifier) {
     val s = LocalStrings.current
     val (openKids, totalKids) = TaskTree.childCounts(state.data.tasks, t.id)
     val todayTicket = state.data.tickets.any { it.taskId == t.id && it.date == state.todayIso() }
@@ -202,7 +219,7 @@ private fun TaskRow(state: AppState, t: Task, column: Int, selected: Boolean, fo
         else -> MaterialTheme.colorScheme.onSurface
     }
     Column(
-        Modifier.fillMaxWidth()
+        modifier.fillMaxWidth()
             .combinedClickable(
                 onClick = {
                     if (compact) {
@@ -217,16 +234,17 @@ private fun TaskRow(state: AppState, t: Task, column: Int, selected: Boolean, fo
     ) {
         DsListItem(
             containerColor = bg, contentColor = fg,
-            leading = { DsCheckbox(checked = t.done, onCheckedChange = { state.toggleDone(t.id) }, enabled = t.id != INBOX_ID) },
+            leading = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (t.id != INBOX_ID) Icon(Icons.Default.DragHandle, s.dragToReorder, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = handle.size(24.dp).testTag("drag:${t.id}"))
+                    DsCheckbox(checked = t.done, onCheckedChange = { state.toggleDone(t.id) }, enabled = t.id != INBOX_ID)
+                }
+            },
             headline = {
                 if (state.renamingId == t.id) {
                     Row { RenameField(state, t) }
                 } else {
-                    Text(
-                        t.title,
-                        textDecoration = if (t.done) TextDecoration.LineThrough else null,
-                        maxLines = 2, overflow = TextOverflow.Ellipsis,
-                    )
+                    Text(t.title, textDecoration = if (t.done) TextDecoration.LineThrough else null)
                 }
             },
             supporting = if (staleTicket) {
@@ -258,13 +276,15 @@ private fun TaskRow(state: AppState, t: Task, column: Int, selected: Boolean, fo
 private fun TaskMenu(state: AppState, t: Task, column: Int, open: Boolean, dismiss: () -> Unit) {
     val s = LocalStrings.current
     DsMenu(expanded = open, onDismissRequest = dismiss) {
-        DsMenuItem(s.newSubtask, icon = Icons.Default.Add, onClick = { dismiss(); state.select(column, t.id); state.startAddChildOfSelection() })
+        val canAddChild = TaskTree.canAddChild(state.data.tasks, t.id)
+        if (canAddChild) DsMenuItem(s.newSubtask, icon = Icons.Default.Add, onClick = { dismiss(); state.select(column, t.id); state.startAddChildOfSelection() })
         if (t.id != INBOX_ID) {
+            DsMenuItem(s.duplicate, icon = Icons.Default.ContentCopy, onClick = { dismiss(); state.duplicateTaskId = t.id })
             DsMenuItem(s.toToday, icon = Icons.Default.Today, onClick = { dismiss(); state.ticketize(t.id) })
             DsMenuItem(s.printTask, icon = Icons.Default.Print, onClick = { dismiss(); state.print(PrintTarget.Task(t.id)) })
         }
         DsMenuItem(s.estimate + " / " + s.timebox, onClick = { dismiss(); state.detailTaskId = t.id })
-        DsMenuItem(s.pasteLines, onClick = { dismiss(); state.breakDownTaskId = t.id })
+        if (canAddChild) DsMenuItem(s.pasteLines, onClick = { dismiss(); state.breakDownTaskId = t.id })
         DsMenuItem(s.rename, onClick = { dismiss(); state.select(column, t.id); state.renamingId = t.id })
         DsMenuItem(s.moveUp, onClick = { dismiss(); state.store.moveTask(t.id, -1) })
         DsMenuItem(s.moveDown, onClick = { dismiss(); state.store.moveTask(t.id, +1) })
@@ -282,6 +302,8 @@ private fun NewTaskField(state: AppState, parentId: String?) {
     var text by remember { mutableStateOf("") }
     val fr = remember { FocusRequester() }
     LaunchedEffect(Unit) { fr.requestFocus() }
+    // A task created here sits at depth 0 (root) or parent depth + 1; it may get children only below the great-grandchild level.
+    val childAllowed = (if (parentId == null) 0 else TaskTree.depth(state.data.tasks, parentId) + 1) < TaskTree.MAX_DEPTH
     fun commit(child: Boolean) {
         if (text.isBlank()) { if (!child) state.cancelEdit(); return }
         state.commitAdd(parentId, text, child)
@@ -304,8 +326,8 @@ private fun NewTaskField(state: AppState, parentId: String?) {
             modifier = Modifier.weight(1f).focusRequester(fr).onPreviewKeyEvent { e ->
                 if (e.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
                 when (e.key) {
-                    Key.Tab -> { commit(true); true }
-                    Key.Enter, Key.NumPadEnter -> { commit(e.isShiftPressed); true }
+                    Key.Tab -> { commit(childAllowed); true }
+                    Key.Enter, Key.NumPadEnter -> { commit(e.isShiftPressed && childAllowed); true }
                     Key.Escape -> { state.cancelEdit(); true }
                     else -> false
                 }

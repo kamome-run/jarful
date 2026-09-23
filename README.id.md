@@ -40,7 +40,7 @@ menjadi aplikasi untuk Android (termasuk Chromebook dan laptop ChromeOS/Android 
 | Pecah tugas menjadi **tugas mikro 2–5 menit** supaya putaran sering berulang | Tugas berjenjang dalam **kolom berdampingan**; `Tab` langsung menambah subtugas |
 | Satu sticky note = satu tugas; setelah selesai **diremas dan dimasukkan ke stoples bening** | Menyelesaikan "tiket hari ini" memutar **animasi meremas + suara kertas + getaran** dan bola kertas jatuh ke stoples |
 | Mulai hari dengan kebiasaan mudah; **siapkan hari esok pada malam sebelumnya** | **Rutinitas** per hari membuat tiket esok otomatis setelah jam persiapan (bawaan 21:00) |
-| Saat sadar sedang menunda, tulis **3–5 tugas berikutnya** lalu mulai | `Ctrl+K` **Fokus ulang**: satu tugas per baris → langsung jadi tiket → yang pertama mulai berjalan |
+| Saat sadar sedang menunda, tulis **3–5 tugas berikutnya** lalu mulai | `Ctrl+K` **Fokus ulang**: satu tugas per baris → langsung jadi tiket di tab Hari ini |
 | Tugas yang tak bisa dipecah **dipecah berdasarkan waktu** ("10 menit saja") | Tiket dengan batas waktu menghitung mundur; di akhir pilih "selesaikan / +5 menit / pecah" |
 | Tumpukan pekerjaan (ribuan email) jadi "**semua yang baru + N yang lama, setiap hari**" | **Rutinitas kuota** (penghitung +1, selesai saat target tercapai) |
 | **Printer termal** menghilangkan hambatan | Mencetak lewat Bluetooth Classic / Bluetooth LE / COM / TCP dengan **ESC/POS, TSPL, atau CPCL**, satu tiket per struk |
@@ -125,13 +125,13 @@ Untuk mencopot: **Settings → Apps → Installed apps → Jarful**. Berkas data
 
 ## 5. Pertama kali dibuka dan alur harian
 
-1. **Atur rutinitas** (tab Rutinitas): tulis kebiasaan pagi yang mudah dari atas ke bawah (membuat kopi, membuka jendela…). Aktifkan hari per rutinitas; untuk kebiasaan berjumlah seperti "proses 10 email", isi angkanya sebagai **kuota**.
-2. **Disiapkan malam sebelumnya**: membuka aplikasi setelah jam "Siapkan hari esok pukul" (bawaan 21:00) membuat tiket rutinitas untuk besok. Pagi hari, tiket hari ini dibuat jika belum ada.
-3. **Pecah tugas** (tab Kolom): buat tugas besar ("Bersihkan rumah") di kolom kiri, pilih lalu tekan `Tab` (atau "Tambah subtugas") untuk menambah "Dapur", "Kamar mandi"… di kolom berikutnya, lalu pecah lagi sampai **2–5 menit** ("Cuci piring"). Tugas yang terbuka lebih dari 3 hari menampilkan saran "pecah lebih kecil".
+1. **Atur rutinitas** (tab Rutinitas): tulis kebiasaan pagi yang mudah dari atas ke bawah (membuat kopi, membuka jendela…). Aktifkan hari per rutinitas; untuk kebiasaan berjumlah seperti "proses 10 email", isi angkanya sebagai **kuota**. Rutinitas dikelompokkan di bawah **judul kategori**; seret pegangan ≡ untuk mengurutkan (menyeret ke judul lain mengubah kategorinya), **duplikat** rutinitas dengan jumlah tertentu, atau **pilih beberapa** lalu aktifkan / nonaktifkan sekaligus.
+2. **Disiapkan malam sebelumnya**: membuka aplikasi setelah jam "Siapkan hari esok pukul" (bawaan 21:00) membuat tiket rutinitas untuk besok. Pagi hari, tiket hari ini dibuat jika belum ada. Untuk **mencetak malam ini tiket besok pagi**, pakai "Cetak untuk tanggal…" di tab Rutinitas dan pilih besok.
+3. **Pecah tugas** (tab Kolom): buat tugas besar ("Bersihkan rumah") di kolom kiri, pilih lalu tekan `Tab` (atau "Tambah subtugas") untuk menambah "Dapur", "Kamar mandi"… di kolom berikutnya, lalu pecah lagi sampai **2–5 menit** ("Cuci piring"). Tugas yang terbuka lebih dari 3 hari menampilkan saran "pecah lebih kecil". Hierarki sampai **tingkat cicit** (empat kolom). Seret pegangan ≡ untuk mengurutkan baris, dan pakai **Duplikat** di menu untuk menyalin tugas beserta subtugasnya sebanyak yang diinginkan. Judul panjang ditampilkan dalam beberapa baris.
 4. **Buat tiket hari ini**: pilih tugas lalu tekan `T`; untuk seluruh kolom tekan `Shift+T` (atau menu kolom). Tiket muncul sebagai kartu mirip struk di tab Hari ini.
 5. **Cetak dan tempel** (opsional): `Ctrl+P` mencetak semua tiket hari ini; sobek lalu **tempel di papan tulis putih dengan magnet**.
-6. **Kerjakan → selesaikan**: **Mulai** menampilkan waktu berjalan (hitung mundur jika ada batas waktu). Tekan **Selesai** (atau geser kartu ke kanan): kartu meremas dan jatuh ke stoples dengan suara dan getaran. Copot tiket kertasnya, remas, dan masukkan ke stoples sungguhan.
-7. **Saat tersadar sedang menunda**: `Ctrl+K` (⚡ Fokus ulang), tulis 3–5 tugas berikutnya satu per baris lalu tekan **Mulai**. Langsung jadi tiket dan yang pertama mulai berjalan.
+6. **Kerjakan → selesaikan**: tekan **Selesai** (atau geser kartu ke kanan): kartu meremas dan jatuh ke stoples dengan suara dan getaran. Copot tiket kertasnya, remas, dan masukkan ke stoples sungguhan.
+7. **Saat tersadar sedang menunda**: `Ctrl+K` (⚡ Fokus ulang), tulis 3–5 tugas berikutnya satu per baris lalu tekan **Mulai**. Langsung jadi tiket di tab Hari ini.
 8. **Statistik**: putaran per hari (90 hari), rekor beruntun, dan penyelesaian rutinitas.
 
 ## 6. Pengaturan printer (rinci)

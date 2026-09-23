@@ -40,7 +40,7 @@ en una app para Android (incluidos los Chromebook y los portátiles ChromeOS/And
 | Dividir las tareas en **microtareas de 2–5 minutos** para que el bucle se repita a menudo | Tareas jerárquicas en **columnas contiguas**; `Tab` añade una subtarea al instante |
 | Una nota = una tarea; al terminar, **se arruga y se echa a un frasco transparente** | Completar un «ticket de hoy» reproduce una **animación de arrugado + sonido de papel + vibración** y deja caer una bolita en el frasco |
 | Empezar el día con hábitos fáciles; **preparar el día siguiente la noche anterior** | Las **rutinas** por día de la semana generan los tickets de mañana tras la hora de preparación (21:00 por defecto) |
-| Al notar que procrastinas, escribir **las próximas 3–5 tareas** y empezar | `Ctrl+K` **Reenfocar**: una tarea por línea → tickets inmediatos → la primera se pone en marcha |
+| Al notar que procrastinas, escribir **las próximas 3–5 tareas** y empezar | `Ctrl+K` **Reenfocar**: una tarea por línea → tickets inmediatos en la pestaña Hoy |
 | Lo que no se puede dividir se **divide por tiempo** («solo 10 minutos») | Los tickets con bloque de tiempo hacen cuenta atrás; al final: «completar / +5 min / dividir» |
 | El atraso acumulado (miles de correos) pasa a ser «**todo lo nuevo + N antiguos, cada día**» | **Rutinas con cuota** (contador +1, se completa al llegar al objetivo) |
 | Una **impresora térmica** elimina la fricción | Imprime por Bluetooth Classic / Bluetooth LE / COM / TCP con **ESC/POS, TSPL o CPCL**, un ticket por recibo |
@@ -125,13 +125,13 @@ Para desinstalar: **Configuración → Aplicaciones → Aplicaciones instaladas 
 
 ## 5. Primer inicio y flujo diario
 
-1. **Configura las rutinas** (pestaña Rutinas): enumera de arriba abajo hábitos matutinos fáciles (preparar café, abrir la ventana…). Activa los días por rutina; para hábitos con recuento como «procesar 10 correos», introduce el número como **cuota**.
-2. **Preparado la noche anterior**: abrir la app después de la hora «Preparar mañana a las» (21:00 por defecto) genera los tickets de rutina de mañana. Por la mañana se crean los de hoy si faltan.
-3. **Divide las tareas** (pestaña Columnas): crea una tarea grande («Limpiar la casa») en la columna izquierda, selecciónala y pulsa `Tab` (o «Añadir subtarea») para añadir «Cocina», «Baño»… en la columna siguiente, y sigue dividiendo hasta piezas de **2–5 minutos** («Fregar los platos»). Las tareas abiertas más de 3 días muestran un aviso para dividirlas más.
+1. **Configura las rutinas** (pestaña Rutinas): enumera de arriba abajo hábitos matutinos fáciles (preparar café, abrir la ventana…). Activa los días por rutina; para hábitos con recuento como «procesar 10 correos», introduce el número como **cuota**. Las rutinas se agrupan bajo **encabezados de categoría**; arrastra el asa ≡ para reordenar (arrastrar a otro encabezado cambia la categoría), **duplica** una rutina indicando el número de copias, o **selecciona varias** y actívalas o desactívalas a la vez.
+2. **Preparado la noche anterior**: abrir la app después de la hora «Preparar mañana a las» (21:00 por defecto) genera los tickets de rutina de mañana. Por la mañana se crean los de hoy si faltan. Para **imprimir esta noche los tickets de mañana por la mañana**, usa «Imprimir para una fecha…» en la pestaña Rutinas y elige mañana.
+3. **Divide las tareas** (pestaña Columnas): crea una tarea grande («Limpiar la casa») en la columna izquierda, selecciónala y pulsa `Tab` (o «Añadir subtarea») para añadir «Cocina», «Baño»… en la columna siguiente, y sigue dividiendo hasta piezas de **2–5 minutos** («Fregar los platos»). Las tareas abiertas más de 3 días muestran un aviso para dividirlas más. La jerarquía llega hasta el **nivel de bisnieto** (cuatro columnas). Arrastra el asa ≡ para reordenar las filas y usa **Duplicar** en el menú para copiar una tarea con sus subtareas tantas veces como quieras. Los títulos largos se muestran en varias líneas.
 4. **Crea los tickets de hoy**: selecciona una tarea y pulsa `T`; para toda una columna, `Mayús+T` (o el menú de la columna). Aparecen como tarjetas tipo recibo en la pestaña Hoy.
 5. **Imprime y cuelga** (opcional): `Ctrl+P` imprime todos los tickets de hoy; córtalos y **fíjalos a la pizarra con imanes**.
-6. **Hazlo → completa**: **Iniciar** muestra el tiempo transcurrido (cuenta atrás si hay bloque de tiempo). Pulsa **Hecho** (o desliza la tarjeta a la derecha): se arruga y cae en el frasco con sonido y vibración. Despega el ticket de papel, arrúgalo y échalo al frasco real.
-7. **Cuando te pilles procrastinando**: `Ctrl+K` (⚡ Reenfocar), escribe las próximas 3–5 tareas, una por línea, y pulsa **Empezar**. Se convierten en tickets al instante y la primera arranca.
+6. **Hazlo → completa**: pulsa **Hecho** (o desliza la tarjeta a la derecha): se arruga y cae en el frasco con sonido y vibración. Despega el ticket de papel, arrúgalo y échalo al frasco real.
+7. **Cuando te pilles procrastinando**: `Ctrl+K` (⚡ Reenfocar), escribe las próximas 3–5 tareas, una por línea, y pulsa **Empezar**. Se convierten en tickets al instante en la pestaña Hoy.
 8. **Estadísticas**: ciclos por día (90 días), racha y cumplimiento de rutinas.
 
 ## 6. Configuración de la impresora (detallada)
