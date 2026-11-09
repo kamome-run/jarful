@@ -81,9 +81,9 @@ object TicketFormatter {
     fun renderTicket(t: Ticket, paper: PaperWidth, dateLabel: String): MonoBitmap =
         renderTextBitmap(ticketLines(t, dateLabel), widthPx = paper.dots, paddingPx = 8)
 
-    /** Cat printers are always 384 px wide regardless of the configured paper width. */
+    /** Pocket printers have a fixed print head width regardless of the paper setting. */
     private fun renderFor(t: Ticket, s: PrinterSettings, dateLabel: String): MonoBitmap =
-        if (s.protocol == PrintProtocol.CATPRINTER) renderTextBitmap(ticketLines(t, dateLabel), widthPx = CatPrinter.WIDTH, paddingPx = 8)
+        if (s.protocol == PrintProtocol.CATPRINTER || s.protocol == PrintProtocol.PHOMEMO_M02) renderTextBitmap(ticketLines(t, dateLabel), widthPx = CatPrinter.WIDTH, paddingPx = 8)
         else renderTicket(t, s.paperWidth, dateLabel)
 
     /** A print job: a byte stream for stream transports, or a multi-step BLE plan (MXW01). */
@@ -100,7 +100,7 @@ object TicketFormatter {
             val bitmaps = tickets.map { t -> renderTextBitmap(ticketLines(t, dateLabel(t)) + TextLine("", 0f), widthPx = Mxw01.WIDTH, paddingPx = 8) }
             return PrintJob.Ble(Mxw01.plan(stack(bitmaps), s.feedLines))
         }
-        if (s.protocol == PrintProtocol.CATPRINTER && tickets.size > 1) {
+        if ((s.protocol == PrintProtocol.CATPRINTER || s.protocol == PrintProtocol.PHOMEMO_M02) && tickets.size > 1) {
             return PrintJob.Batches(tickets.map { t -> encodeTicket(t, s, dateLabel(t)) })
         }
         return PrintJob.Bytes(encodeAll(tickets, s, dateLabel))
@@ -133,6 +133,14 @@ object TicketFormatter {
     }
 
     fun encodeBitmap(bmp: MonoBitmap, s: PrinterSettings): ByteArray = when (s.protocol) {
+        // M02: use the printer's supported raster/feed commands, without generic
+        // receipt-printer heating or cutter commands. Reference: vivier/phomemo-tools,
+        // cups/filter/rastertopm02_t02.py (255-row bands, ESC d feed).
+        PrintProtocol.PHOMEMO_M02 -> {
+            require(bmp.width == 384) { "M02 requires a 384px bitmap" }
+            EscPos().init().alignCenter().raster(bmp, bandRows = 255)
+                .raw(0x1B, 0x64, s.feedLines.coerceIn(0, 255)).bytes()
+        }
         PrintProtocol.ESCPOS_RASTER -> EscPos(s.charset).init().maxDensity().alignCenter().raster(bmp).feed(s.feedLines).also { if (s.cutEnabled) it.partialCut() }.bytes()
         PrintProtocol.ESCPOS_BITIMAGE -> EscPos(s.charset).init().maxDensity().alignCenter().bitImage(bmp).feed(s.feedLines).also { if (s.cutEnabled) it.partialCut() }.bytes()
         PrintProtocol.TSPL -> Tspl.label(bmp, s.paperWidth.mm, s.labelHeightMm, s.labelGapMm)
@@ -163,7 +171,7 @@ object TicketFormatter {
             if (s.cutEnabled) e.partialCut()
             return e.bytes()
         }
-        val width = if (s.protocol == PrintProtocol.CATPRINTER) CatPrinter.WIDTH else s.paperWidth.dots
+        val width = if (s.protocol == PrintProtocol.CATPRINTER || s.protocol == PrintProtocol.PHOMEMO_M02) CatPrinter.WIDTH else s.paperWidth.dots
         val bmp = renderTextBitmap(
             listOf(
                 TextLine("Jarful", 40f, bold = true, center = true),

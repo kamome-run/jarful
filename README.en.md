@@ -189,11 +189,12 @@ Paper width is **58 mm (384 dots)** or **80 mm (576 dots)**. Output always uses 
 5. Jarful → Settings → Thermal printer → **Serial / COM** → pick `COMx` → **Test print**.
 6. "PORT_OPEN_FAILED" means another program holds the port (vendor utility) or the printer is off; close it and power-cycle the printer.
 
-### 6.5b Windows 11 — Bluetooth LE (GB01-family pocket printers)
+### 6.5b Windows 11 — Bluetooth LE (Phomemo M02 / GB01 family)
 
-1. Pair the printer once in **Settings → Bluetooth & devices → Add device → Bluetooth** so Windows knows it (LE printers usually need no PIN).
-2. Jarful → Settings → Thermal printer → **Bluetooth LE (GATT)** → 🔄 → pick the printer → protocol **Cat printer (GB01/GT01/MX06)** → **Test print**.
-3. The first print takes 2–5 s to start Windows PowerShell. If it fails, paste the **Diagnose connection** report into an issue.
+1. Turn on the printer and PC Bluetooth, and disconnect phone printing apps. Prior Windows pairing is not required.
+2. Jarful → Settings → Thermal printer → **Bluetooth LE (GATT)** → 🔄. After a six-second scan, select the printer (for example `Mr.in_M02`). Select its LE entry rather than copying a Classic/COM address, which may differ.
+3. For M02 select **Phomemo M02 (384px)** → **Test print**. For GB01-family printers select **Cat printer (GB01/GT01/MX06)**. The Cat printer protocol does not work with M02.
+4. A missing cached device triggers a scan and connection retry. If it still fails, check power and phone connections, then include the **Diagnose connection** report in an issue.
 
 > BLE on Windows uses a bundled PowerShell script calling the built-in Windows Bluetooth LE API; nothing extra to install.
 
