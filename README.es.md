@@ -300,7 +300,7 @@ La impresión ráster funciona en todos los idiomas (se elige una fuente adecuad
 ./gradlew :desktopApp:run
 ```
 
-Requisitos: JDK 17 y el SDK de Android (API 35). Consulta [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md);
+Requisitos: JDK 25 y el SDK de Android (API 36). Consulta [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md);
 la especificación está en [docs/SPEC.md](docs/SPEC.md) y las notas de los artículos en [docs/SOURCES.md](docs/SOURCES.md) (en japonés).
 
 ## 14. Licencia y aviso

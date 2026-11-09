@@ -300,7 +300,7 @@ Bluetooth-принтер спершу спаруйте в **Налаштуван
 ./gradlew :desktopApp:run
 ```
 
-Вимоги: JDK 17 та Android SDK (API 35). Див. [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md);
+Вимоги: JDK 25 та Android SDK (API 36). Див. [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md);
 специфікація — [docs/SPEC.md](docs/SPEC.md), конспект статей — [docs/SOURCES.md](docs/SOURCES.md) (японською).
 
 ## 14. Ліцензія та застереження

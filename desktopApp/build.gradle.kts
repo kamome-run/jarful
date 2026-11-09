@@ -1,4 +1,5 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.kotlinJvm)
@@ -7,14 +8,19 @@ plugins {
 }
 
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(25)
+    compilerOptions { jvmTarget.set(JvmTarget.JVM_25) }
 }
 
 dependencies {
     implementation(project(":shared"))
     implementation(compose.desktop.currentOs)
     implementation(libs.kotlinx.coroutines.swing)
-    testImplementation(libs.kotlin.test)
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.kotlin.testJunit5)
+    // Gradle 9 no longer supplies test framework runtime dependencies implicitly.
+    testRuntimeOnly(libs.junit.jupiter.engine)
+    testRuntimeOnly(libs.junit.platform.launcher)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.kotlinx.serialization.json)
     @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
@@ -24,11 +30,14 @@ dependencies {
 tasks.withType<Test> {
     useJUnitPlatform()
     systemProperty("java.awt.headless", "true")
+    jvmArgs("--enable-native-access=ALL-UNNAMED")
 }
 
 compose.desktop {
     application {
         mainClass = "dev.jarful.desktop.MainKt"
+        // Skiko and jSerialComm load native libraries on JDK 25.
+        jvmArgs += "--enable-native-access=ALL-UNNAMED"
 
         nativeDistributions {
             targetFormats(TargetFormat.Msi, TargetFormat.Exe)

@@ -307,7 +307,7 @@ Raster printing works in every language (a suitable font is chosen per line; Ara
 ./gradlew :desktopApp:run
 ```
 
-Requirements: JDK 17 and the Android SDK (API 35). See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md);
+Requirements: JDK 25 and the Android SDK (API 36). See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md);
 the specification is [docs/SPEC.md](docs/SPEC.md) and the article notes are [docs/SOURCES.md](docs/SOURCES.md) (Japanese).
 
 ## 14. License and disclaimer

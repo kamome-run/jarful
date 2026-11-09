@@ -298,7 +298,7 @@
 ./gradlew :desktopApp:run
 ```
 
-المتطلبات: JDK 17 و Android SDK (API 35). انظر [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)؛
+المتطلبات: JDK 25 و Android SDK (API 36). انظر [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)؛
 المواصفات في [docs/SPEC.md](docs/SPEC.md) وملاحظات المقالات في [docs/SOURCES.md](docs/SOURCES.md) (باليابانية).
 
 ## 14. الرخصة وإخلاء المسؤولية

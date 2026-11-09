@@ -300,7 +300,7 @@ ChromeOS 安裝 Google Play 以外的 APK 有兩種方式。
 ./gradlew :desktopApp:run
 ```
 
-需求：JDK 17、Android SDK（API 35）。詳見 [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)；
+需求：JDK 25、Android SDK（API 36）。詳見 [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)；
 規格書在 [docs/SPEC.md](docs/SPEC.md)，參考文章摘要在 [docs/SOURCES.md](docs/SOURCES.md)（日文）。
 
 ## 14. 授權與免責聲明

@@ -16,15 +16,23 @@ jarful/
 
 ## 必要なもの
 
-- JDK 17
-- Android SDK（`platforms;android-35`, `build-tools;35.0.0`）。`local.properties` に `sdk.dir` を書くか `ANDROID_HOME` を設定。
+- **JDK 25**（推奨: Eclipse Temurin 25 の最新パッチ）。`JAVA_HOME` をそのインストール先に設定する。Gradle 実行、Kotlin/Java コンパイル、テスト、Windows 配布物の作成はすべて JDK 25 を使い、JDK 17 のインストールは不要。
+- Android SDK（`platforms;android-36`, `build-tools;35.0.0`）。`local.properties` に `sdk.dir` を書くか `ANDROID_HOME` を設定。
 - Windows インストーラ（MSI/EXE）の作成は Windows 上でのみ可能（jpackage の制約）。CI が生成します。
+
+Windows で必要な SDK の取得から検証まで進めるには、通信可能な通常の PowerShell で次を実行する。インストール済みの Temurin JDK 25 を検出し、Android SDK がなければ公式コマンドラインツールを SHA-256 検証後に展開する。SDK のライセンスは `sdkmanager` の画面で確認する。
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/Verify-Jdk25.ps1
+```
+
+`-JdkHome` と `-AndroidSdk` で既存のインストール先も指定できる。`-CheckOnly` はダウンロードやビルドをせず設定だけ確認する。実行ログは `build/jdk25-support/verification.log`、Gradle キャッシュは `build/jdk25-gradle-cache` に保存される。完了するとテスト・Android APK・Windows アプリと MSI/EXE が生成される。Jarful のインストールや保存データの変更は行わない。
 
 ## よく使うコマンド
 
 | 目的 | コマンド |
 |------|----------|
-| 単体テスト | `./gradlew :shared:desktopTest` |
+| 単体・デスクトップテスト | `./gradlew :shared:desktopTest :desktopApp:test` |
 | Windows BLE ヘルパー回帰テスト（実機不要） | `powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/Test-WindowsBle.ps1` |
 | Android debug APK | `./gradlew :androidApp:assembleDebug` |
 | Android release APK（未署名） | `./gradlew :androidApp:assembleRelease` |
@@ -33,6 +41,8 @@ jarful/
 | Windows MSI/EXE | `./gradlew :desktopApp:packageMsi :desktopApp:packageExe`（Windows 上） |
 
 ## 設計メモ
+
+- **ビルド環境**: Gradle 9.3.1 / Kotlin 2.3.21 / Compose Multiplatform 1.10.3 / Android Gradle Plugin 8.13.2。全モジュールで `jvmToolchain(25)` を指定し、CI も JDK 25 を使用する。デスクトップの生成コード・同梱ランタイムは Java 25。Android は同じ JDK 25 で Java 17 互換のバイトコードを生成し、D8 で Android 用に変換する。`JVM_17` / `VERSION_17` は出力形式の指定であり、JDK 17 を取得する指定ではない。Android の target SDK は 35 を維持する。
 
 - **状態**: `Store` が `StateFlow<AppData>` を持ち、すべての変更は `mutate {}` を通る。150ms デバウンスで JSON に原子的書き込み。Undo はスナップショット方式（最大 50）。
 - **UI 状態**: `AppState`（選択パス、フォーカス列、ダイアログ、コンボ、瓶の投入シグナル）。
