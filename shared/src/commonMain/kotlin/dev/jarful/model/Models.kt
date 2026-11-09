@@ -116,6 +116,8 @@ enum class PrintProtocol(val label: String, val raster: Boolean) {
     CATPRINTER("Cat printer (GB01/GT01/MX06)", true),
     /** Newer cat printers (MXW01, X5h…): `22 21` control packets on AE01, raw rows on AE03, replies on AE02. BLE only. */
     CATPRINTER_MXW01("Cat printer MXW01 (AE03 data)", true),
+    /** M02 uses 384-dot ESC/POS raster bands (at most 255 rows) and ESC d paper feed. */
+    PHOMEMO_M02("Phomemo M02 (384px)", true),
 }
 
 @Serializable

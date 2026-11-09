@@ -25,6 +25,7 @@ jarful/
 | 目的 | コマンド |
 |------|----------|
 | 単体テスト | `./gradlew :shared:desktopTest` |
+| Windows BLE ヘルパー回帰テスト（実機不要） | `powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/Test-WindowsBle.ps1` |
 | Android debug APK | `./gradlew :androidApp:assembleDebug` |
 | Android release APK（未署名） | `./gradlew :androidApp:assembleRelease` |
 | デスクトップ起動 | `./gradlew :desktopApp:run` |

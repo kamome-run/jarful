@@ -190,11 +190,12 @@ Bluetooth プリンターは **ChromeOS 側の設定 → Bluetooth** でペア�
 5. Jarful → 設定 → サーマルプリンター → **Serial / COM** → 一覧から `COMx` を選択 → **テスト印刷**。
 6. 「PORT_OPEN_FAILED」が出る場合は、他のアプリ（専用ユーティリティ等）がポートを掴んでいないか確認し、プリンターの電源を入れ直してください。
 
-### 6.5b Windows 11 — Bluetooth LE（GB01 系ポケットプリンター向け）
+### 6.5b Windows 11 — Bluetooth LE（Phomemo M02 / GB01 系）
 
-1. **設定 → Bluetooth とデバイス → デバイスの追加 → Bluetooth** でプリンターを一度ペアリングします（Windows に機器を認識させるため。LE 機器は PIN 不要のことが多い）。
-2. Jarful → 設定 → サーマルプリンター → **Bluetooth LE (GATT)** → 🔄 → プリンターを選択 → プロトコル **Cat printer (GB01/GT01/MX06)** → **テスト印刷**。
-3. 初回は Windows PowerShell の起動に 2〜5 秒かかります。エラーが出た場合は **接続診断** の結果を Issue に貼ってください。
+1. プリンターの電源と PC の Bluetooth をオンにし、スマートフォンの印刷アプリとの接続を切ります。Windows での事前ペアリングは不要です。
+2. Jarful → 設定 → サーマルプリンター → **Bluetooth LE (GATT)** → 🔄。約 6 秒のスキャン後、一覧からプリンターを選択します。M02 は `Mr.in_M02` 等の名前です。Classic / COM のアドレスと LE のアドレスが異なる場合があるため、一覧から選び直してください。
+3. M02 はプロトコル **Phomemo M02 (384px)** を選び、**テスト印刷**。GB01 系は **Cat printer (GB01/GT01/MX06)** を選びます。M02 は Cat printer では印刷できません。
+4. `DEVICE_NOT_FOUND` の場合も短いスキャン後に接続を再試行します。解決しない場合は電源・スマートフォンとの接続を確認し、**接続診断** の結果を Issue に貼ってください。
 
 > Windows の BLE は、アプリに同梱した PowerShell スクリプトから Windows 標準の Bluetooth LE API を呼び出しています。追加のインストールは不要です。
 

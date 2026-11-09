@@ -26,6 +26,31 @@ class PrintEncodingTest {
     private fun b(vararg v: Int) = ByteArray(v.size) { v[it].toByte() }
 
     @Test
+    fun phomemoM02Uses255RowBandsAndEscDFeed() {
+        val rows = Array(256) { y -> ByteArray(48) { x -> (y + x).toByte() } }
+        val settings = PrinterSettings(protocol = PrintProtocol.PHOMEMO_M02, feedLines = 3, cutEnabled = true)
+        val bytes = TicketFormatter.encodeBitmap(MonoBitmap(384, 256, rows), settings)
+        assertContentEquals(b(0x1B, 0x40, 0x1B, 0x61, 1, 0x1D, 0x76, 0x30, 0, 48, 0, 255, 0), bytes.copyOfRange(0, 13))
+        assertContentEquals(rows.take(255).flatMap { it.toList() }.toByteArray(), bytes.copyOfRange(13, 13 + 255 * 48))
+        val second = 13 + 255 * 48
+        assertContentEquals(b(0x1D, 0x76, 0x30, 0, 48, 0, 1, 0), bytes.copyOfRange(second, second + 8))
+        assertContentEquals(rows.last(), bytes.copyOfRange(second + 8, second + 56))
+        assertContentEquals(b(0x1B, 0x64, 3), bytes.takeLast(3).toByteArray())
+        assertEquals(5 + 16 + 256 * 48 + 3, bytes.size)
+    }
+
+    @Test
+    fun phomemoM02Keeps384DotWidthAndSeparateLabels() {
+        val settings = PrinterSettings(protocol = PrintProtocol.PHOMEMO_M02, paperWidth = PaperWidth.MM80)
+        val testPage = TicketFormatter.encodeTestPage(settings)
+        assertContentEquals(b(0x1D, 0x76, 0x30, 0, 48, 0), testPage.copyOfRange(5, 11))
+        val job = TicketFormatter.encodeJob(listOf(ticket, ticket.copy(id = "k2")), settings) { "d" }
+        assertTrue(job is TicketFormatter.PrintJob.Batches && job.batches.size == 2)
+        val first = (job as TicketFormatter.PrintJob.Batches).batches.first()
+        assertContentEquals(b(0x1D, 0x76, 0x30, 0, 48, 0), first.copyOfRange(5, 11))
+    }
+
+    @Test
     fun escposTextOrderAndCut() { // AC-7
         val bytes = TicketFormatter.encodeTicketText(ticket, PaperWidth.MM58, PrinterCharset.UTF8, "2026-09-22 (Tue)", feedLines = 3, cut = true)
         val init = bytes.indexOf(b(0x1B, 0x40)); val center = bytes.indexOf(b(0x1B, 0x61, 1)); val dbl = bytes.indexOf(b(0x1D, 0x21, 0x11))

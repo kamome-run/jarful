@@ -144,12 +144,13 @@ ADHD 傾向のある人が「先延ばし」を減らし、毎日安定してタ
 
 - FR-9.1 **接続方式（トランスポート）** を以下から選択できる。
   - (a) **Bluetooth Classic（SPP / RFCOMM, UUID 00001101-0000-1000-8000-00805F9B34FB）**: Android / Chromebook。ペアリング済み機器一覧から選択する。Android 12 以降は `BLUETOOTH_CONNECT` 権限を実行時に要求する。
-  - (d) **Bluetooth LE（GATT）**: Android / Chromebook。約 4 秒のスキャンとペアリング済み LE 機器の一覧から選択する。接続後に MTU 512 を要求し、既知のプリンター用キャラクタリスティック（FF02, AE01, 2AF1, ISSC 49535343-8841-…, BEF8D6C9-…, Nordic UART 6E400002-…）を優先し、無ければ書き込み可能な最初のキャラクタリスティックを用いる。書き込みは MTU−3 バイト以下に分割し、Write Without Response の場合は 12ms 間隔で送る。Android 12 以降は `BLUETOOTH_SCAN`（`neverForLocation`）、それ以前は `ACCESS_FINE_LOCATION` をスキャン時に要求する。Windows では JVM に BLE API がないため、アプリに同梱した PowerShell スクリプト（Windows PowerShell 5.1 から WinRT の `Windows.Devices.Bluetooth` を呼ぶ）を子プロセスとして実行して GATT 書き込みを行う。機器一覧は Windows が把握している（ペアリング済み／検出済み）BLE 機器、書き込みは 20 バイト単位。通知の待ち受けは行わない（GB01 系は不要）。
+  - (d) **Bluetooth LE（GATT）**: Android / Chromebook。約 4 秒のスキャンとペアリング済み LE 機器の一覧から選択する。接続後に MTU 512 を要求し、既知のプリンター用キャラクタリスティック（FF02, AE01, 2AF1, ISSC 49535343-8841-…, BEF8D6C9-…, Nordic UART 6E400002-…）を優先し、無ければ書き込み可能な最初のキャラクタリスティックを用いる。書き込みは MTU−3 バイト以下に分割し、Write Without Response の場合は 12ms 間隔で送る。Android 12 以降は `BLUETOOTH_SCAN`（`neverForLocation`）、それ以前は `ACCESS_FINE_LOCATION` をスキャン時に要求する。Windows では JVM に BLE API がないため、アプリに同梱した PowerShell スクリプト（Windows PowerShell 5.1 から WinRT の `Windows.Devices.Bluetooth` を呼ぶ）を子プロセスとして実行して GATT 書き込みを行う。機器一覧は約 6 秒のアクティブスキャンと既知機器を統合し、事前ペアリングを必須としない。アドレスからの取得が null の場合もスキャンし、検出したアドレス種別（Public / Random）で再試行する。Classic / COM のアドレスとは区別し、別の機器へ自動接続しない。書き込みは 20 バイト単位。通知の待ち受けは行わない（GB01 系は不要）。
   - (b) **シリアル COM ポート**: Windows 11。Bluetooth 設定で SPP 機器に割り当てられた仮想 COM ポート（例: `COM5`）を一覧から選択する。
   - (c) **TCP/IP（既定ポート 9100）**: ネットワークプリンター用。Android / Windows 共通。
 - FR-9.2 **印刷プロトコル（コマンド体系）** を以下から選択できる。既定は「ESC/POS ラスター」。
   - `ESC/POS テキスト`: プリンター内蔵フォントで文字を送る（`ESC @`, `ESC t n` によるコードページ選択, `FS &` による 2 バイト文字モード, `ESC a`, `GS !`, `ESC E`）。文字コードは UTF-8 / Shift_JIS / Big5 / GB18030 / CP437 / CP850 / Windows-1252 / CP858 / CP852 / Windows-1250 / CP866 / Windows-1251 / CP864 / Windows-1256 / Windows-1258 から選ぶ。該当フォント内蔵機向け。
   - `ESC/POS ラスター`: アプリ側でチケットをモノクロ画像に描画し `GS v 0` で送る。日本語フォント非内蔵のポータブル機向け。
+  - `Phomemo M02 (384px)`: 幅 384 ドット固定、`ESC @` → `ESC a 1` → 最大 255 行単位の `GS v 0` → `ESC d <フィード行数>`。M02 非対応の汎用加熱設定・カット命令を送らず、本体の濃度を用いる。複数枚は独立したジョブにする。形式の参照: [phomemo-tools の M02 CUPS フィルター](https://github.com/vivier/phomemo-tools/blob/master/cups/filter/rastertopm02_t02.py)。
   - `ESC/POS ビットイメージ`: 同じ画像を `ESC * 33`（24 ドット密度）で 24 行ずつ送る。`GS v 0` 非対応の旧機向け。
   - `TSPL`: ラベルプリンター向け。`SIZE` / `GAP` / `CLS` / `BITMAP` / `PRINT` で 1 チケット = 1 ラベル。
   - `CPCL`: ラベルプリンター向け。`! 0 200 200 <h> 1` / `EG` / `FORM` / `PRINT`。
@@ -167,7 +168,7 @@ ADHD 傾向のある人が「先延ばし」を減らし、毎日安定してタ
 - FR-9.11 **接続の堅牢化と診断**:
   - Classic は「SPP secure → SPP insecure → RFCOMM ch.1 → RFCOMM ch.1 insecure」の順に接続を試み、すべて失敗した場合は各方式のエラーをまとめて返す。ペアリングされていない機器は `NOT_PAIRED` で即時に失敗する。
   - Bluetooth 系トランスポートは、設定された方式（Classic / LE）で失敗した場合にもう一方を自動的に試し、成功した方式を設定に保存してトーストで知らせる（安価な機器は種別の見た目と実際の接続方式が食い違うため）。
-  - 設定画面の **接続診断** は、OS バージョン・権限状態・機器種別（CLASSIC / LE / DUAL）・ボンド状態・SDP の UUID 一覧と SPP の有無・各 Classic 方式の結果・GATT のサービスとキャラクタリスティック（プロパティと既知プリンター用の印）をテキストで表示し、コピーできる。Windows では非対応の旨を表示する。
+  - 設定画面の **接続診断** は、OS バージョン・権限状態・機器種別（CLASSIC / LE / DUAL）・ボンド状態・SDP の UUID 一覧と SPP の有無・各 Classic 方式の結果・GATT のサービスとキャラクタリスティック（プロパティと既知プリンター用の印）をテキストで表示し、コピーできる。Windows では COM 一覧・LE 機器・GATT 特性・選択した書き込み先を表示する。診断時に別プロトコルの試験パケットを送らない。既知 UUID であっても書き込み不可の特性は送信先から除外する。
 
 ### FR-10 キーボード主体の高速操作 [S3 P5]
 

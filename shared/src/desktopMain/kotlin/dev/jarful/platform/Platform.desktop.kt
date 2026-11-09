@@ -111,7 +111,7 @@ actual fun bleSupported(): Boolean = bleScript != null
 
 actual suspend fun listBleDevices(): List<PrinterEndpoint> = withContext(Dispatchers.IO) {
     runCatching {
-        runBle("list").lines().filter { it.contains('|') }.map { val (a, n) = it.split('|', limit = 2); PrinterEndpoint(a.trim(), n.trim()) }
+        runBle("list", timeoutMs = 60_000).lines().filter { it.contains('|') }.map { val (a, n) = it.split('|', limit = 2); PrinterEndpoint(a.trim(), n.trim()) }
             .distinctBy { it.id }.sortedBy { it.name }
     }.getOrDefault(emptyList())
 }
@@ -139,7 +139,7 @@ actual suspend fun diagnoseBluetooth(address: String): String = withContext(Disp
     if (!bleSupported()) return@withContext "Bluetooth diagnostics: BLE helper unavailable on this OS. Use a COM port (README 6.5) or TCP."
     val sb = StringBuilder("Jarful Bluetooth diagnostics (Windows, WinRT helper)\n")
     sb.appendLine("ports: " + runCatching { SerialPort.getCommPorts().joinToString { it.systemPortName + " " + it.descriptivePortName } }.getOrDefault("?"))
-    sb.append(runCatching { runBle("services", address) }.getOrElse { "le: error " + (it.message ?: "?") + "\n" })
+    sb.append(runCatching { runBle("services", address, timeoutMs = 90_000) }.getOrElse { "le: error " + (it.message ?: "?") + "\n" })
     sb.toString()
 }
 
