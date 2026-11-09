@@ -9,10 +9,14 @@ plugins {
 }
 
 kotlin {
+    jvmToolchain(25)
     androidTarget {
+        // Android's bytecode target is independent of the build JDK.
         compilerOptions { jvmTarget.set(JvmTarget.JVM_17) }
     }
-    jvm("desktop")
+    jvm("desktop") {
+        compilerOptions { jvmTarget.set(JvmTarget.JVM_25) }
+    }
 
     sourceSets {
         val desktopMain by getting
@@ -45,6 +49,10 @@ kotlin {
             implementation(libs.jserialcomm)
         }
     }
+}
+
+tasks.withType<Test>().configureEach {
+    jvmArgs("--enable-native-access=ALL-UNNAMED")
 }
 
 android {

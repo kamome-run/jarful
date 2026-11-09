@@ -300,7 +300,7 @@ Rasterdruck funktioniert in jeder Sprache (pro Zeile wird eine passende Schrift 
 ./gradlew :desktopApp:run
 ```
 
-Voraussetzungen: JDK 17 und Android SDK (API 35). Siehe [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md);
+Voraussetzungen: JDK 25 und Android SDK (API 36). Siehe [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md);
 die Spezifikation steht in [docs/SPEC.md](docs/SPEC.md), die Artikelnotizen in [docs/SOURCES.md](docs/SOURCES.md) (japanisch).
 
 ## 14. Lizenz und Hinweis

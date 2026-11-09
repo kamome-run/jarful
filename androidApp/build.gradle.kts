@@ -8,7 +8,9 @@ plugins {
 }
 
 kotlin {
+    jvmToolchain(25)
     androidTarget {
+        // D8 consumes Java 17-compatible bytecode, compiled with JDK 25.
         compilerOptions { jvmTarget.set(JvmTarget.JVM_17) }
     }
     sourceSets {

@@ -308,7 +308,7 @@ Chromebook や Google 製ノート PC のタッチパネル、タブレットで
 ./gradlew :desktopApp:run
 ```
 
-要件: JDK 17、Android SDK（API 35）。詳細は [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)。
+要件: JDK 25、Android SDK（API 36）。詳細は [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)。
 仕様書は [docs/SPEC.md](docs/SPEC.md)、参照記事の要約は [docs/SOURCES.md](docs/SOURCES.md)。
 
 ## 14. ライセンス・免責

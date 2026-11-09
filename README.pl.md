@@ -300,7 +300,7 @@ Druk rastrowy działa w każdym języku (dla każdego wiersza dobierana jest odp
 ./gradlew :desktopApp:run
 ```
 
-Wymagania: JDK 17 i Android SDK (API 35). Zobacz [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md);
+Wymagania: JDK 25 i Android SDK (API 36). Zobacz [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md);
 specyfikacja jest w [docs/SPEC.md](docs/SPEC.md), a notatki z artykułów w [docs/SOURCES.md](docs/SOURCES.md) (po japońsku).
 
 ## 14. Licencja i zastrzeżenia
