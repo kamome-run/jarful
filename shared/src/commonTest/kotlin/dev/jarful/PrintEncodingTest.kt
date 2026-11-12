@@ -172,7 +172,7 @@ class PrintEncodingTest {
         assertContentEquals(b(0x1B, 0x37, 0x07, 0xB0, 0x02), esc.copyOfRange(9, 14))
         val rows = arrayOf(ByteArray(48).also { it[0] = 0xC0.toByte() }) // pixels 0 and 1 black
         val plan = dev.jarful.print.Mxw01.plan(MonoBitmap(384, 1, rows), 0)
-        assertEquals(0xE0, plan[1].bytes[6].toInt() and 0xFF) // max intensity
+        assertEquals(0x5D, plan[1].bytes[6].toInt() and 0xFF) // vendor-default intensity (only value confirmed to print)
         assertEquals(0x00, plan[2].bytes[9].toInt() and 0xFF) // 1-bpp mode (the one known to print)
         assertEquals(48, plan[3].bytes.size)
         val gray = dev.jarful.print.Mxw01.plan(MonoBitmap(384, 1, rows), 0, gray = true)
