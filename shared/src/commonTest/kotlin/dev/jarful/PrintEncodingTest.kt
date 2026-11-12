@@ -153,7 +153,7 @@ class PrintEncodingTest {
         assertEquals(dev.jarful.print.CatPrinter.crc8(b(0x2C, 0x01, 0x30, 0x00)), req[10].toInt() and 0xFF)
         assertEquals(0xFF, req.last().toInt() and 0xFF)
         val bmp = MonoBitmap(384, 3, arrayOf(ByteArray(48), ByteArray(48).also { it[0] = 0x80.toByte() }, ByteArray(48)))
-        val plan = dev.jarful.print.Mxw01.plan(bmp, feedLines = 1)
+        val plan = dev.jarful.print.Mxw01.plan(bmp, feedLines = 1, gray = false)
         assertEquals(5, plan.size)
         assertEquals(dev.jarful.print.Mxw01.CHAR_CONTROL, plan[0].characteristic)
         assertEquals(dev.jarful.print.Mxw01.CHAR_NOTIFY, plan[0].awaitNotify)
@@ -166,18 +166,19 @@ class PrintEncodingTest {
     }
 
     @Test
-    fun densityMapsToEachProtocol() { // FR-9.10
-        assertEquals(0x5D, dev.jarful.print.Density.mxw01Intensity(2)); assertEquals(0xE0, dev.jarful.print.Density.mxw01Intensity(5))
-        assertEquals(0x2EE0, dev.jarful.print.Density.catEnergy(2))
-        assertEquals(0x80, dev.jarful.print.Density.escposGsK(3)); assertEquals(0x86, dev.jarful.print.Density.escposGsK(5)); assertEquals(0x7A, dev.jarful.print.Density.escposGsK(1))
-        assertContentEquals(b(0x1B, 0x40), EscPos().init().density(3).bytes()) // default level sends nothing
-        val dark = EscPos().init().density(5).bytes()
-        assertContentEquals(b(0x1D, 0x28, 0x4B, 0x02, 0x00, 0x31, 0x86), dark.copyOfRange(2, 9))
-        assertContentEquals(b(0x1B, 0x37, 0x07, 0xF0, 0x02), dark.copyOfRange(9, 14))
-        val plan = dev.jarful.print.Mxw01.plan(MonoBitmap(384, 1, arrayOf(ByteArray(48))), 0, dev.jarful.print.Density.mxw01Intensity(5))
-        assertEquals(0xE0, plan[1].bytes[6].toInt() and 0xFF)
-        val cat = dev.jarful.print.CatPrinter.encode(MonoBitmap(384, 1, arrayOf(ByteArray(48))), 0, dev.jarful.print.Density.catEnergy(5))
-        assertEquals(1, countSeq(cat, b(0x51, 0x78, 0xAF, 0x00, 0x02, 0x00, 0x28, 0xA0)))
+    fun alwaysPrintsAtMaximumDarkness() { // FR-9.10
+        val esc = EscPos().init().maxDensity().bytes()
+        assertContentEquals(b(0x1D, 0x28, 0x4B, 0x02, 0x00, 0x31, 0x86), esc.copyOfRange(2, 9))
+        assertContentEquals(b(0x1B, 0x37, 0x07, 0xB0, 0x02), esc.copyOfRange(9, 14))
+        val rows = arrayOf(ByteArray(48).also { it[0] = 0xC0.toByte() }) // pixels 0 and 1 black
+        val plan = dev.jarful.print.Mxw01.plan(MonoBitmap(384, 1, rows), 0)
+        assertEquals(0xE0, plan[1].bytes[6].toInt() and 0xFF) // max intensity
+        assertEquals(0x02, plan[2].bytes[9].toInt() and 0xFF) // 4-bpp mode
+        assertEquals(192, plan[3].bytes.size) // 384 px * 4 bit = 192 bytes per row
+        assertEquals(0xFF, plan[3].bytes[0].toInt() and 0xFF) // both nibbles black
+        assertEquals(0x00, plan[3].bytes[1].toInt() and 0xFF)
+        val cat = dev.jarful.print.CatPrinter.encode(MonoBitmap(384, 1, arrayOf(ByteArray(48))), 0, dev.jarful.print.Density.CAT_ENERGY)
+        assertEquals(1, countSeq(cat, b(0x51, 0x78, 0xAF, 0x00, 0x02, 0x00, 0x30, 0x75)))
     }
 
     private fun countSeq(hay: ByteArray, needle: ByteArray): Int { var n = 0; var i = 0; while (true) { val j = hay.copyOfRange(i, hay.size).indexOf(needle); if (j < 0) return n; n++; i += j + needle.size } }

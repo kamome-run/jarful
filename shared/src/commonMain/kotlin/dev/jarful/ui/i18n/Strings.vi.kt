@@ -55,5 +55,4 @@ val VI = Strings(
     syncHostRunning = "đang lắng nghe", syncHostError = { "Không thể khởi động máy chủ: $it" },
     syncError = { code -> when (code) { "UNREACHABLE" -> "Không kết nối được máy chủ (cùng Wi-Fi chưa? máy chủ đang chạy chưa?)"; "PIN_MISMATCH" -> "Sai mã PIN"; "VERSION_MISMATCH" -> "Phiên bản ứng dụng khác nhau"; "NO_PEER" -> "Chưa cấu hình máy chủ"; "BAD_RESPONSE" -> "Phản hồi không đọc được"; else -> code } },
     printerDiagnose = "Chẩn đoán kết nối", printerDiagnoseTitle = "Chẩn đoán Bluetooth", printerDiagnoseHint = "Hiển thị loại thiết bị, có SPP hay không, các dịch vụ GATT và kết quả của từng cách kết nối. Nếu không in được, hãy sao chép nội dung này và dán vào issue trên GitHub.", copy = "Sao chép", printSwitchedTransport = { "Đã chuyển cách kết nối sang $it" },
-    printDensity = "Độ đậm khi in", printDensityHint = "Tăng lên nếu bản in mờ (1 = nhạt, 5 = đậm). Quá đậm sẽ làm giấy chạy chậm.",
 )
