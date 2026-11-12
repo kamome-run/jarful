@@ -3,7 +3,9 @@ package dev.jarful.ui.today
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -31,12 +33,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
+import kotlin.math.roundToInt
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -68,6 +76,7 @@ fun TicketCard(state: AppState, ticket: Ticket, modifier: Modifier = Modifier, s
     var crumpling by remember(ticket.id) { mutableStateOf(false) }
     var menu by remember { mutableStateOf(false) }
     val isRunning = ticket.state == TicketState.RUNNING
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(crumpling) {
         if (crumpling) {
@@ -86,7 +95,32 @@ fun TicketCard(state: AppState, ticket: Ticket, modifier: Modifier = Modifier, s
 
     val tone = when { ticket.isDone -> CardTone.Muted; isRunning -> CardTone.Highlight; else -> CardTone.Default }
 
-    DsCard(modifier = modifier.fillMaxWidth().scale(scale.value).rotate(rotation.value).alpha(alpha.value), tone = tone) {
+    // Touch: swipe the card to the right (past 40% of its width) to complete it (NFR-CB touch).
+    val density = LocalDensity.current
+    var widthPx by remember { mutableStateOf(1f) }
+    val swipe = remember { Animatable(0f) }
+    val swipeModifier = if (ticket.isDone) Modifier else Modifier.pointerInput(ticket.id) {
+        detectHorizontalDragGestures(
+            onDragEnd = {
+                if (swipe.value > widthPx * 0.4f) { if (!crumpling) crumpling = true }
+                scope.launch { swipe.animateTo(0f, tween(200)) }
+            },
+            onDragCancel = { scope.launch { swipe.animateTo(0f, tween(200)) } },
+            onHorizontalDrag = { change, dragAmount ->
+                change.consume()
+                scope.launch { swipe.snapTo((swipe.value + dragAmount).coerceIn(0f, widthPx)) }
+            },
+        )
+    }
+
+    DsCard(
+        modifier = modifier.fillMaxWidth()
+            .onSizeChanged { widthPx = it.width.toFloat().coerceAtLeast(1f) }
+            .offset { IntOffset(swipe.value.roundToInt(), 0) }
+            .then(swipeModifier)
+            .scale(scale.value).rotate(rotation.value).alpha(alpha.value),
+        tone = tone,
+    ) {
         Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(

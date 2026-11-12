@@ -30,7 +30,7 @@ import kotlin.test.assertTrue
 class ScreenshotSmokeTest {
     private val out = File("build/screenshots").apply { mkdirs() }
 
-    private fun seededStore(): Store {
+    private fun seededStore(lang: dev.jarful.model.Language = dev.jarful.model.Language.JA): Store {
         val store = Store(null, TestScope(), JA.inbox)
         store.load()
         val house = store.addTask(null, "家の掃除")!!
@@ -41,7 +41,7 @@ class ScreenshotSmokeTest {
         store.addTask(null, "夕食を作る"); store.addTask(null, "旅行の計画")
         store.upsertRoutine(Routine(id = Ids.next("r"), title = "コーヒーを淹れる", category = "朝", estimateMin = 3, order = 0))
         store.upsertRoutine(Routine(id = Ids.next("r"), title = "メールを処理", category = "仕事", quotaTarget = 10, order = 1))
-        store.updateSettings { it.copy(onboardingDone = true, language = dev.jarful.model.Language.JA) }
+        store.updateSettings { it.copy(onboardingDone = true, language = lang) }
         store.regenerateToday()
         store.ticketizeColumn(kitchen.id)
         val first = store.data.value.tickets.first { it.title == "皿を洗う" }
@@ -51,8 +51,8 @@ class ScreenshotSmokeTest {
         return store
     }
 
-    private fun shoot(name: String, w: Int, h: Int, dark: Boolean = false, system: DesignSystem? = null) {
-        val store = seededStore()
+    private fun shoot(name: String, w: Int, h: Int, dark: Boolean = false, system: DesignSystem? = null, lang: dev.jarful.model.Language = dev.jarful.model.Language.JA) {
+        val store = seededStore(lang)
         ImageComposeScene(width = w, height = h, coroutineContext = Dispatchers.Unconfined).use { scene ->
             scene.setContent { JarfulApp(store, darkTheme = dark, designSystemOverride = system) }
             scene.render(1_000_000_000L)
@@ -82,6 +82,29 @@ class ScreenshotSmokeTest {
 
     @Test
     fun androidMaterialPhoneDark() = shoot("android-material-412x915-dark", 412, 915, dark = true, system = DesignSystem.MATERIAL)
+
+    @Test
+    fun arabicRtlLayout() = shoot("android-material-412x915-ar", 412, 915, system = DesignSystem.MATERIAL, lang = dev.jarful.model.Language.AR)
+
+    @Test
+    fun taiwaneseMandarinFluent() = shoot("windows-fluent-1280x800-zh-TW", 1280, 800, system = DesignSystem.FLUENT, lang = dev.jarful.model.Language.ZH_TW)
+
+    @Test
+    fun multilingualTicketsRasterize() {
+        val samples = listOf(
+            "ar" to Ticket(id = "1", date = "2026-09-23", category = "المطبخ", title = "غسل الأطباق (ضعها في غسالة الصحون فقط)", estimateMin = 5),
+            "ru" to Ticket(id = "2", date = "2026-09-23", category = "Кухня", title = "Помыть посуду", estimateMin = 5),
+            "vi" to Ticket(id = "3", date = "2026-09-23", category = "Bếp", title = "Rửa chén (chỉ cần xếp vào máy)", estimateMin = 5),
+            "zh-TW" to Ticket(id = "4", date = "2026-09-23", category = "廚房", title = "洗碗（放進洗碗機就好）", estimateMin = 5),
+            "pl" to Ticket(id = "5", date = "2026-09-23", category = "Kuchnia", title = "Zmyć naczynia (włożyć do zmywarki)", estimateMin = 5),
+        )
+        for ((lang, t) in samples) {
+            val bmp = TicketFormatter.renderTicket(t, PaperWidth.MM58, "2026-09-23")
+            val black = (0 until bmp.height).sumOf { y -> (0 until bmp.width).count { x -> (bmp.rows[y][x / 8].toInt() and (0x80 shr (x % 8))) != 0 } }
+            assertTrue(black > 500, "$lang ticket has almost no ink: $black")
+            ImageIO.write(toImage(bmp), "png", File(out, "ticket-raster-$lang.png"))
+        }
+    }
 
     @Test
     fun ticketRasterLooksRight() {
