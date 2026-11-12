@@ -114,6 +114,8 @@ enum class PrintProtocol(val label: String, val raster: Boolean) {
     CPCL("CPCL (label)", true),
     /** "Cat printer" pocket printers (GB01/GB02/GB03/GT01/MX05/MX06/YT01…): proprietary 0x51 0x78 packets over BLE AE01. */
     CATPRINTER("Cat printer (GB01/GT01/MX06)", true),
+    /** Newer cat printers (MXW01, X5h…): `22 21` control packets on AE01, raw rows on AE03, replies on AE02. BLE only. */
+    CATPRINTER_MXW01("Cat printer MXW01 (AE03 data)", true),
 }
 
 @Serializable

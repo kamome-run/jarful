@@ -159,6 +159,7 @@ Nie wiesz, który Bluetooth masz? Jeśli w ustawieniach Bluetooth systemu da si�
 | TSPL | Drukarki etykiet (wysokość etykiety i odstęp w mm) |
 | CPCL | Drukarki etykiet z CPCL |
 | Cat printer | Drukarki kieszonkowe 57 mm bez ESC/POS (rodzina GB01 / GT01 / MX06, sprzedawane z aplikacjami „iPrint” / „Fun Print”). Łączą się przez BLE |
+| Cat printer MXW01 | Nowsza generacja (rodzina MXW01 / X5h; diagnostyka pokazuje AE01–AE04). Tylko BLE |
 
 Szerokość papieru to **58 mm (384 punkty)** lub **80 mm (576 punktów)**. W drukarkach kieszonkowych bez obcinacza zostaw **Cut wyłączone**; 3–5 wierszy wysuwu to dobra wartość.
 

@@ -265,8 +265,8 @@ class AppState(val store: Store, val scope: CoroutineScope, var strings: Strings
         printing = true
         scope.launch {
             val result = withContext(Dispatchers.Default) {
-                val bytes = TicketFormatter.encodeAll(tickets, settings) { dateLabel(it.date) }
-                printer.send(settings, bytes)
+                val job = TicketFormatter.encodeJob(tickets, settings) { dateLabel(it.date) }
+                printer.send(settings, job)
             }
             printing = false
             when (result) {
@@ -280,7 +280,7 @@ class AppState(val store: Store, val scope: CoroutineScope, var strings: Strings
         val settings = data.settings.printer
         printing = true
         scope.launch {
-            val result = withContext(Dispatchers.Default) { printer.send(settings, TicketFormatter.encodeTestPage(settings)) }
+            val result = withContext(Dispatchers.Default) { printer.send(settings, TicketFormatter.encodeTestJob(settings)) }
             printing = false
             when (result) {
                 is PrintResult.Ok -> { adoptTransport(result.usedTransport); showToast(strings.printOk) }

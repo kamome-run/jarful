@@ -6,6 +6,7 @@ import dev.jarful.platform.bleSupported
 import dev.jarful.platform.bluetoothSupported
 import dev.jarful.platform.ensureBluetoothPermission
 import dev.jarful.platform.sendBle
+import dev.jarful.platform.sendBlePlan
 import dev.jarful.platform.sendBluetooth
 import dev.jarful.platform.sendRawTcp
 import dev.jarful.platform.sendSerial
@@ -18,6 +19,16 @@ sealed class PrintResult {
 
 /** Sends encoded bytes through the configured transport (FR-9.1, FR-9.7, FR-9.8). */
 class PrinterClient(private val timeoutMs: Int = 5_000, private val chunkSize: Int = 512) {
+    suspend fun send(s: PrinterSettings, job: TicketFormatter.PrintJob): PrintResult = when (job) {
+        is TicketFormatter.PrintJob.Bytes -> send(s, job.bytes)
+        is TicketFormatter.PrintJob.Ble -> try {
+            if (s.bluetoothAddress.isBlank()) PrintResult.Error("NO_DEVICE")
+            else if (!bleSupported()) PrintResult.Error("MXW01_REQUIRES_BLE")
+            else if (!ensureBluetoothPermission(scan = false)) PrintResult.Error("PERMISSION_DENIED")
+            else { sendBlePlan(s.bluetoothAddress, job.plan, timeoutMs.coerceAtLeast(15_000), chunkSize); PrintResult.Ok(PrinterTransport.BLUETOOTH_LE) }
+        } catch (e: Throwable) { PrintResult.Error(e.message ?: e::class.simpleName ?: "ERROR") }
+    }
+
     suspend fun send(s: PrinterSettings, bytes: ByteArray): PrintResult {
         return try {
             when (s.transport) {

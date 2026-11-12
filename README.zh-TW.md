@@ -159,6 +159,7 @@ ChromeOS 安裝 Google Play 以外的 APK 有兩種方式。
 | TSPL | 標籤機（以 mm 設定標籤高度與間距） |
 | CPCL | 使用 CPCL 的標籤機 |
 | 貓咪印表機 | 不支援 ESC/POS 的 57 mm 口袋印表機（GB01 / GT01 / MX06 系列，搭配「iPrint」「Fun Print」等 App 販售）。以 BLE 連線 |
+| 貓咪印表機 MXW01 | 上述的新世代機型（MXW01 / X5h 系列；連線診斷會列出 AE01〜AE04）。僅限 BLE |
 
 紙張寬度為 **58 mm（384 點）** 或 **80 mm（576 點）**。沒有裁刀的口袋印表機請把 **Cut 關閉**，進紙行數設 3〜5 即可。
 
