@@ -55,6 +55,16 @@ class StoreTest {
     }
 
     @Test
+    fun disablingARoutineRemovesItsOpenTicketForToday() { // FR-6 / user report
+        val s = store()
+        s.upsertRoutine(Routine(id = "r1", title = "Coffee")); s.upsertRoutine(Routine(id = "r2", title = "Mail"))
+        s.regenerateToday()
+        assertEquals(2, s.data.value.tickets.count { it.routineId != null })
+        s.upsertRoutine(s.data.value.routines.first { it.id == "r2" }.copy(enabled = false)); s.regenerateToday()
+        assertEquals(listOf("r1"), s.data.value.tickets.mapNotNull { it.routineId })
+    }
+
+    @Test
     fun refocusCreatesInboxTasksAtFront() { // FR-7
         val s = store()
         val t = s.addTask(null, "Later")!!; s.ticketize(t.id)
