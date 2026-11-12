@@ -258,9 +258,15 @@ class AppState(val store: Store, val scope: CoroutineScope, var strings: Strings
         estimateMin = t.estimateMin, timeboxMin = t.timeboxMin,
     )
 
+    /** What the top-bar print button prints: the visible column on the Columns screen, today's tickets elsewhere. */
+    fun printFromTopBar(wide: Boolean) {
+        if (!wide && tab == Tab.COLUMNS) print(PrintTarget.Column(parentIdForColumn(compactColumnIndex.coerceIn(0, columnCount - 1))))
+        else print(PrintTarget.Today)
+    }
+
     fun print(kind: PrintTarget) {
         val tickets = ticketsToPrint(kind)
-        if (tickets.isEmpty()) return
+        if (tickets.isEmpty()) { showToast(strings.nothingToPrint); return }
         val settings = data.settings.printer
         printing = true
         scope.launch {
