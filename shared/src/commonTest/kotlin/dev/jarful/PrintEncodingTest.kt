@@ -180,7 +180,12 @@ class PrintEncodingTest {
         val probe = dev.jarful.print.Mxw01.variantPlans(MonoBitmap(384, 1, rows)) { MonoBitmap(384, 1, arrayOf(ByteArray(48))) }
         assertEquals(8, probe.size); assertTrue(probe.all { it.second.size >= 4 })
         val cat = dev.jarful.print.CatPrinter.encode(MonoBitmap(384, 1, arrayOf(ByteArray(48))), 0, dev.jarful.print.Density.CAT_ENERGY)
-        assertEquals(1, countSeq(cat, b(0x51, 0x78, 0xAF, 0x00, 0x02, 0x00, 0x30, 0x75)))
+        assertEquals(1, countSeq(cat, b(0x51, 0x78, 0xAF, 0x00, 0x02, 0x00, 0xE0, 0x2E))) // known-good energy 0x2EE0
+        val withSpeed = dev.jarful.print.CatPrinter.encode(MonoBitmap(384, 1, arrayOf(ByteArray(48))), 0, 0x2EE0, quality = 0x35, speed = 0x0A)
+        assertEquals(1, countSeq(withSpeed, b(0x51, 0x78, 0xBD, 0x00, 0x01, 0x00, 0x0A)))
+        assertEquals(1, countSeq(withSpeed, b(0x51, 0x78, 0xA4, 0x00, 0x01, 0x00, 0x35)))
+        val catProbe = dev.jarful.print.CatPrinter.variantJobs(MonoBitmap(384, 1, arrayOf(ByteArray(48)))) { MonoBitmap(384, 1, arrayOf(ByteArray(48))) }
+        assertEquals(8, catProbe.size)
     }
 
     private fun countSeq(hay: ByteArray, needle: ByteArray): Int { var n = 0; var i = 0; while (true) { val j = hay.copyOfRange(i, hay.size).indexOf(needle); if (j < 0) return n; n++; i += j + needle.size } }
