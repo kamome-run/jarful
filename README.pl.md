@@ -40,7 +40,7 @@ w aplikację na Androida (w tym Chromebooki i laptopy Google z ChromeOS/Androide
 | Dzielić zadania na **mikrozadania po 2–5 minut**, aby pętla powtarzała się często | Hierarchia zadań w **kolumnach obok siebie**; `Tab` natychmiast dodaje podzadanie |
 | Jedna karteczka = jedno zadanie; po wykonaniu **zgnieć ją i wrzuć do przezroczystego słoika** | Zakończenie „biletu na dziś” odtwarza **animację zgniatania + szelest papieru + wibrację**, a do słoika wpada papierowa kulka |
 | Zaczynać dzień od łatwych nawyków; **przygotować jutro wieczorem** | **Rutyny** według dni tygodnia tworzą jutrzejsze bilety po godzinie przygotowania (domyślnie 21:00) |
-| Gdy zauważysz zwlekanie, zapisz **kolejne 3–5 zadań** i zacznij | `Ctrl+K` **Skup się**: jedno zadanie w wierszu → natychmiast bilety → pierwszy rusza |
+| Gdy zauważysz zwlekanie, zapisz **kolejne 3–5 zadań** i zacznij | `Ctrl+K` **Skup się**: jedno zadanie w wierszu → natychmiast bilety na karcie Dziś |
 | Zadania niepodzielne **dzieli się czasem** („tylko 10 minut”) | Bilety z blokiem czasu odliczają; na koniec: „zakończ / +5 min / podziel” |
 | Zaległości (tysiące e-maili) stają się „**wszystko nowe + N starych, codziennie**” | **Rutyny z limitem** (licznik +1, zakończenie po osiągnięciu celu) |
 | **Drukarka termiczna** usuwa tarcie | Druk przez Bluetooth Classic / Bluetooth LE / COM / TCP w **ESC/POS, TSPL lub CPCL**, jeden bilet na paragon |
@@ -125,13 +125,13 @@ Odinstalowanie: **Ustawienia → Aplikacje → Zainstalowane aplikacje → Jarfu
 
 ## 5. Pierwsze uruchomienie i rytm dnia
 
-1. **Ustaw rutyny** (karta Rutyny): wypisz od góry do dołu łatwe poranne nawyki (zaparzyć kawę, otworzyć okno…). Włącz dni tygodnia dla każdej rutyny; przy nawykach liczonych, jak „przetworzyć 10 e-maili”, wpisz liczbę jako **limit**.
-2. **Przygotowanie wieczorem**: otwarcie aplikacji po godzinie „Przygotuj jutro o” (domyślnie 21:00) tworzy jutrzejsze bilety rutyn. Rano powstają dzisiejsze, jeśli ich brakuje.
-3. **Dziel zadania** (karta Kolumny): utwórz duże zadanie („Sprzątanie domu”) w lewej kolumnie, zaznacz je i naciśnij `Tab` (albo „Dodaj podzadanie”), aby w następnej kolumnie dodać „Kuchnia”, „Łazienka”…, i dziel dalej do kawałków po **2–5 minut** („Zmyć naczynia”). Zadania otwarte ponad 3 dni pokazują podpowiedź „podziel dalej”.
+1. **Ustaw rutyny** (karta Rutyny): wypisz od góry do dołu łatwe poranne nawyki (zaparzyć kawę, otworzyć okno…). Włącz dni tygodnia dla każdej rutyny; przy nawykach liczonych, jak „przetworzyć 10 e-maili”, wpisz liczbę jako **limit**. Rutyny są pogrupowane pod **nagłówkami kategorii**; przeciągnij uchwyt ≡, aby zmienić kolejność (przeciągnięcie pod inny nagłówek zmienia kategorię), **duplikuj** rutynę z podaną liczbą kopii albo **zaznacz kilka** i włącz lub wyłącz je razem.
+2. **Przygotowanie wieczorem**: otwarcie aplikacji po godzinie „Przygotuj jutro o” (domyślnie 21:00) tworzy jutrzejsze bilety rutyn. Rano powstają dzisiejsze, jeśli ich brakuje. Aby **wieczorem wydrukować bilety na jutrzejszy poranek**, użyj „Drukuj na datę…” na karcie Rutyny i wybierz jutro.
+3. **Dziel zadania** (karta Kolumny): utwórz duże zadanie („Sprzątanie domu”) w lewej kolumnie, zaznacz je i naciśnij `Tab` (albo „Dodaj podzadanie”), aby w następnej kolumnie dodać „Kuchnia”, „Łazienka”…, i dziel dalej do kawałków po **2–5 minut** („Zmyć naczynia”). Zadania otwarte ponad 3 dni pokazują podpowiedź „podziel dalej”. Hierarchia sięga do **poziomu prawnuka** (cztery kolumny). Przeciągnij uchwyt ≡, aby zmienić kolejność wierszy, a poleceniem **Duplikuj** w menu skopiujesz zadanie wraz z podzadaniami dowolną liczbę razy. Długie tytuły są zawijane.
 4. **Utwórz dzisiejsze bilety**: zaznacz zadanie i naciśnij `T`; dla całej kolumny `Shift+T` (lub menu kolumny). Pojawią się jako karty w stylu paragonu na karcie Dziś.
 5. **Wydrukuj i przypnij** (opcjonalnie): `Ctrl+P` drukuje wszystkie dzisiejsze bilety; oderwij je i **przypnij magnesami do tablicy**.
-6. **Zrób → zakończ**: **Start** pokazuje upływający czas (przy bloku czasu — odliczanie). Naciśnij **Gotowe** (lub przesuń kartę w prawo): zgniata się i wpada do słoika z dźwiękiem i wibracją. Zdejmij papierowy bilet, zgnieć i wrzuć do prawdziwego słoika.
-7. **Gdy przyłapiesz się na zwlekaniu**: `Ctrl+K` (⚡ Skup się), zapisz kolejne 3–5 zadań po jednym w wierszu i naciśnij **Zacznij**. Od razu stają się biletami, a pierwszy rusza.
+6. **Zrób → zakończ**: naciśnij **Gotowe** (lub przesuń kartę w prawo): zgniata się i wpada do słoika z dźwiękiem i wibracją. Zdejmij papierowy bilet, zgnieć i wrzuć do prawdziwego słoika.
+7. **Gdy przyłapiesz się na zwlekaniu**: `Ctrl+K` (⚡ Skup się), zapisz kolejne 3–5 zadań po jednym w wierszu i naciśnij **Zacznij**. Od razu stają się biletami na karcie Dziś.
 8. **Statystyki**: pętle dziennie (90 dni), seria i realizacja rutyn.
 
 ## 6. Konfiguracja drukarki (szczegółowo)
