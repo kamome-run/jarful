@@ -149,3 +149,16 @@ class TaskTreeDepthAndCopyTest {
         assertEquals(listOf("A", "B", "C", "D"), TaskTree.childrenOf(back, null).map { it.title })
     }
 }
+
+class TaskTreeInboxPinTest {
+    @Test
+    fun moveToNeverPutsAnythingAboveTheInbox() {
+        val now = 1L
+        var tasks = listOf(Task(id = INBOX_ID, parentId = null, title = "Inbox", order = 0, createdAt = now, updatedAt = now))
+        for (n in listOf("A", "B")) { val (t, _) = TaskTree.add(tasks, null, n, now); tasks = t }
+        val b = TaskTree.childrenOf(tasks, null).last()
+        val out = TaskTree.moveTo(tasks, b.id, 0)
+        assertEquals(listOf("Inbox", "B", "A"), TaskTree.childrenOf(out, null).map { it.title })
+        assertEquals(tasks, TaskTree.moveTo(tasks, INBOX_ID, 2))
+    }
+}
