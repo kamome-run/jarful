@@ -57,7 +57,12 @@ actual suspend fun sendRawTcp(host: String, port: Int, bytes: ByteArray, timeout
 }
 
 actual fun bluetoothSupported(): Boolean = false
-actual suspend fun ensureBluetoothPermission(): Boolean = true
+actual fun bleSupported(): Boolean = false
+actual suspend fun ensureBluetoothPermission(scan: Boolean): Boolean = true
+actual suspend fun listBleDevices(): List<PrinterEndpoint> = emptyList()
+actual suspend fun sendBle(address: String, bytes: ByteArray, timeoutMs: Int, chunkSize: Int) {
+    throw UnsupportedOperationException("BLE_UNSUPPORTED_ON_DESKTOP")
+}
 actual suspend fun listBluetoothDevices(): List<PrinterEndpoint> = emptyList()
 actual suspend fun sendBluetooth(address: String, bytes: ByteArray, timeoutMs: Int, chunkSize: Int) {
     throw UnsupportedOperationException("BLUETOOTH_UNSUPPORTED_USE_SERIAL")
@@ -93,6 +98,13 @@ actual suspend fun sendSerial(portId: String, bytes: ByteArray, timeoutMs: Int, 
 
 actual fun encodeText(text: String, charsetName: String): ByteArray = text.toByteArray(Charset.forName(charsetName))
 
+/** Prefer breaking a line at the last space before [fit] (space-separated scripts); CJK breaks anywhere. */
+internal fun wordBoundary(text: String, fit: Int): Int {
+    if (fit >= text.length) return fit
+    val cut = text.lastIndexOf(' ', fit - 1)
+    return if (cut > 0 && fit - cut <= 24) cut + 1 else fit
+}
+
 actual fun renderTextBitmap(lines: List<TextLine>, widthPx: Int, paddingPx: Int): MonoBitmap {
     System.setProperty("java.awt.headless", "true")
     data class Placed(val text: String, val line: TextLine, val y: Int)
@@ -101,9 +113,8 @@ actual fun renderTextBitmap(lines: List<TextLine>, widthPx: Int, paddingPx: Int)
     val placed = ArrayList<Placed>()
     var y = paddingPx
     val inner = widthPx - paddingPx * 2
-    val allText = lines.joinToString("") { it.text }
-    val family = printerFontFamily(allText)
-    fun fontFor(l: TextLine) = Font(family, if (l.bold) Font.BOLD else Font.PLAIN, l.sizePx.toInt())
+    // Pick a font per line so a Japanese category and an Arabic title each get a font that covers their script.
+    fun fontFor(l: TextLine) = Font(printerFontFamily(l.text), if (l.bold) Font.BOLD else Font.PLAIN, l.sizePx.toInt())
     for (l in lines) {
         if (l.sizePx <= 0f) { placed.add(Placed("", l, y)); y += 8; continue }
         val fm = pg.getFontMetrics(fontFor(l))
@@ -112,8 +123,9 @@ actual fun renderTextBitmap(lines: List<TextLine>, widthPx: Int, paddingPx: Int)
         while (rest.isNotEmpty()) {
             var n = rest.length
             while (n > 1 && fm.stringWidth(rest.substring(0, n)) > inner) n--
-            placed.add(Placed(rest.substring(0, n), l, y + fm.ascent))
-            rest = rest.substring(n)
+            n = wordBoundary(rest, n)
+            placed.add(Placed(rest.substring(0, n).trimEnd(), l, y + fm.ascent))
+            rest = rest.substring(n).trimStart()
             y += lineH
         }
         y += 4
@@ -129,7 +141,12 @@ actual fun renderTextBitmap(lines: List<TextLine>, widthPx: Int, paddingPx: Int)
         if (p.line.sizePx <= 0f) { g.fillRect(paddingPx, p.y + 2, widthPx - paddingPx * 2, 2); continue }
         g.font = fontFor(p.line)
         val w = g.fontMetrics.stringWidth(p.text)
-        val x = if (p.line.center) (widthPx - w) / 2 else paddingPx
+        // Java2D drawString performs bidi reordering and Arabic shaping for complex scripts.
+        val x = when {
+            p.line.center -> (widthPx - w) / 2
+            p.line.rtl -> (widthPx - paddingPx) - w
+            else -> paddingPx
+        }
         g.drawString(p.text, x, p.y)
     }
     g.dispose()
@@ -146,24 +163,31 @@ actual fun renderTextBitmap(lines: List<TextLine>, widthPx: Int, paddingPx: Int)
     return MonoBitmap(widthPx, height, rows)
 }
 
+/** Preferred UI/print fonts per script family; the first one installed that covers the text wins (FR-9.4). */
 private val preferredPrinterFonts = listOf(
-    "Yu Gothic UI", "Yu Gothic", "Meiryo UI", "Meiryo", "MS Gothic", "MS UI Gothic", "BIZ UDGothic",
-    "Noto Sans JP", "Noto Sans CJK JP", "Source Han Sans JP", "IPAGothic", "IPAexGothic", "TakaoGothic", "VL Gothic",
-    "Hiragino Sans", "Hiragino Kaku Gothic ProN",
+    // Latin, Cyrillic, Vietnamese, Arabic (Windows system fonts first)
+    "Segoe UI", "Segoe UI Variable Text", "Arial", "Tahoma", "Noto Sans", "Noto Sans Arabic", "DejaVu Sans", "Liberation Sans",
+    // Japanese
+    "Yu Gothic UI", "Yu Gothic", "Meiryo UI", "Meiryo", "MS Gothic", "BIZ UDGothic", "Noto Sans JP", "Noto Sans CJK JP", "IPAGothic", "VL Gothic", "Hiragino Sans",
+    // Traditional Chinese (Taiwan)
+    "Microsoft JhengHei UI", "Microsoft JhengHei", "PMingLiU", "Noto Sans TC", "Noto Sans CJK TC", "PingFang TC",
+    // Simplified Chinese
+    "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans SC", "Noto Sans CJK SC",
 )
 
-@Volatile private var cachedFamily: String? = null
+private val familyCache = java.util.concurrent.ConcurrentHashMap<String, String>()
 
-/** Picks a font family that can display [text]; prefers Japanese-capable system fonts (FR-9.4). */
+/** Picks a font family that can display every character of [text]; cached per script signature. */
 fun printerFontFamily(text: String): String {
-    cachedFamily?.let { fam -> if (Font(fam, Font.PLAIN, 12).canDisplayUpTo(text) == -1) return fam }
+    val key = text.map { Character.UnicodeScript.of(it.code).name }.distinct().sorted().joinToString(",")
+    familyCache[key]?.let { return it }
     val ge = java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment()
     val available = ge.availableFontFamilyNames.toSet()
     val candidates = preferredPrinterFonts.filter { it in available } + Font.SANS_SERIF + Font.DIALOG
     val chosen = candidates.firstOrNull { Font(it, Font.PLAIN, 12).canDisplayUpTo(text) == -1 }
         ?: ge.allFonts.firstOrNull { it.canDisplayUpTo(text) == -1 }?.family
         ?: Font.SANS_SERIF
-    cachedFamily = chosen
+    familyCache[key] = chosen
     return chosen
 }
 

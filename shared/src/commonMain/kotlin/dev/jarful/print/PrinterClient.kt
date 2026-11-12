@@ -3,6 +3,7 @@ package dev.jarful.print
 import dev.jarful.model.PrinterSettings
 import dev.jarful.model.PrinterTransport
 import dev.jarful.platform.ensureBluetoothPermission
+import dev.jarful.platform.sendBle
 import dev.jarful.platform.sendBluetooth
 import dev.jarful.platform.sendRawTcp
 import dev.jarful.platform.sendSerial
@@ -25,6 +26,11 @@ class PrinterClient(private val timeoutMs: Int = 5_000, private val chunkSize: I
                     if (s.bluetoothAddress.isBlank()) return PrintResult.Error("NO_DEVICE")
                     if (!ensureBluetoothPermission()) return PrintResult.Error("PERMISSION_DENIED")
                     sendBluetooth(s.bluetoothAddress, bytes, timeoutMs, chunkSize)
+                }
+                PrinterTransport.BLUETOOTH_LE -> {
+                    if (s.bluetoothAddress.isBlank()) return PrintResult.Error("NO_DEVICE")
+                    if (!ensureBluetoothPermission(scan = false)) return PrintResult.Error("PERMISSION_DENIED")
+                    sendBle(s.bluetoothAddress, bytes, timeoutMs.coerceAtLeast(15_000), chunkSize)
                 }
                 PrinterTransport.SERIAL -> {
                     if (s.serialPort.isBlank()) return PrintResult.Error("NO_PORT")

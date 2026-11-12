@@ -13,13 +13,14 @@ class EscPos(private val charset: PrinterCharset = PrinterCharset.UTF8) {
 
     fun init(): EscPos = apply {
         raw(0x1B, 0x40) // ESC @
-        if (charset == PrinterCharset.SHIFT_JIS) raw(0x1C, 0x26) // FS & kanji mode
+        if (charset.codePage >= 0) raw(0x1B, 0x74, charset.codePage) // ESC t n: select code page
+        if (charset.kanji) raw(0x1C, 0x26) // FS &: 2-byte (kanji/hanzi) mode
     }
     fun alignCenter(): EscPos = apply { raw(0x1B, 0x61, 1) }
     fun alignLeft(): EscPos = apply { raw(0x1B, 0x61, 0) }
     fun doubleSize(on: Boolean): EscPos = apply { raw(0x1D, 0x21, if (on) 0x11 else 0x00) }
     fun bold(on: Boolean): EscPos = apply { raw(0x1B, 0x45, if (on) 1 else 0) }
-    fun text(s: String): EscPos = apply { raw(encodeText(s, charset.label)) }
+    fun text(s: String): EscPos = apply { raw(encodeText(s, charset.javaName)) }
     fun line(s: String = ""): EscPos = apply { text(s); raw(0x0A) }
     fun feed(n: Int): EscPos = apply { repeat(n.coerceAtLeast(0)) { raw(0x0A) } }
     fun partialCut(): EscPos = apply { raw(0x1D, 0x56, 66, 0) } // GS V 66 0
