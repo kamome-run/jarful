@@ -80,17 +80,23 @@ object TicketFormatter {
     fun renderTicket(t: Ticket, paper: PaperWidth, dateLabel: String): MonoBitmap =
         renderTextBitmap(ticketLines(t, dateLabel), widthPx = paper.dots, paddingPx = 8)
 
+    /** Cat printers are always 384 px wide regardless of the configured paper width. */
+    private fun renderFor(t: Ticket, s: PrinterSettings, dateLabel: String): MonoBitmap =
+        if (s.protocol == PrintProtocol.CATPRINTER) renderTextBitmap(ticketLines(t, dateLabel), widthPx = CatPrinter.WIDTH, paddingPx = 8)
+        else renderTicket(t, s.paperWidth, dateLabel)
+
     fun encodeBitmap(bmp: MonoBitmap, s: PrinterSettings): ByteArray = when (s.protocol) {
         PrintProtocol.ESCPOS_RASTER -> EscPos(s.charset).init().alignCenter().raster(bmp).feed(s.feedLines).also { if (s.cutEnabled) it.partialCut() }.bytes()
         PrintProtocol.ESCPOS_BITIMAGE -> EscPos(s.charset).init().alignCenter().bitImage(bmp).feed(s.feedLines).also { if (s.cutEnabled) it.partialCut() }.bytes()
         PrintProtocol.TSPL -> Tspl.label(bmp, s.paperWidth.mm, s.labelHeightMm, s.labelGapMm)
         PrintProtocol.CPCL -> Cpcl.label(bmp)
+        PrintProtocol.CATPRINTER -> CatPrinter.encode(bmp, s.feedLines)
         PrintProtocol.ESCPOS_TEXT -> error("not a bitmap protocol")
     }
 
     fun encodeTicket(t: Ticket, s: PrinterSettings, dateLabel: String): ByteArray =
         if (s.protocol == PrintProtocol.ESCPOS_TEXT) encodeTicketText(t, s.paperWidth, s.charset, dateLabel, s.feedLines, s.cutEnabled)
-        else encodeBitmap(renderTicket(t, s.paperWidth, dateLabel), s)
+        else encodeBitmap(renderFor(t, s, dateLabel), s)
 
     fun encodeAll(tickets: List<Ticket>, s: PrinterSettings, dateLabel: (Ticket) -> String): ByteArray {
         var out = ByteArray(0)
@@ -109,13 +115,14 @@ object TicketFormatter {
             if (s.cutEnabled) e.partialCut()
             return e.bytes()
         }
+        val width = if (s.protocol == PrintProtocol.CATPRINTER) CatPrinter.WIDTH else s.paperWidth.dots
         val bmp = renderTextBitmap(
             listOf(
                 TextLine("Jarful", 40f, bold = true, center = true),
                 TextLine("", 0f),
                 TextLine("Test print OK / テスト印刷", 26f),
-                TextLine("${s.protocol.label} / ${s.paperWidth.label} / ${s.paperWidth.dots}px", 20f),
-            ), s.paperWidth.dots, 8,
+                TextLine("${s.protocol.label} / ${s.paperWidth.label} / ${width}px", 20f),
+            ), width, 8,
         )
         return encodeBitmap(bmp, s)
     }

@@ -195,18 +195,41 @@ actual suspend fun listBluetoothDevices(): List<PrinterEndpoint> {
 }
 
 @Suppress("MissingPermission")
+private fun classicStrategies(device: android.bluetooth.BluetoothDevice): List<Pair<String, () -> android.bluetooth.BluetoothSocket>> = listOf(
+    "SPP secure" to { device.createRfcommSocketToServiceRecord(SPP_UUID) },
+    "SPP insecure" to { device.createInsecureRfcommSocketToServiceRecord(SPP_UUID) },
+    "RFCOMM channel 1" to { device.javaClass.getMethod("createRfcommSocket", Int::class.javaPrimitiveType).invoke(device, 1) as android.bluetooth.BluetoothSocket },
+    "RFCOMM channel 1 insecure" to { device.javaClass.getMethod("createInsecureRfcommSocket", Int::class.javaPrimitiveType).invoke(device, 1) as android.bluetooth.BluetoothSocket },
+)
+
+/** Connects with each strategy in turn; returns the socket or throws with every error collected. */
+@Suppress("MissingPermission")
+private fun connectClassic(a: BluetoothAdapter, device: android.bluetooth.BluetoothDevice, log: MutableList<String>? = null): android.bluetooth.BluetoothSocket {
+    val errors = ArrayList<String>()
+    for ((name, make) in classicStrategies(device)) {
+        runCatching { a.cancelDiscovery() }
+        Thread.sleep(150)
+        val socket = try { make() } catch (e: Throwable) { errors += "$name: create failed (${e.message ?: e::class.simpleName})"; log?.add(errors.last()); continue }
+        try {
+            socket.connect()
+            log?.add("$name: connected")
+            return socket
+        } catch (e: Throwable) {
+            errors += "$name: ${e.message ?: e::class.simpleName}"
+            log?.add(errors.last())
+            runCatching { socket.close() }
+        }
+    }
+    throw IllegalStateException(errors.joinToString("; "))
+}
+
+@Suppress("MissingPermission")
 actual suspend fun sendBluetooth(address: String, bytes: ByteArray, timeoutMs: Int, chunkSize: Int): Unit = withContext(Dispatchers.IO) {
     val a = adapter() ?: throw IllegalStateException("BLUETOOTH_UNAVAILABLE")
     if (!a.isEnabled) throw IllegalStateException("BLUETOOTH_OFF")
     val device = a.getRemoteDevice(address)
-    runCatching { a.cancelDiscovery() }
-    val socket = try {
-        device.createRfcommSocketToServiceRecord(SPP_UUID).also { it.connect() }
-    } catch (e: Exception) {
-        // Fallback for devices that do not advertise SPP correctly: channel 1 via reflection.
-        val m = device.javaClass.getMethod("createRfcommSocket", Int::class.javaPrimitiveType)
-        (m.invoke(device, 1) as android.bluetooth.BluetoothSocket).also { it.connect() }
-    }
+    if (device.bondState != android.bluetooth.BluetoothDevice.BOND_BONDED) throw IllegalStateException("NOT_PAIRED")
+    val socket = connectClassic(a, device)
     socket.use { s ->
         val out = s.outputStream
         var off = 0
@@ -218,6 +241,79 @@ actual suspend fun sendBluetooth(address: String, bytes: ByteArray, timeoutMs: I
         }
         Thread.sleep(300) // let the printer drain before closing
     }
+}
+
+@Suppress("MissingPermission")
+actual suspend fun diagnoseBluetooth(address: String): String = withContext(Dispatchers.IO) {
+    val sb = StringBuilder()
+    sb.appendLine("Jarful Bluetooth diagnostics")
+    sb.appendLine("Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT}) ${Build.MANUFACTURER} ${Build.MODEL}")
+    val a = adapter()
+    if (a == null) { sb.appendLine("adapter: none"); return@withContext sb.toString() }
+    sb.appendLine("adapter enabled: ${a.isEnabled}; classic=${bluetoothSupported()} le=${bleSupported()}")
+    sb.appendLine("permissions: connect=${Build.VERSION.SDK_INT < 31 || granted(Manifest.permission.BLUETOOTH_CONNECT)} scan=${Build.VERSION.SDK_INT < 31 || granted(Manifest.permission.BLUETOOTH_SCAN)} location=${granted(Manifest.permission.ACCESS_FINE_LOCATION)}")
+    if (!a.isEnabled) return@withContext sb.toString()
+    val device = a.getRemoteDevice(address)
+    val type = when (device.type) {
+        android.bluetooth.BluetoothDevice.DEVICE_TYPE_CLASSIC -> "CLASSIC (BR/EDR)"
+        android.bluetooth.BluetoothDevice.DEVICE_TYPE_LE -> "LE only"
+        android.bluetooth.BluetoothDevice.DEVICE_TYPE_DUAL -> "DUAL (BR/EDR + LE)"
+        else -> "UNKNOWN"
+    }
+    val bond = when (device.bondState) { android.bluetooth.BluetoothDevice.BOND_BONDED -> "BONDED"; android.bluetooth.BluetoothDevice.BOND_BONDING -> "BONDING"; else -> "NOT BONDED" }
+    sb.appendLine("device: ${device.name ?: "?"} [$address] type=$type bond=$bond")
+    runCatching { device.fetchUuidsWithSdp() }
+    Thread.sleep(2500)
+    val uuids = device.uuids?.map { it.uuid.toString() } ?: emptyList()
+    sb.appendLine("SDP uuids (${uuids.size}): ${if (uuids.isEmpty()) "none" else uuids.joinToString(", ")}")
+    sb.appendLine("has SPP (00001101): ${uuids.any { it.startsWith("00001101") }}")
+
+    if (device.bondState == android.bluetooth.BluetoothDevice.BOND_BONDED) {
+        val log = ArrayList<String>()
+        try { connectClassic(a, device, log).close(); sb.appendLine("classic: OK") } catch (e: Throwable) { sb.appendLine("classic: FAILED") }
+        log.forEach { sb.appendLine("  $it") }
+    } else sb.appendLine("classic: skipped (not paired)")
+
+    if (bleSupported()) {
+        val connected = java.util.concurrent.CountDownLatch(1)
+        val discovered = java.util.concurrent.CountDownLatch(1)
+        var status = -1
+        val cb = object : android.bluetooth.BluetoothGattCallback() {
+            override fun onConnectionStateChange(g: android.bluetooth.BluetoothGatt, st: Int, newState: Int) {
+                status = st
+                if (newState == android.bluetooth.BluetoothProfile.STATE_CONNECTED) connected.countDown() else { connected.countDown(); discovered.countDown() }
+            }
+            override fun onServicesDiscovered(g: android.bluetooth.BluetoothGatt, st: Int) { discovered.countDown() }
+        }
+        val gatt = device.connectGatt(ctx, false, cb, android.bluetooth.BluetoothDevice.TRANSPORT_LE)
+        if (gatt == null) sb.appendLine("le: connectGatt returned null") else try {
+            if (!connected.await(10, TimeUnit.SECONDS)) sb.appendLine("le: connect timeout")
+            else if (status != android.bluetooth.BluetoothGatt.GATT_SUCCESS) sb.appendLine("le: connect failed status=$status")
+            else {
+                gatt.discoverServices()
+                if (!discovered.await(10, TimeUnit.SECONDS)) sb.appendLine("le: discovery timeout")
+                else {
+                    sb.appendLine("le: connected, ${gatt.services.size} services")
+                    for (svc in gatt.services) {
+                        sb.appendLine("  service ${svc.uuid}")
+                        for (c in svc.characteristics) {
+                            val p = c.properties
+                            val props = buildList {
+                                if (p and android.bluetooth.BluetoothGattCharacteristic.PROPERTY_READ != 0) add("R")
+                                if (p and android.bluetooth.BluetoothGattCharacteristic.PROPERTY_WRITE != 0) add("W")
+                                if (p and android.bluetooth.BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE != 0) add("WNR")
+                                if (p and android.bluetooth.BluetoothGattCharacteristic.PROPERTY_NOTIFY != 0) add("N")
+                                if (p and android.bluetooth.BluetoothGattCharacteristic.PROPERTY_INDICATE != 0) add("I")
+                            }.joinToString("")
+                            val known = if (BLE_PRINTER_CHARACTERISTICS.contains(c.uuid)) " <- known printer characteristic" else ""
+                            sb.appendLine("    char ${c.uuid} [$props]$known")
+                        }
+                    }
+                }
+            }
+        } finally { runCatching { gatt.disconnect() }; runCatching { gatt.close() } }
+    }
+    sb.toString()
 }
 
 actual fun serialSupported(): Boolean = false

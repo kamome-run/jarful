@@ -54,4 +54,5 @@ val FR = Strings(
     syncAuto = "Synchronisation automatique (au lancement et toutes les 5 min)", syncNow = "Synchroniser maintenant", syncOk = "Synchronisé", syncFailed = { "Échec de la synchronisation : $it" }, syncLast = "Dernière synchronisation", syncNever = "jamais",
     syncHostRunning = "en écoute", syncHostError = { "Impossible de démarrer l'hôte : $it" },
     syncError = { code -> when (code) { "UNREACHABLE" -> "Hôte injoignable (même Wi-Fi ? hôte lancé ?)"; "PIN_MISMATCH" -> "PIN incorrect"; "VERSION_MISMATCH" -> "Versions d'application différentes"; "NO_PEER" -> "Aucun hôte configuré"; "BAD_RESPONSE" -> "Réponse illisible"; else -> code } },
+    printerDiagnose = "Diagnostiquer la connexion", printerDiagnoseTitle = "Diagnostic Bluetooth", printerDiagnoseHint = "Affiche le type d'appareil, la présence du SPP, les services GATT et le résultat de chaque méthode de connexion. Si l'impression échoue, copiez ce rapport dans un ticket GitHub.", copy = "Copier", printSwitchedTransport = { "Mode de connexion basculé sur $it" },
 )

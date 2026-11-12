@@ -158,6 +158,7 @@ Nie wiesz, który Bluetooth masz? Jeśli w ustawieniach Bluetooth systemu da si�
 | ESC/POS tekst | Druk wbudowaną czcionką drukarki. Dopasuj zestaw znaków (UTF-8 / Shift_JIS / Big5 / GB18030 / Windows-125x / CP8xx…) do drukarki |
 | TSPL | Drukarki etykiet (wysokość etykiety i odstęp w mm) |
 | CPCL | Drukarki etykiet z CPCL |
+| Cat printer | Drukarki kieszonkowe 57 mm bez ESC/POS (rodzina GB01 / GT01 / MX06, sprzedawane z aplikacjami „iPrint” / „Fun Print”). Łączą się przez BLE |
 
 Szerokość papieru to **58 mm (384 punkty)** lub **80 mm (576 punktów)**. W drukarkach kieszonkowych bez obcinacza zostaw **Cut wyłączone**; 3–5 wierszy wysuwu to dobra wartość.
 
@@ -281,6 +282,8 @@ Druk rastrowy działa w każdym języku (dla każdego wiersza dobierana jest odp
 | Brak portu COM w Windows | Dodaj port **wychodzący** jak w 6.5; sparuj ponownie |
 | Synchronizacja: „brak połączenia z hostem” | Ta sama sieć Wi-Fi? Aplikacja hosta otwarta? Zapora zezwoliła? |
 | Synchronizacja: „błędny PIN” | Wpisz ponownie PIN wyświetlany na ekranie ustawień hosta |
+| Paruje się, ale nigdy nie łączy (aplikacja producenta też nie) | Niektóre **drukarki tylko LE przestają się łączyć po sparowaniu w systemie**. Rozparuj w ustawieniach Bluetooth → zrestartuj drukarkę → wybierz w Jarful **Bluetooth LE** → 🔄 → Wydruk testowy. Całkowicie zamknij aplikację producenta. Jeśli nadal nie działa, wklej raport **Diagnozuj połączenie** do zgłoszenia |
+| Brak połączenia na OPPO / Xiaomi / Huawei | Zezwól na „Urządzenia w pobliżu” i „Lokalizację”, włącz lokalizację, wyłącz optymalizację baterii dla Jarful. Gdy Classic zawiedzie, automatycznie próbowane jest LE, a działający tryb jest zapisywany |
 | Brak biletów rutyn | Sprawdź dni tygodnia i przełącznik „Włączona”; użyj „Wygeneruj dziś ponownie” |
 
 ## 13. Budowanie ze źródeł

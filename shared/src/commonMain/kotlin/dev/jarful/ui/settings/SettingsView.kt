@@ -7,6 +7,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -42,6 +45,7 @@ import dev.jarful.ui.AppState
 import dev.jarful.ui.common.IntField
 import dev.jarful.ui.ds.ButtonKind
 import dev.jarful.ui.ds.DsButton
+import dev.jarful.ui.ds.DsDialog
 import dev.jarful.ui.ds.DsIconButton
 import dev.jarful.ui.ds.DsMenu
 import dev.jarful.ui.ds.DsMenuItem
@@ -155,7 +159,26 @@ private fun PrinterSection(state: AppState, p: PrinterSettings, update: ((Printe
                 IntField("Gap", p.labelGapMm, { v -> if (v != null) update { it.copy(labelGapMm = v) } }, suffix = "mm")
             }
         }
-        DsButton(onClick = { scope.launch { state.testPrint() } }, enabled = !state.printing, kind = ButtonKind.Accent) { Text(s.testPrint) }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            DsButton(onClick = { scope.launch { state.testPrint() } }, enabled = !state.printing, kind = ButtonKind.Accent) { Text(s.testPrint) }
+            if (p.transport == PrinterTransport.BLUETOOTH || p.transport == PrinterTransport.BLUETOOTH_LE) {
+                DsButton(onClick = { state.diagnosePrinter() }, enabled = !state.diagnosing && p.bluetoothAddress.isNotBlank()) { Text(if (state.diagnosing) "…" else s.printerDiagnose) }
+            }
+        }
+    }
+    state.diagnosis?.let { report ->
+        DsDialog(
+            onDismissRequest = { state.diagnosis = null },
+            title = { Text(s.printerDiagnoseTitle) },
+            text = {
+                Column {
+                    Text(s.printerDiagnoseHint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(bottom = 8.dp))
+                    Text(report, style = MaterialTheme.typography.bodySmall.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace), modifier = Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState()))
+                }
+            },
+            confirmButton = { DsButton(onClick = { copyToClipboard(report); state.showToast(s.copied) }, kind = ButtonKind.Accent, modifier = Modifier.fillMaxWidth()) { Text(s.copy) } },
+            dismissButton = { DsButton(onClick = { state.diagnosis = null }, modifier = Modifier.fillMaxWidth()) { Text(s.close) } },
+        )
     }
 }
 
