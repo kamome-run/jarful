@@ -45,6 +45,20 @@ fun AppDialogs(state: AppState) {
 
     if (state.refocusOpen) RefocusDialog(state)
 
+    state.pendingTicketDeleteIds?.let { ids ->
+        val count = state.todayTickets().count { it.id in ids }
+        if (count == 0) state.pendingTicketDeleteIds = null
+        else ConfirmDialog(title = s.deleteSelectedTickets, body = s.confirmDeleteTickets(count), confirmText = s.delete,
+            onConfirm = { state.deleteSelectedTickets() }, onDismiss = { state.pendingTicketDeleteIds = null })
+    }
+
+    state.pendingTaskDeleteIds?.let { ids ->
+        val count = state.data.tasks.count { it.id in ids && it.id != INBOX_ID }
+        if (count == 0) state.pendingTaskDeleteIds = null
+        else ConfirmDialog(title = s.deleteSelected, body = s.confirmDeleteTasks(count), confirmText = s.delete,
+            onConfirm = { state.deleteSelectedTasks() }, onDismiss = { state.pendingTaskDeleteIds = null })
+    }
+
     state.confirmDeleteId?.let { id ->
         val t = TaskTree.byId(state.data.tasks, id)
         if (t == null) state.confirmDeleteId = null

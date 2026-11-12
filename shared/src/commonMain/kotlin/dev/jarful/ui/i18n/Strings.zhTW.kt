@@ -3,6 +3,8 @@ package dev.jarful.ui.i18n
 import kotlinx.datetime.DayOfWeek
 
 val ZH_TW = Strings(
+    deleteSelectedTickets = "刪除選取的票券", confirmDeleteTickets = { "要刪除今天選取的 $it 張票券嗎？原本的任務與例行事項會保留。已完成票券也會從紀錄中刪除。可用「復原」一次還原全部。" },
+    deleteSelected = "刪除選取的任務", confirmDeleteTasks = { "要刪除選取的 $it 個任務及其子任務嗎？可用「復原」一次還原全部。" },
     tabToday = "今天", tabColumns = "欄位", tabRoutines = "例行事項", tabStats = "統計", tabSettings = "設定",
     inbox = "收件匣", root = "全部",
     newTask = "新增任務", newSubtask = "新增子任務（拆解）", addTaskHint = "輸入任務後按 Enter（Tab 可拆解）", addSubtaskHint = "輸入子任務後按 Enter",

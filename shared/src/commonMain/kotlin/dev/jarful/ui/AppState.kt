@@ -52,6 +52,16 @@ class AppState(val store: Store, val scope: CoroutineScope, var strings: Strings
     var moveTaskId by mutableStateOf<String?>(null)
     var confirmDeleteId by mutableStateOf<String?>(null)
     var compactColumnIndex by mutableIntStateOf(0)
+    var taskSelectMode by mutableStateOf(false)
+        private set
+    var selectedTaskIds by mutableStateOf<Set<String>>(emptySet())
+        private set
+    var pendingTaskDeleteIds by mutableStateOf<Set<String>?>(null)
+    var ticketSelectMode by mutableStateOf(false)
+        private set
+    var selectedTicketIds by mutableStateOf<Set<String>>(emptySet())
+        private set
+    var pendingTicketDeleteIds by mutableStateOf<Set<String>?>(null)
 
     // ----- Dialogs -----
     var refocusOpen by mutableStateOf(false)
@@ -123,7 +133,12 @@ class AppState(val store: Store, val scope: CoroutineScope, var strings: Strings
         private set
 
     init {
-        store.onChange = { data = it }
+        store.onChange = { next ->
+            data = next
+            val liveIds = next.tasks.map { it.id }.toSet()
+            selectedTaskIds = selectedTaskIds.intersect(liveIds)
+            selectedTicketIds = selectedTicketIds.intersect(next.tickets.filter { it.date == todayIso() }.map { it.id }.toSet())
+        }
         data = store.data.value
     }
 
@@ -197,10 +212,34 @@ class AppState(val store: Store, val scope: CoroutineScope, var strings: Strings
 
     fun toggleDone(id: String) { store.toggleTaskDone(id) }
 
+    fun startTaskSelect() { cancelEdit(); exitTicketSelect(); taskSelectMode = true }
+    fun exitTaskSelect() { taskSelectMode = false; selectedTaskIds = emptySet(); pendingTaskDeleteIds = null }
+    fun toggleTaskSelection(id: String) {
+        if (!taskSelectMode || id == INBOX_ID || TaskTree.byId(data.tasks, id) == null) return
+        selectedTaskIds = if (id in selectedTaskIds) selectedTaskIds - id else selectedTaskIds + id
+    }
+    fun selectTasks(ids: Set<String>) {
+        if (!taskSelectMode) return
+        selectedTaskIds = selectedTaskIds + data.tasks.filter { it.id in ids && it.id != INBOX_ID }.map { it.id }
+    }
+    fun clearTaskSelection() { selectedTaskIds = emptySet() }
+    fun requestDeleteSelectedTasks() {
+        if (selectedTaskIds.isNotEmpty()) pendingTaskDeleteIds = selectedTaskIds.toSet()
+    }
+    fun deleteSelectedTasks() {
+        val ids = pendingTaskDeleteIds ?: return
+        store.deleteTasks(ids)
+        trimDeletedTaskPath()
+        exitTaskSelect()
+    }
+    private fun trimDeletedTaskPath() {
+        val missing = path.indexOfFirst { TaskTree.byId(data.tasks, it) == null }
+        if (missing >= 0) select(missing, null)
+    }
+
     fun deleteTask(id: String) {
-        val col = path.indexOf(id)
         store.deleteTask(id)
-        if (col >= 0) select(col, null)
+        trimDeletedTaskPath()
         confirmDeleteId = null
     }
 
@@ -215,6 +254,25 @@ class AppState(val store: Store, val scope: CoroutineScope, var strings: Strings
     fun todayIso(): String = Dates.iso(Dates.today())
     fun todayTickets(): List<Ticket> = data.tickets.filter { it.date == todayIso() }.sortedWith(compareBy({ it.isDone }, { it.order }))
     fun oldOpenTickets(): List<Ticket> = data.tickets.filter { it.date < todayIso() && !it.isDone }.sortedBy { it.date }
+    fun startTicketSelect() { cancelEdit(); exitTaskSelect(); ticketSelectMode = true }
+    fun exitTicketSelect() { ticketSelectMode = false; selectedTicketIds = emptySet(); pendingTicketDeleteIds = null }
+    fun toggleTicketSelection(id: String) {
+        if (!ticketSelectMode || todayTickets().none { it.id == id }) return
+        selectedTicketIds = if (id in selectedTicketIds) selectedTicketIds - id else selectedTicketIds + id
+    }
+    fun selectAllTodayTickets() {
+        if (ticketSelectMode) selectedTicketIds = todayTickets().map { it.id }.toSet()
+    }
+    fun clearTicketSelection() { selectedTicketIds = emptySet() }
+    fun requestDeleteSelectedTickets() {
+        val ids = selectedTicketIds.intersect(todayTickets().map { it.id }.toSet())
+        if (ids.isNotEmpty()) pendingTicketDeleteIds = ids.toSet()
+    }
+    fun deleteSelectedTickets() {
+        val ids = pendingTicketDeleteIds ?: return
+        store.removeTickets(ids.intersect(todayTickets().map { it.id }.toSet()))
+        exitTicketSelect()
+    }
     fun loopsToday(): Int = data.tickets.count { it.date == todayIso() && it.isDone }
 
     /** Called after the crumple animation finished (FR-4.1). Applies completion + feedback. */

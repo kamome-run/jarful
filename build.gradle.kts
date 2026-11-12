@@ -11,3 +11,14 @@ plugins {
 require(JavaVersion.current() == JavaVersion.VERSION_25) {
     "Jarful builds require JDK 25. Set JAVA_HOME to a JDK 25 installation."
 }
+
+subprojects {
+    // The Gradle process uses the native charset for Windows launcher argfiles.
+    // Application source files and test data continue to use UTF-8.
+    tasks.withType<JavaCompile>().configureEach {
+        options.encoding = "UTF-8"
+    }
+    tasks.withType<Test>().configureEach {
+        defaultCharacterEncoding = "UTF-8"
+    }
+}
