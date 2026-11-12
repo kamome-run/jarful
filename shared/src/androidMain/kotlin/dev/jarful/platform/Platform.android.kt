@@ -123,8 +123,10 @@ actual suspend fun listBleDevices(): List<PrinterEndpoint> {
     return found.values.sortedBy { it.name }
 }
 
+private val CCCD_UUID: UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
+
 @Suppress("MissingPermission")
-actual suspend fun sendBle(address: String, bytes: ByteArray, timeoutMs: Int, chunkSize: Int): Unit = withContext(Dispatchers.IO) {
+actual suspend fun sendBlePlan(address: String, plan: List<BleWrite>, timeoutMs: Int, chunkSize: Int): Unit = withContext(Dispatchers.IO) {
     val a = adapter() ?: throw IllegalStateException("BLUETOOTH_UNAVAILABLE")
     if (!a.isEnabled) throw IllegalStateException("BLUETOOTH_OFF")
     val device = a.getRemoteDevice(address)
@@ -132,18 +134,29 @@ actual suspend fun sendBle(address: String, bytes: ByteArray, timeoutMs: Int, ch
     val discovered = java.util.concurrent.CountDownLatch(1)
     val mtuLatch = java.util.concurrent.CountDownLatch(1)
     var writeLatch = java.util.concurrent.CountDownLatch(1)
+    var descLatch = java.util.concurrent.CountDownLatch(1)
+    var notifyLatch = java.util.concurrent.CountDownLatch(1)
+    var notifyFilter: UUID? = null
     var mtu = 23
     var failure: String? = null
     val cb = object : android.bluetooth.BluetoothGattCallback() {
         override fun onConnectionStateChange(g: android.bluetooth.BluetoothGatt, status: Int, newState: Int) {
             if (newState == android.bluetooth.BluetoothProfile.STATE_CONNECTED) connected.countDown()
-            else if (newState == android.bluetooth.BluetoothProfile.STATE_DISCONNECTED) { failure = failure ?: "DISCONNECTED($status)"; connected.countDown(); discovered.countDown(); mtuLatch.countDown(); writeLatch.countDown() }
+            else if (newState == android.bluetooth.BluetoothProfile.STATE_DISCONNECTED) { failure = failure ?: "DISCONNECTED($status)"; connected.countDown(); discovered.countDown(); mtuLatch.countDown(); writeLatch.countDown(); descLatch.countDown(); notifyLatch.countDown() }
         }
         override fun onServicesDiscovered(g: android.bluetooth.BluetoothGatt, status: Int) { discovered.countDown() }
         override fun onMtuChanged(g: android.bluetooth.BluetoothGatt, m: Int, status: Int) { if (status == android.bluetooth.BluetoothGatt.GATT_SUCCESS) mtu = m; mtuLatch.countDown() }
         override fun onCharacteristicWrite(g: android.bluetooth.BluetoothGatt, c: android.bluetooth.BluetoothGattCharacteristic, status: Int) {
             if (status != android.bluetooth.BluetoothGatt.GATT_SUCCESS) failure = "WRITE_FAILED($status)"
             writeLatch.countDown()
+        }
+        override fun onDescriptorWrite(g: android.bluetooth.BluetoothGatt, d: android.bluetooth.BluetoothGattDescriptor, status: Int) { descLatch.countDown() }
+        @Deprecated("pre-33 callback")
+        override fun onCharacteristicChanged(g: android.bluetooth.BluetoothGatt, c: android.bluetooth.BluetoothGattCharacteristic) {
+            if (notifyFilter == null || c.uuid == notifyFilter) notifyLatch.countDown()
+        }
+        override fun onCharacteristicChanged(g: android.bluetooth.BluetoothGatt, c: android.bluetooth.BluetoothGattCharacteristic, value: ByteArray) {
+            if (notifyFilter == null || c.uuid == notifyFilter) notifyLatch.countDown()
         }
     }
     val gatt = device.connectGatt(ctx, false, cb, android.bluetooth.BluetoothDevice.TRANSPORT_LE)
@@ -155,30 +168,51 @@ actual suspend fun sendBle(address: String, bytes: ByteArray, timeoutMs: Int, ch
         gatt.discoverServices()
         if (!discovered.await(timeoutMs.toLong(), TimeUnit.MILLISECONDS) || failure != null) throw IllegalStateException(failure ?: "DISCOVERY_TIMEOUT")
         val all = gatt.services.flatMap { it.characteristics }
-        val writable = { c: android.bluetooth.BluetoothGattCharacteristic ->
+        fun writable(c: android.bluetooth.BluetoothGattCharacteristic) =
             c.properties and (android.bluetooth.BluetoothGattCharacteristic.PROPERTY_WRITE or android.bluetooth.BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE) != 0
+        fun resolve(uuid: String?): android.bluetooth.BluetoothGattCharacteristic {
+            if (uuid != null) return all.firstOrNull { it.uuid.toString().equals(uuid, ignoreCase = true) } ?: throw IllegalStateException("CHARACTERISTIC_NOT_FOUND:$uuid")
+            return BLE_PRINTER_CHARACTERISTICS.firstNotNullOfOrNull { u -> all.firstOrNull { it.uuid == u && writable(it) } }
+                ?: all.firstOrNull { writable(it) && it.service.uuid.toString().let { u -> !u.startsWith("00001800") && !u.startsWith("00001801") } }
+                ?: throw IllegalStateException("NO_WRITABLE_CHARACTERISTIC")
         }
-        val target = BLE_PRINTER_CHARACTERISTICS.firstNotNullOfOrNull { u -> all.firstOrNull { it.uuid == u && writable(it) } }
-            ?: all.firstOrNull { writable(it) && it.service.uuid.toString().let { u -> !u.startsWith("00001800") && !u.startsWith("00001801") } }
-            ?: throw IllegalStateException("NO_WRITABLE_CHARACTERISTIC")
-        val noResponse = target.properties and android.bluetooth.BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE != 0
-        target.writeType = if (noResponse) android.bluetooth.BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE else android.bluetooth.BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
-        val chunk = minOf(chunkSize, (mtu - 3).coerceAtLeast(20))
-        var off = 0
-        while (off < bytes.size) {
-            val n = minOf(chunk, bytes.size - off)
-            val part = bytes.copyOfRange(off, off + n)
-            writeLatch = java.util.concurrent.CountDownLatch(1)
-            val ok = if (Build.VERSION.SDK_INT >= 33) {
-                gatt.writeCharacteristic(target, part, target.writeType) == android.bluetooth.BluetoothStatusCodes.SUCCESS
-            } else {
-                @Suppress("DEPRECATION") run { target.value = part; gatt.writeCharacteristic(target) }
+        val enabledNotify = HashSet<UUID>()
+        fun enableNotify(uuid: String) {
+            val c = all.firstOrNull { it.uuid.toString().equals(uuid, ignoreCase = true) } ?: return
+            if (!enabledNotify.add(c.uuid)) return
+            gatt.setCharacteristicNotification(c, true)
+            val d = c.getDescriptor(CCCD_UUID) ?: return
+            descLatch = java.util.concurrent.CountDownLatch(1)
+            val indicate = c.properties and android.bluetooth.BluetoothGattCharacteristic.PROPERTY_INDICATE != 0
+            val value = if (indicate) android.bluetooth.BluetoothGattDescriptor.ENABLE_INDICATION_VALUE else android.bluetooth.BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+            if (Build.VERSION.SDK_INT >= 33) gatt.writeDescriptor(d, value) else @Suppress("DEPRECATION") run { d.value = value; gatt.writeDescriptor(d) }
+            descLatch.await(2, TimeUnit.SECONDS)
+        }
+        for (step in plan) {
+            step.awaitNotify?.let { enableNotify(it) }
+            val target = resolve(step.characteristic)
+            val noResponse = target.properties and android.bluetooth.BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE != 0
+            target.writeType = if (noResponse) android.bluetooth.BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE else android.bluetooth.BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+            val chunk = minOf(chunkSize, (mtu - 3).coerceAtLeast(20))
+            if (step.awaitNotify != null) { notifyFilter = UUID.fromString(step.awaitNotify); notifyLatch = java.util.concurrent.CountDownLatch(1) }
+            var off = 0
+            while (off < step.bytes.size) {
+                val n = minOf(chunk, step.bytes.size - off)
+                val part = step.bytes.copyOfRange(off, off + n)
+                writeLatch = java.util.concurrent.CountDownLatch(1)
+                val ok = if (Build.VERSION.SDK_INT >= 33) {
+                    gatt.writeCharacteristic(target, part, target.writeType) == android.bluetooth.BluetoothStatusCodes.SUCCESS
+                } else {
+                    @Suppress("DEPRECATION") run { target.value = part; gatt.writeCharacteristic(target) }
+                }
+                if (!ok) throw IllegalStateException("WRITE_REJECTED")
+                if (!writeLatch.await(timeoutMs.toLong(), TimeUnit.MILLISECONDS)) throw IllegalStateException("WRITE_TIMEOUT")
+                failure?.let { throw IllegalStateException(it) }
+                off += n
+                if (noResponse) Thread.sleep(12) // pace writes for printers without flow control
             }
-            if (!ok) throw IllegalStateException("WRITE_REJECTED")
-            if (!writeLatch.await(timeoutMs.toLong(), TimeUnit.MILLISECONDS)) throw IllegalStateException("WRITE_TIMEOUT")
-            failure?.let { throw IllegalStateException(it) }
-            off += n
-            if (noResponse) Thread.sleep(12) // pace writes for printers without flow control
+            if (step.awaitNotify != null) notifyLatch.await(3, TimeUnit.SECONDS) // tolerant: continue even without a reply
+            if (step.delayMs > 0) Thread.sleep(step.delayMs)
         }
         Thread.sleep(400)
     } finally {

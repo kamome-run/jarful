@@ -159,6 +159,7 @@ Not sure which Bluetooth you have? If the OS Bluetooth settings can **pair** the
 | TSPL | Label printers (set label height and gap in mm) |
 | CPCL | Label printers using CPCL |
 | Cat printer | 57 mm pocket printers that do not speak ESC/POS (GB01 / GT01 / MX06 family, sold with the “iPrint” / “Fun Print” apps). Connects over BLE |
+| Cat printer MXW01 | Newer generation of the above (MXW01 / X5h family; the diagnostics list AE01–AE04). BLE only |
 
 Paper width is **58 mm (384 dots)** or **80 mm (576 dots)**. Pocket printers without a cutter should keep **Cut off**; 3–5 feed lines is a good default.
 
