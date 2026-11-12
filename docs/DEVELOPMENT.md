@@ -3,7 +3,7 @@
 ## 構成
 
 ```
-kusha/
+jarful/
 ├── shared/       Kotlin Multiplatform 共通コード（ドメイン、UI、印刷、プラットフォーム抽象）
 │   ├── commonMain/   model / data(Store) / domain / print / sound / ui
 │   ├── androidMain/  FileStore, Bluetooth SPP, AudioTrack, Vibrator, Canvas ラスタライズ
