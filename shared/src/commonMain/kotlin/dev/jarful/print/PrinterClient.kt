@@ -21,6 +21,15 @@ sealed class PrintResult {
 class PrinterClient(private val timeoutMs: Int = 5_000, private val chunkSize: Int = 512) {
     suspend fun send(s: PrinterSettings, job: TicketFormatter.PrintJob): PrintResult = when (job) {
         is TicketFormatter.PrintJob.Bytes -> send(s, job.bytes)
+        is TicketFormatter.PrintJob.Batches -> {
+            var last: PrintResult = PrintResult.Error("EMPTY")
+            for ((i, b) in job.batches.withIndex()) {
+                last = send(s, b)
+                if (last is PrintResult.Error) break
+                if (i < job.batches.lastIndex) kotlinx.coroutines.delay(1500)
+            }
+            last
+        }
         is TicketFormatter.PrintJob.Ble -> try {
             if (s.bluetoothAddress.isBlank()) PrintResult.Error("NO_DEVICE")
             else if (!bleSupported()) PrintResult.Error("MXW01_REQUIRES_BLE")
