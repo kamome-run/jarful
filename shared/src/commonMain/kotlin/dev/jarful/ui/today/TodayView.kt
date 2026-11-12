@@ -4,6 +4,8 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,14 +17,18 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Print
+import androidx.compose.material.icons.filled.Checklist
+import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import dev.jarful.ui.ds.ButtonKind
 import dev.jarful.ui.ds.DsButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.jarful.ui.AppState
@@ -36,22 +42,21 @@ fun TodayView(state: AppState, showJar: Boolean, modifier: Modifier = Modifier) 
     val s = LocalStrings.current
     val tickets = state.todayTickets()
     val old = state.oldOpenTickets()
-    Box(modifier.fillMaxSize()) {
-        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 96.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(modifier.fillMaxSize()) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(s.todayTitle, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+            AnimatedVisibility(state.combo >= 2) {
+                Text(s.combo(state.combo), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+            }
+            Spacer(Modifier.width(8.dp))
+            DsButton(onClick = { state.print(PrintTarget.Today) }, enabled = !state.printing && tickets.any { !it.isDone }, kind = ButtonKind.Subtle) {
+                Icon(Icons.Default.Print, null, modifier = Modifier.width(18.dp)); Spacer(Modifier.width(4.dp)); Text(s.printToday, maxLines = 1)
+            }
+        }
+        TicketSelectionBar(state)
+        LazyColumn(Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 96.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (showJar) {
                 item { JarView(state.loopsToday(), state.jarDropSignal, Modifier.fillMaxWidth(), height = 170.dp) }
-            }
-            item {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(s.todayTitle, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                    AnimatedVisibility(state.combo >= 2) {
-                        Text(s.combo(state.combo), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-                    }
-                    Spacer(Modifier.width(8.dp))
-                    DsButton(onClick = { state.print(PrintTarget.Today) }, enabled = !state.printing && tickets.any { !it.isDone }, kind = ButtonKind.Subtle) {
-                        Icon(Icons.Default.Print, null, modifier = Modifier.width(18.dp)); Spacer(Modifier.width(4.dp)); Text(s.printToday, maxLines = 1)
-                    }
-                }
             }
             if (old.isNotEmpty()) {
                 item {
@@ -80,6 +85,36 @@ fun TodayView(state: AppState, showJar: Boolean, modifier: Modifier = Modifier) 
                 }
             }
             items(tickets, key = { it.id }) { k -> TicketCard(state, k) }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun TicketSelectionBar(state: AppState) {
+    val s = LocalStrings.current
+    val canUndo = remember(state.data) { state.store.canUndo() }
+    FlowRow(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        DsButton(onClick = { if (state.ticketSelectMode) state.exitTicketSelect() else state.startTicketSelect() },
+            enabled = state.ticketSelectMode || state.todayTickets().isNotEmpty(), modifier = Modifier.testTag("ticketSelectMode")) {
+            Icon(Icons.Default.Checklist, null, modifier = Modifier.width(18.dp))
+            Spacer(Modifier.width(4.dp))
+            Text(if (state.ticketSelectMode) s.close else s.selectMode)
+        }
+        DsButton(onClick = { state.undo() }, enabled = canUndo, kind = ButtonKind.Subtle,
+            modifier = Modifier.testTag("undoTicketAction")) {
+            Icon(Icons.AutoMirrored.Filled.Undo, null, modifier = Modifier.width(18.dp))
+            Spacer(Modifier.width(4.dp)); Text(s.undo)
+        }
+        if (state.ticketSelectMode) {
+            Text(s.selectedCount(state.selectedTicketIds.size), modifier = Modifier.padding(vertical = 8.dp), style = MaterialTheme.typography.labelLarge)
+            DsButton(onClick = { state.selectAllTodayTickets() }, kind = ButtonKind.Subtle,
+                modifier = Modifier.testTag("ticketSelectAll")) { Text(s.selectAll) }
+            DsButton(onClick = { state.clearTicketSelection() }, kind = ButtonKind.Subtle,
+                enabled = state.selectedTicketIds.isNotEmpty(), modifier = Modifier.testTag("ticketSelectNone")) { Text(s.selectNone) }
+            DsButton(onClick = { state.requestDeleteSelectedTickets() }, enabled = state.selectedTicketIds.isNotEmpty(),
+                modifier = Modifier.testTag("deleteSelectedTickets")) { Text(s.deleteSelectedTickets, color = MaterialTheme.colorScheme.error) }
         }
     }
 }

@@ -202,8 +202,12 @@ class Store(
         }
     }
 
-    fun deleteTask(id: String) = mutate(undoable = true) { d ->
-        val (tasks, removed) = TaskTree.delete(d.tasks, id)
+    fun deleteTask(id: String) = deleteTasks(setOf(id))
+
+    /** One snapshot and save for the whole selection, including descendant tickets. */
+    fun deleteTasks(ids: Set<String>) = mutate(undoable = true) { d ->
+        val (tasks, removed) = TaskTree.deleteMany(d.tasks, ids)
+        if (removed.isEmpty()) return@mutate d
         val removedIds = removed.map { it.id }.toSet()
         d.copy(tasks = tasks, tickets = d.tickets.filter { it.taskId !in removedIds || it.isDone })
     }
@@ -310,7 +314,13 @@ class Store(
         })
     }
 
-    fun removeTicket(id: String) = mutate(undoable = true) { d -> d.copy(tickets = d.tickets.filter { it.id != id }) }
+    fun removeTicket(id: String) = removeTickets(setOf(id))
+
+    /** Delete only the chosen tickets; keep source tasks/routines and use one undo snapshot. */
+    fun removeTickets(ids: Set<String>) = mutate(undoable = true) { d ->
+        if (d.tickets.none { it.id in ids }) return@mutate d
+        d.copy(tickets = d.tickets.filter { it.id !in ids })
+    }
 
     fun moveTicket(id: String, delta: Int) = mutate(undoable = true) { d ->
         val k = d.tickets.firstOrNull { it.id == id } ?: return@mutate d

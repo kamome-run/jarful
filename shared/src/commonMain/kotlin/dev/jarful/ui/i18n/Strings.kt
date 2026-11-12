@@ -38,6 +38,8 @@ data class Strings(
     val about: String, val aboutBody: String,
     val printed: String, val childCount: (Int, Int) -> String,
     val confirmDelete: (String) -> String, val moveUp: String, val moveDown: String, val moveTo: String, val moveToRoot: String,
+    val deleteSelected: String, val confirmDeleteTasks: (Int) -> String,
+    val deleteSelectedTickets: String, val confirmDeleteTickets: (Int) -> String,
     val all: String, val subtasksOf: (String) -> String, val empty: String,
     val sampleRoutines: List<Triple<String, String, Int?>>,
     val sync: String, val syncIntro: String, val syncHost: String, val syncHostHint: String, val syncHostAddresses: String, val syncHostNoAddress: String,
@@ -57,6 +59,8 @@ data class Strings(
 )
 
 val JA = Strings(
+    deleteSelectedTickets = "選択したチケットを削除", confirmDeleteTickets = { "今日のチケット $it 枚を削除しますか？元のタスク・ルーチンは残ります。完了済みチケットを含む場合、その記録も削除されます。「元に戻す」でまとめて復元できます。" },
+    deleteSelected = "選択したタスクを削除", confirmDeleteTasks = { "選択した $it 件のタスクと、その子タスクを削除しますか？「元に戻す」でまとめて復元できます。" },
     tabToday = "今日", tabColumns = "カラム", tabRoutines = "ルーチン", tabStats = "統計", tabSettings = "設定",
     inbox = "受信箱", root = "すべて",
     newTask = "新しいタスク", newSubtask = "子タスクを追加（分解）", addTaskHint = "タスク名を入力して Enter（Tab で分解）", addSubtaskHint = "子タスクを入力して Enter",
@@ -116,6 +120,8 @@ val JA = Strings(
 )
 
 val EN = Strings(
+    deleteSelectedTickets = "Delete selected tickets", confirmDeleteTickets = { "Delete $it tickets from today? Source tasks and routines remain. Completed tickets are removed from your records too. Undo restores the whole batch." },
+    deleteSelected = "Delete selected tasks", confirmDeleteTasks = { "Delete $it selected tasks and their subtasks? Undo restores the whole batch." },
     tabToday = "Today", tabColumns = "Columns", tabRoutines = "Routines", tabStats = "Stats", tabSettings = "Settings",
     inbox = "Inbox", root = "All",
     newTask = "New task", newSubtask = "Add subtask (break down)", addTaskHint = "Type a task and press Enter (Tab = break down)", addSubtaskHint = "Type a subtask and press Enter",

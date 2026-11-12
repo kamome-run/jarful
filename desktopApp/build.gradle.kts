@@ -1,5 +1,6 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.compose.desktop.application.tasks.AbstractJLinkTask
 
 plugins {
     alias(libs.plugins.kotlinJvm)
@@ -42,7 +43,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Msi, TargetFormat.Exe)
             packageName = "Jarful"
-            packageVersion = "1.7.2"
+            packageVersion = "1.7.4"
             description = "Game-loop task manager for ADHD brains"
             vendor = "Jarful contributors"
             licenseFile.set(rootProject.file("LICENSE"))
@@ -58,6 +59,36 @@ compose.desktop {
             linux {
                 iconFile.set(project.file("icons/jarful.png"))
             }
+        }
+    }
+}
+
+// Compose 1.10.3 writes UTF-8 @argfiles, but the Windows JDK launcher reads
+// them in the system code page. Pass jlink's short argument list directly so
+// Japanese user-profile paths reach the tool without an encoding round trip.
+if (System.getProperty("os.name").startsWith("Windows")) {
+    tasks.withType<AbstractJLinkTask>().configureEach {
+        val runtimeTask = this
+        val process = providers
+        actions.clear()
+        doLast {
+            val destination = runtimeTask.destinationDir.get().asFile
+            check(destination.toPath().startsWith(layout.buildDirectory.get().asFile.toPath())) {
+                "Runtime output must stay inside the desktop build directory"
+            }
+            destination.deleteRecursively()
+            val selectedModules = if (runtimeTask.includeAllModules.getOrElse(false)) {
+                "ALL-MODULE-PATH"
+            } else {
+                runtimeTask.modules.get().joinToString(",")
+            }
+            process.exec {
+                executable = file("${runtimeTask.javaHome.get()}/bin/jlink.exe").absolutePath
+                args("--add-modules", selectedModules,
+                    "--strip-debug", "--no-header-files", "--no-man-pages",
+                    "--strip-native-commands", "--output", destination.absolutePath)
+                args(runtimeTask.freeArgs.getOrElse(emptyList()))
+            }.result.get().assertNormalExitValue()
         }
     }
 }

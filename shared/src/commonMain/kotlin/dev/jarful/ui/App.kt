@@ -217,12 +217,21 @@ private fun columnShortcut(state: AppState, e: KeyEvent): Boolean {
     if (e.type != KeyEventType.KeyDown) return false
     if (e.isCtrlPressed || e.isMetaPressed) return false
     if (e.key == Key.Escape) {
+        if (state.ticketSelectMode) { state.exitTicketSelect(); return true }
+        if (state.taskSelectMode) { state.exitTaskSelect(); return true }
         state.cancelEdit(); state.refocusOpen = false; state.showShortcuts = false; return true
     }
     val onColumns = state.tab == Tab.COLUMNS || state.tab == Tab.TODAY
     if (!onColumns) return false
+    if (state.ticketSelectMode) {
+        if (e.key == Key.Delete || e.key == Key.Backspace) { state.requestDeleteSelectedTickets(); return true }
+        return false
+    }
     if (state.addingIn != AppState.NONE || state.renamingId != null) return false
     val sel = state.selectedTaskId
+    if (state.taskSelectMode && (e.key == Key.Delete || e.key == Key.Backspace)) {
+        state.requestDeleteSelectedTasks(); return true
+    }
     return when (e.key) {
         Key.DirectionUp -> { if (e.isAltPressed) sel?.let { state.store.moveTask(it, -1) } else state.moveSelection(-1); true }
         Key.DirectionDown -> { if (e.isAltPressed) sel?.let { state.store.moveTask(it, +1) } else state.moveSelection(+1); true }

@@ -3,6 +3,8 @@ package dev.jarful.ui.i18n
 import kotlinx.datetime.DayOfWeek
 
 val AR = Strings(
+    deleteSelectedTickets = "حذف التذاكر المحددة", confirmDeleteTickets = { "هل تريد حذف $it من تذاكر اليوم؟ ستبقى المهام والروتينات. تُحذف التذاكر المكتملة من السجل أيضًا. يمكن استعادة المجموعة كاملة بالتراجع." },
+    deleteSelected = "حذف المهام المحددة", confirmDeleteTasks = { "هل تريد حذف $it من المهام المحددة ومهامها الفرعية؟ يمكن استعادة المجموعة كاملة بالتراجع." },
     tabToday = "اليوم", tabColumns = "الأعمدة", tabRoutines = "الروتين", tabStats = "الإحصاءات", tabSettings = "الإعدادات",
     inbox = "الوارد", root = "الكل",
     newTask = "مهمة جديدة", newSubtask = "إضافة مهمة فرعية (تقسيم)", addTaskHint = "اكتب المهمة واضغط Enter‏ (Tab للتقسيم)", addSubtaskHint = "اكتب المهمة الفرعية واضغط Enter",

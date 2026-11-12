@@ -3,6 +3,8 @@ package dev.jarful.ui.i18n
 import kotlinx.datetime.DayOfWeek
 
 val VI = Strings(
+    deleteSelectedTickets = "Xóa các phiếu đã chọn", confirmDeleteTickets = { "Xóa $it phiếu hôm nay? Công việc và thói quen vẫn được giữ lại. Phiếu đã hoàn thành cũng bị xóa khỏi lịch sử. Hoàn tác khôi phục toàn bộ nhóm." },
+    deleteSelected = "Xóa các công việc đã chọn", confirmDeleteTasks = { "Xóa $it công việc đã chọn và các công việc con? Hoàn tác sẽ khôi phục toàn bộ nhóm." },
     tabToday = "Hôm nay", tabColumns = "Cột", tabRoutines = "Thói quen", tabStats = "Thống kê", tabSettings = "Cài đặt",
     inbox = "Hộp thư đến", root = "Tất cả",
     newTask = "Việc mới", newSubtask = "Thêm việc con (chia nhỏ)", addTaskHint = "Nhập việc rồi nhấn Enter (Tab = chia nhỏ)", addSubtaskHint = "Nhập việc con rồi nhấn Enter",

@@ -5,7 +5,7 @@ Checked locally on 2026-11-09:
 - `powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File tools/Test-WindowsBle.ps1`: PASS. Compiles the actual C# WinRT event bridge and checks address validation, cache-miss recovery, random address types, missing devices, enumeration failure, deduplication, output escaping and writable-characteristic selection without hardware.
 - `jarful-ble.ps1 list`: discovered the nearby `Mr.in_M02` over advertisements. The existing device-enumeration API failed on this machine; the new list still returned the live device.
 - `git diff --check`: PASS.
-- `gradlew.bat :shared:desktopTest --no-daemon`: at the initial BLE verification, no build JDK was available. JDK 25 has since been installed and the build configuration migrated; see [JDK 25 migration checks](JDK25_MIGRATION.md) for the current network blocker. New Kotlin tests cover exact M02 raster bytes, the 255/256-row boundary, fixed width, paper feed and separate labels; they still need a complete Gradle run. Windows CI also runs the helper regression checks.
+- `gradlew.bat :shared:desktopTest --no-daemon`: JDK 25 build verification completed on 2026-11-12; all 81 shared/desktop tests passed, including exact M02 raster bytes, the 255/256-row boundary, fixed width, paper feed and separate labels. Windows packages and isolated app startup were also verified; see [JDK 25 migration checks](JDK25_MIGRATION.md). Windows CI also runs the helper regression checks.
 - GATT connection to the discovered M02 still returned null locally. Successful GATT writes and visible paper output have **not** been verified. The installed application and its saved settings have not been replaced.
 
 For a full hardware check after building:

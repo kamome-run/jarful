@@ -11,16 +11,34 @@ $ErrorActionPreference = 'Stop'
 $repo = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $support = Join-Path $repo 'build/jdk25-support'
 $log = Join-Path $support 'verification.log'
+$nativeLog = Join-Path $support 'gradle.log'
 
-function Invoke-Checked([string] $program, [string[]] $arguments) {
+function Invoke-Checked([string] $program, [string[]] $arguments, [switch] $CaptureOutput) {
     # Native tools can emit informational messages on stderr in PowerShell 5.1.
     $savedPreference = $ErrorActionPreference
+    $savedConsoleEncoding = [Console]::OutputEncoding
     try {
         $ErrorActionPreference = 'Continue'
-        & $program @arguments
+        if ($CaptureOutput) {
+            [Console]::OutputEncoding = New-Object Text.UTF8Encoding($false)
+            [IO.File]::AppendAllText($nativeLog, (">>> " + $program + ' ' + ($arguments -join ' ') + [Environment]::NewLine), [Text.Encoding]::UTF8)
+            # Start-Transcript alone can omit native stdout/stderr. Write each
+            # captured line explicitly, including errors, and display it live.
+            & $program @arguments 2>&1 | ForEach-Object {
+                $line = "$_"
+                [IO.File]::AppendAllText($nativeLog, $line + [Environment]::NewLine, [Text.Encoding]::UTF8)
+                Write-Host $line
+            }
+        } else {
+            # Keep SDK license prompts attached directly to the user's console.
+            & $program @arguments
+        }
         $code = $LASTEXITCODE
-    } finally { $ErrorActionPreference = $savedPreference }
-    if ($code -ne 0) { throw "$program exited with code $code. Log: $log" }
+    } finally {
+        [Console]::OutputEncoding = $savedConsoleEncoding
+        $ErrorActionPreference = $savedPreference
+    }
+    if ($code -ne 0) { throw "$program exited with code $code. Log: $log; Gradle output: $nativeLog" }
 }
 
 function Find-Jdk25 {
@@ -95,7 +113,7 @@ if ($CheckOnly) { return }
 
 [IO.Directory]::CreateDirectory($support) | Out-Null
 $savedEnvironment = @{}
-foreach ($name in @('JAVA_HOME', 'ANDROID_HOME', 'ANDROID_SDK_ROOT', 'GRADLE_USER_HOME')) {
+foreach ($name in @('JAVA_HOME', 'ANDROID_HOME', 'ANDROID_SDK_ROOT', 'ANDROID_USER_HOME', 'GRADLE_USER_HOME')) {
     $savedEnvironment[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
 }
 $transcribing = $false
@@ -104,18 +122,32 @@ Push-Location -LiteralPath $repo
 try {
     Start-Transcript -LiteralPath $log -Force | Out-Null
     $transcribing = $true
+    [IO.File]::WriteAllText($nativeLog, '', (New-Object Text.UTF8Encoding($false)))
     $env:JAVA_HOME = $jdk
     $env:ANDROID_HOME = $AndroidSdk
     $env:ANDROID_SDK_ROOT = $AndroidSdk
+    $env:ANDROID_USER_HOME = Join-Path $support 'android-user-home'
+    [IO.Directory]::CreateDirectory($env:ANDROID_USER_HOME) | Out-Null
     $env:GRADLE_USER_HOME = Join-Path $repo 'build/jdk25-gradle-cache'
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    $manager = Install-AndroidTools $AndroidSdk
-    # sdkmanager presents Google's license agreements for the user to review.
-    Invoke-Checked $manager @("--sdk_root=$AndroidSdk", '--licenses')
-    Invoke-Checked $manager @("--sdk_root=$AndroidSdk", 'platforms;android-36', 'build-tools;35.0.0', 'platform-tools')
+    $requiredSdkFiles = @(
+        'platforms/android-36/android.jar', 'platforms/android-36/package.xml',
+        'build-tools/35.0.0/aapt2.exe', 'build-tools/35.0.0/package.xml',
+        'platform-tools/adb.exe', 'platform-tools/package.xml',
+        'licenses/android-sdk-license'
+    )
+    $missingSdkFiles = @($requiredSdkFiles | Where-Object { -not (Test-Path -LiteralPath (Join-Path $AndroidSdk $_) -PathType Leaf) })
+    if ($missingSdkFiles.Count -gt 0) {
+        $manager = Install-AndroidTools $AndroidSdk
+        # sdkmanager presents Google's license agreements for the user to review.
+        Invoke-Checked $manager @("--sdk_root=$AndroidSdk", '--licenses')
+        Invoke-Checked $manager @("--sdk_root=$AndroidSdk", 'platforms;android-36', 'build-tools;35.0.0', 'platform-tools')
+    } else {
+        Write-Output 'Using the installed Android SDK packages and existing license record.'
+    }
     $wrapper = Join-Path $repo 'gradlew.bat'
-    Invoke-Checked $wrapper @('--version')
-    Invoke-Checked $wrapper @(':shared:desktopTest', ':desktopApp:test', ':androidApp:assembleDebug', ':androidApp:assembleRelease', ':desktopApp:createDistributable', ':desktopApp:packageMsi', ':desktopApp:packageExe', '--no-daemon', '--stacktrace')
+    Invoke-Checked $wrapper @('--version', '--console=plain') -CaptureOutput
+    Invoke-Checked $wrapper @(':shared:desktopTest', ':desktopApp:test', ':androidApp:assembleDebug', ':androidApp:assembleRelease', ':desktopApp:createDistributable', ':desktopApp:packageMsi', ':desktopApp:packageExe', '--continue', '--no-daemon', '--stacktrace', '--console=plain') -CaptureOutput
     Write-Output 'PASS: tests and Windows/Android builds completed.'
     Write-Output "Windows app: $(Join-Path $repo 'desktopApp/build/compose/binaries/main/app/Jarful/Jarful.exe')"
 } finally {

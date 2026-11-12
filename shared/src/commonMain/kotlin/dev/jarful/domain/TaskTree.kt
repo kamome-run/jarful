@@ -130,10 +130,21 @@ object TaskTree {
 
     /** Removes [id] and all descendants. Returns the new list and the removed tasks (for undo). */
     fun delete(tasks: List<Task>, id: String): Pair<List<Task>, List<Task>> {
-        if (id == INBOX_ID) return tasks to emptyList()
-        val removed = descendants(tasks, id) + tasks.filter { it.id == id }
-        val removedIds = removed.map { it.id }.toSet()
-        return tasks.filter { it.id !in removedIds } to removed
+        return deleteMany(tasks, setOf(id))
+    }
+
+    /** Removes selected tasks and their descendants once, even if selections overlap. */
+    fun deleteMany(tasks: List<Task>, ids: Set<String>): Pair<List<Task>, List<Task>> {
+        val children = tasks.groupBy { it.parentId }
+        val queue = ArrayDeque(tasks.filter { it.id != INBOX_ID && it.id in ids }.map { it.id })
+        val removedIds = mutableSetOf<String>()
+        while (queue.isNotEmpty()) {
+            val id = queue.removeFirst()
+            if (id == INBOX_ID || !removedIds.add(id)) continue
+            children[id].orEmpty().forEach { queue.addLast(it.id) }
+        }
+        if (removedIds.isEmpty()) return tasks to emptyList()
+        return tasks.filter { it.id !in removedIds } to tasks.filter { it.id in removedIds }
     }
 
     fun restore(tasks: List<Task>, removed: List<Task>): List<Task> {
