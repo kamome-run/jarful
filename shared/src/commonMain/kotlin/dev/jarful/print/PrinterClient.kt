@@ -18,15 +18,15 @@ sealed class PrintResult {
 }
 
 /** Sends encoded bytes through the configured transport (FR-9.1, FR-9.7, FR-9.8). */
-class PrinterClient(private val timeoutMs: Int = 5_000, private val chunkSize: Int = 512) {
-    suspend fun send(s: PrinterSettings, job: TicketFormatter.PrintJob): PrintResult = when (job) {
+open class PrinterClient(private val timeoutMs: Int = 5_000, private val chunkSize: Int = 512) {
+    open suspend fun send(s: PrinterSettings, job: TicketFormatter.PrintJob): PrintResult = when (job) {
         is TicketFormatter.PrintJob.Bytes -> send(s, job.bytes)
         is TicketFormatter.PrintJob.Batches -> {
             var last: PrintResult = PrintResult.Error("EMPTY")
             for ((i, b) in job.batches.withIndex()) {
                 last = send(s, b)
                 if (last is PrintResult.Error) break
-                if (i < job.batches.lastIndex) kotlinx.coroutines.delay(1500)
+                if (i < job.batches.lastIndex) kotlinx.coroutines.delay(1000)
             }
             last
         }
@@ -38,7 +38,7 @@ class PrinterClient(private val timeoutMs: Int = 5_000, private val chunkSize: I
         } catch (e: Throwable) { PrintResult.Error(e.message ?: e::class.simpleName ?: "ERROR") }
     }
 
-    suspend fun send(s: PrinterSettings, bytes: ByteArray): PrintResult {
+    open suspend fun send(s: PrinterSettings, bytes: ByteArray): PrintResult {
         return try {
             when (s.transport) {
                 PrinterTransport.TCP -> {
