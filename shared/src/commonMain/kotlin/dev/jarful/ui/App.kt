@@ -22,23 +22,8 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.Today
 import androidx.compose.material.icons.filled.ViewColumn
-import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationRail
-import androidx.compose.material3.NavigationRailItem
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -51,7 +36,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
@@ -66,19 +50,24 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
 import dev.jarful.data.Store
 import dev.jarful.ui.columns.ColumnsView
+import dev.jarful.ui.ds.DesignSystem
+import dev.jarful.ui.ds.DsAppShell
+import dev.jarful.ui.ds.DsIconButton
+import dev.jarful.ui.ds.JarfulDesignTheme
+import dev.jarful.ui.ds.ShellNavItem
+import dev.jarful.ui.ds.platformDesignSystem
 import dev.jarful.ui.i18n.LocalStrings
 import dev.jarful.ui.i18n.stringsFor
 import dev.jarful.ui.jar.JarView
 import dev.jarful.ui.routines.RoutinesView
 import dev.jarful.ui.settings.SettingsView
 import dev.jarful.ui.stats.StatsView
-import dev.jarful.ui.theme.JarfulTheme
 import dev.jarful.ui.today.TodayView
 import kotlinx.coroutines.delay
 
 /** Root composable shared by Android and desktop (§7). Material 3 throughout (NFR-8). */
 @Composable
-fun JarfulApp(store: Store, darkTheme: Boolean? = null) {
+fun JarfulApp(store: Store, darkTheme: Boolean? = null, designSystemOverride: DesignSystem? = null) {
     val data by store.data.collectAsState()
     val strings = stringsFor(data.settings.language)
     val scope = rememberCoroutineScope()
@@ -110,8 +99,9 @@ fun JarfulApp(store: Store, darkTheme: Boolean? = null) {
         if (state.addingIn == AppState.NONE && state.renamingId == null && !state.refocusOpen) runCatching { rootFocus.requestFocus() }
     }
 
+    val designSystem = remember { platformDesignSystem() }
     CompositionLocalProvider(LocalStrings provides strings) {
-        JarfulTheme(dark = darkTheme ?: isSystemInDarkTheme()) {
+        JarfulDesignTheme(system = designSystemOverride ?: designSystem, dark = darkTheme ?: isSystemInDarkTheme()) {
             BoxWithConstraints(
                 Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
                     .focusRequester(rootFocus).focusable()
@@ -119,132 +109,77 @@ fun JarfulApp(store: Store, darkTheme: Boolean? = null) {
                     .onKeyEvent { columnShortcut(state, it) },
             ) {
                 val wide = maxWidth >= 840.dp
-                if (wide) WideLayout(state, snackbar) else CompactLayout(state, snackbar)
+                val s = LocalStrings.current
+                val items = listOf(
+                    ShellNavItem(Tab.TODAY.name, s.tabToday, Icons.Default.Today),
+                    ShellNavItem(Tab.COLUMNS.name, s.tabColumns, Icons.Default.ViewColumn),
+                    ShellNavItem(Tab.ROUTINES.name, s.tabRoutines, Icons.Default.Repeat),
+                    ShellNavItem(Tab.STATS.name, s.tabStats, Icons.Default.BarChart),
+                    ShellNavItem(Tab.SETTINGS.name, s.tabSettings, Icons.Default.Settings),
+                )
+                // In the wide layout TODAY and COLUMNS share one screen.
+                val selected = if (wide && state.tab == Tab.TODAY) Tab.COLUMNS.name else state.tab.name
+                val title = when (state.tab) {
+                    Tab.TODAY -> if (wide) s.tabColumns else s.tabToday
+                    Tab.COLUMNS -> s.tabColumns
+                    Tab.ROUTINES -> s.tabRoutines
+                    Tab.STATS -> s.tabStats
+                    Tab.SETTINGS -> s.tabSettings
+                }
+                DsAppShell(
+                    wide = wide, items = items, selectedId = selected, onSelect = { state.tab = Tab.valueOf(it) },
+                    title = title,
+                    actions = { TopActions(state) },
+                    primaryAction = if (wide || state.tab == Tab.TODAY || state.tab == Tab.COLUMNS) (s.refocus to Icons.Default.Bolt) else null,
+                    onPrimaryAction = { state.refocusOpen = true },
+                    snackbar = snackbar,
+                ) {
+                    if (wide) WideContent(state) else CompactContent(state)
+                }
                 AppDialogs(state)
             }
         }
     }
 }
 
-private data class NavEntry(val tab: Tab, val label: String, val icon: ImageVector)
-
-@Composable
-private fun navEntries(): List<NavEntry> {
-    val s = LocalStrings.current
-    return listOf(
-        NavEntry(Tab.TODAY, s.tabToday, Icons.Default.Today),
-        NavEntry(Tab.COLUMNS, s.tabColumns, Icons.Default.ViewColumn),
-        NavEntry(Tab.ROUTINES, s.tabRoutines, Icons.Default.Repeat),
-        NavEntry(Tab.STATS, s.tabStats, Icons.Default.BarChart),
-        NavEntry(Tab.SETTINGS, s.tabSettings, Icons.Default.Settings),
-    )
-}
-
-@Composable
-private fun currentTitle(state: AppState): String {
-    val s = LocalStrings.current
-    return when (state.tab) {
-        Tab.TODAY -> s.tabToday
-        Tab.COLUMNS -> s.tabColumns
-        Tab.ROUTINES -> s.tabRoutines
-        Tab.STATS -> s.tabStats
-        Tab.SETTINGS -> s.tabSettings
-    }
-}
-
-/** Shared top-bar actions: print today, sync, shortcuts (§8). */
+/** Shared top-bar / command-bar actions: sync, print today, shortcuts (§8). */
 @Composable
 private fun TopActions(state: AppState) {
     val s = LocalStrings.current
     val hasPeer = state.data.settings.sync.peerHost.isNotBlank()
-    if (hasPeer) IconButton(onClick = { state.syncNow() }, enabled = !state.syncing) { Icon(Icons.Default.Sync, s.syncNow) }
-    IconButton(onClick = { state.print(PrintTarget.Today) }, enabled = !state.printing) { Icon(Icons.Default.Print, s.printToday) }
-    IconButton(onClick = { state.showShortcuts = true }) { Icon(Icons.Default.Keyboard, s.shortcuts) }
+    if (hasPeer) DsIconButton(onClick = { state.syncNow() }, icon = Icons.Default.Sync, contentDescription = s.syncNow, enabled = !state.syncing)
+    DsIconButton(onClick = { state.print(PrintTarget.Today) }, icon = Icons.Default.Print, contentDescription = s.printToday, enabled = !state.printing)
+    DsIconButton(onClick = { state.showShortcuts = true }, icon = Icons.Default.Keyboard, contentDescription = s.shortcuts)
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun WideLayout(state: AppState, snackbar: SnackbarHostState) {
-    val s = LocalStrings.current
+private fun WideContent(state: AppState) {
     Row(Modifier.fillMaxSize()) {
-        NavigationRail(
-            header = {
-                FloatingActionButton(onClick = { state.refocusOpen = true }, modifier = Modifier.padding(vertical = 8.dp)) {
-                    Icon(Icons.Default.Bolt, s.refocus)
-                }
-            },
-        ) {
-            navEntries().forEach { e ->
-                // In the wide layout TODAY and COLUMNS share one screen.
-                val selected = state.tab == e.tab || (e.tab == Tab.COLUMNS && state.tab == Tab.TODAY)
-                NavigationRailItem(selected = selected, onClick = { state.tab = e.tab }, icon = { Icon(e.icon, e.label) }, label = { Text(e.label) })
-            }
-        }
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = { Text(if (state.tab == Tab.TODAY) s.tabColumns else currentTitle(state)) },
-                    actions = { TopActions(state) },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
-                )
-            },
-            snackbarHost = { SnackbarHost(snackbar) },
-            containerColor = MaterialTheme.colorScheme.background,
-        ) { padding ->
-            Row(Modifier.fillMaxSize().padding(padding)) {
-                when (state.tab) {
-                    Tab.COLUMNS, Tab.TODAY -> {
-                        ColumnsView(state, compact = false, modifier = Modifier.weight(1f).fillMaxHeight())
-                        VerticalDivider()
-                        Column(Modifier.width(380.dp).fillMaxHeight()) {
-                            JarView(state.loopsToday(), state.jarDropSignal, Modifier.fillMaxWidth().padding(top = 8.dp), height = 200.dp)
-                            TodayView(state, showJar = false, modifier = Modifier.weight(1f))
-                        }
-                    }
-                    Tab.ROUTINES -> RoutinesView(state, Modifier.weight(1f))
-                    Tab.STATS -> StatsView(state, Modifier.weight(1f))
-                    Tab.SETTINGS -> SettingsView(state, Modifier.weight(1f))
+        when (state.tab) {
+            Tab.COLUMNS, Tab.TODAY -> {
+                ColumnsView(state, compact = false, modifier = Modifier.weight(1f).fillMaxHeight())
+                VerticalDivider()
+                Column(Modifier.width(380.dp).fillMaxHeight()) {
+                    JarView(state.loopsToday(), state.jarDropSignal, Modifier.fillMaxWidth().padding(top = 8.dp), height = 200.dp)
+                    TodayView(state, showJar = false, modifier = Modifier.weight(1f))
                 }
             }
+            Tab.ROUTINES -> RoutinesView(state, Modifier.weight(1f))
+            Tab.STATS -> StatsView(state, Modifier.weight(1f))
+            Tab.SETTINGS -> SettingsView(state, Modifier.weight(1f))
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CompactLayout(state: AppState, snackbar: SnackbarHostState) {
-    val s = LocalStrings.current
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text(currentTitle(state)) },
-                actions = { TopActions(state) },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
-            )
-        },
-        bottomBar = {
-            NavigationBar {
-                navEntries().forEach { e ->
-                    NavigationBarItem(selected = state.tab == e.tab, onClick = { state.tab = e.tab }, icon = { Icon(e.icon, e.label) }, label = { Text(e.label) })
-                }
-            }
-        },
-        floatingActionButton = {
-            if (state.tab == Tab.TODAY || state.tab == Tab.COLUMNS) {
-                ExtendedFloatingActionButton(onClick = { state.refocusOpen = true }, icon = { Icon(Icons.Default.Bolt, null) }, text = { Text(s.refocus) })
-            }
-        },
-        snackbarHost = { SnackbarHost(snackbar) },
-        containerColor = MaterialTheme.colorScheme.background,
-    ) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding)) {
-            when (state.tab) {
-                Tab.TODAY -> TodayView(state, showJar = true)
-                Tab.COLUMNS -> ColumnsView(state, compact = true)
-                Tab.ROUTINES -> RoutinesView(state)
-                Tab.STATS -> StatsView(state)
-                Tab.SETTINGS -> SettingsView(state)
-            }
+private fun CompactContent(state: AppState) {
+    Box(Modifier.fillMaxSize()) {
+        when (state.tab) {
+            Tab.TODAY -> TodayView(state, showJar = true)
+            Tab.COLUMNS -> ColumnsView(state, compact = true)
+            Tab.ROUTINES -> RoutinesView(state)
+            Tab.STATS -> StatsView(state)
+            Tab.SETTINGS -> SettingsView(state)
         }
     }
 }
