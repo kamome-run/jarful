@@ -158,6 +158,7 @@ Tidak yakin Bluetooth yang mana? Jika pengaturan Bluetooth OS bisa **menyandingk
 | ESC/POS teks | Mencetak dengan font bawaan printer. Sesuaikan set karakter (UTF-8 / Shift_JIS / Big5 / GB18030 / Windows-125x / CP8xx…) dengan printer |
 | TSPL | Printer label (tinggi label dan jarak dalam mm) |
 | CPCL | Printer label yang memakai CPCL |
+| Cat printer | Printer saku 57 mm yang tidak mendukung ESC/POS (keluarga GB01 / GT01 / MX06, dijual dengan aplikasi “iPrint” / “Fun Print”). Terhubung lewat BLE |
 
 Lebar kertas **58 mm (384 titik)** atau **80 mm (576 titik)**. Printer saku tanpa pemotong: biarkan **Cut mati**; 3–5 baris umpan kertas sudah pas.
 
@@ -281,6 +282,8 @@ Cetak raster berfungsi di semua bahasa (font yang sesuai dipilih per baris; huru
 | Tidak ada port COM di Windows | Tambahkan port **Outgoing** seperti di 6.5; sandingkan ulang |
 | Sinkronisasi "host tidak terjangkau" | Wi-Fi sama? Aplikasi host terbuka? Firewall diizinkan? |
 | Sinkronisasi "PIN salah" | Masukkan ulang PIN yang tampil di layar pengaturan host |
+| Bisa disandingkan tapi tidak pernah terhubung (aplikasi vendor juga gagal) | Sebagian **printer khusus LE berhenti terhubung setelah disandingkan di sistem**. Lepaskan sandingan di pengaturan Bluetooth → nyalakan ulang printer → pilih **Bluetooth LE** di Jarful → 🔄 → Cetak uji. Tutup sepenuhnya aplikasi vendor. Jika masih gagal, tempel laporan **Diagnosis koneksi** ke issue |
+| Tidak bisa terhubung di OPPO / Xiaomi / Huawei | Izinkan “Perangkat di sekitar” dan “Lokasi”, nyalakan Lokasi, kecualikan Jarful dari optimasi baterai. Jika Classic gagal, LE dicoba otomatis dan mode yang berhasil disimpan |
 | Tiket rutinitas tidak muncul | Periksa hari dan sakelar "Aktif"; gunakan "Buat ulang hari ini" |
 
 ## 13. Membangun dari kode sumber

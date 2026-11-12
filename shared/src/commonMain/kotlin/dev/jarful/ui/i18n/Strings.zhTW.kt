@@ -54,4 +54,5 @@ val ZH_TW = Strings(
     syncAuto = "自動同步（啟動時與每 5 分鐘）", syncNow = "立即同步", syncOk = "已同步", syncFailed = { "同步失敗：$it" }, syncLast = "上次同步", syncNever = "尚未同步",
     syncHostRunning = "等待連線中", syncHostError = { "無法啟動主機：$it" },
     syncError = { code -> when (code) { "UNREACHABLE" -> "無法連線到主機（是否在同一個 Wi-Fi？主機是否已啟動？）"; "PIN_MISMATCH" -> "PIN 碼錯誤"; "VERSION_MISMATCH" -> "App 版本不一致"; "NO_PEER" -> "尚未設定主機"; "BAD_RESPONSE" -> "無法讀取回應"; else -> code } },
+    printerDiagnose = "連線診斷", printerDiagnoseTitle = "Bluetooth 連線診斷", printerDiagnoseHint = "顯示裝置類型、是否有 SPP、GATT 服務，以及各種連線方式的結果。若無法列印，請複製此內容貼到 GitHub Issue。", copy = "複製", printSwitchedTransport = { "已將連線方式切換為 $it" },
 )
