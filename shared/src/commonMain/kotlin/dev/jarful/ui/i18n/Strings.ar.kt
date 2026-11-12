@@ -58,4 +58,5 @@ val AR = Strings(
     nothingToPrint = "لا شيء للطباعة. أنشئ تذكرة اليوم للمهمة أو استخدم ⋮ ← طباعة.",
     printBusy = "الطباعة جارية بالفعل", printPaused = { "توقفت الطباعة (المتبقي $it)" }, printProgress = { d, n -> "جارٍ الطباعة $d / $n" }, printResume = "متابعة الطباعة", printDiscard = "تجاهل الباقي", printStop = "إيقاف", printPaperHint = "نفد الورق؟ استبدل اللفافة ثم اضغط «متابعة الطباعة».",
     routinePrintDate = "طباعة ليوم محدد…", printDateTitle = "تاريخ الطباعة", printDateHint = "اطبع روتين صباح الغد الليلة: تتحول روتينات اليوم المختار إلى تذاكر وتُطبع.", today = "اليوم", tomorrow = "غدًا", selectMode = "تحديد متعدد", selectAll = "تحديد الكل", selectNone = "إلغاء التحديد", selectedCount = { "تم تحديد $it" }, enableSelected = "تفعيل المحدد", disableSelected = "تعطيل المحدد", duplicate = "تكرار", duplicateCount = "عدد النسخ", duplicateHint = "تُكرَّر المهام الفرعية أيضًا (بحد أقصى 50).", dragToReorder = "اسحب ≡ لإعادة الترتيب", depthLimitHint = "وصلت إلى مستوى ابن الحفيد؛ لا يمكن التقسيم أكثر.", uncategorized = "بدون تصنيف",
+    printRetrying = { n, max -> "إعادة الاتصال ($n / $max)…" }, printLastError = { "آخر خطأ: $it" },
 )
