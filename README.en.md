@@ -40,7 +40,7 @@ into an app for Android (including Chromebooks and Google's ChromeOS/Android lap
 | Break tasks into **2–5 minute micro-tasks** so the loop repeats often | Hierarchical tasks in **side-by-side columns**; `Tab` adds a subtask instantly |
 | One sticky note = one task; when done, **crumple it into a transparent jar** | Completing a "today ticket" plays a **crumple animation + paper sound + vibration** and drops a paper ball into the jar |
 | Start the day with easy habits; **prepare tomorrow the night before** | Weekday **routines** generate tomorrow's tickets automatically after the prepare time (21:00 by default) |
-| When you notice procrastination, write **the next 3–5 tasks** and start | `Ctrl+K` **Refocus**: one task per line → instant tickets → the first one starts running |
+| When you notice procrastination, write **the next 3–5 tasks** and start | `Ctrl+K` **Refocus**: one task per line → instant tickets on the Today tab |
 | Tasks that cannot be split get **split by time** ("just 10 minutes") | Timeboxed tickets count down; at the end choose "complete / +5 min / break down" |
 | A backlog (thousands of emails) becomes "**all new + N old, every day**" | **Quota routines** (+1 counter, complete at the target) |
 | A **thermal printer** removes the friction | Prints over Bluetooth Classic / Bluetooth LE / COM / TCP using **ESC/POS, TSPL or CPCL**, one ticket per receipt |
@@ -125,13 +125,13 @@ Uninstall via **Settings → Apps → Installed apps → Jarful**. The data file
 
 ## 5. First launch and the daily flow
 
-1. **Set up routines** (Routines tab): list easy morning habits (make coffee, open the window…) from top to bottom. Toggle weekdays per routine; for counted habits such as "process 10 emails", enter the number as a **quota**.
-2. **Prepared the night before**: opening the app after the "prepare tomorrow at" time (21:00 by default) generates tomorrow's routine tickets. Opening it in the morning generates today's if they are missing.
-3. **Break tasks down** (Columns tab): create a big task ("Clean the house") in the left column, select it and press `Tab` (or "Add subtask") to add "Kitchen", "Bathroom"… in the next column, then split further to **2–5 minute** pieces such as "Wash dishes". Tasks open for 3+ days show a "break it down further" hint.
+1. **Set up routines** (Routines tab): list easy morning habits (make coffee, open the window…) from top to bottom. Toggle weekdays per routine; for counted habits such as "process 10 emails", enter the number as a **quota**. Routines are grouped under **category headings**; drag the ≡ handle to reorder (dragging into another heading changes the category), **duplicate** a routine with a count, or **select several** and switch them on or off together.
+2. **Prepared the night before**: opening the app after the "prepare tomorrow at" time (21:00 by default) generates tomorrow's routine tickets. Opening it in the morning generates today's if they are missing. To **print tomorrow morning's tickets tonight**, use "Print for a date…" on the Routines tab and pick tomorrow.
+3. **Break tasks down** (Columns tab): create a big task ("Clean the house") in the left column, select it and press `Tab` (or "Add subtask") to add "Kitchen", "Bathroom"… in the next column, then split further to **2–5 minute** pieces such as "Wash dishes". Tasks open for 3+ days show a "break it down further" hint. The hierarchy goes down to the **great-grandchild level** (four columns). Drag the ≡ handle to reorder rows, and use **Duplicate** in the menu to copy a task with its subtasks as many times as you like. Long titles wrap onto several lines.
 4. **Make today's tickets**: select a task and press `T`; for a whole column press `Shift+T` (or use the column menu). They appear as receipt-style cards in the Today tab.
 5. **Print and pin** (optional): `Ctrl+P` prints all of today's tickets; tear them off and **pin them to the whiteboard with magnets**.
-6. **Do it → complete**: **Start** shows elapsed time (a countdown for timeboxed tickets). Press **Done** (or swipe the card right) and it crumples into the jar with sound and vibration. Peel off the paper ticket, crumple it, and drop it into the real jar.
-7. **When you catch yourself procrastinating**: `Ctrl+K` (⚡ Refocus), write the next 3–5 tasks one per line and press **Start**. They become tickets immediately and the first one starts running.
+6. **Do it → complete**: press **Done** (or swipe the card right) and it crumples into the jar with sound and vibration. Peel off the paper ticket, crumple it, and drop it into the real jar.
+7. **When you catch yourself procrastinating**: `Ctrl+K` (⚡ Refocus), write the next 3–5 tasks one per line and press **Start**. They become tickets immediately on the Today tab.
 8. **Stats**: loops per day (90 days), streak and routine completion.
 
 ## 6. Printer setup (detailed)

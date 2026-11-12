@@ -20,7 +20,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Icon
@@ -30,7 +29,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -49,8 +47,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import dev.jarful.model.Ticket
-import dev.jarful.model.TicketState
-import dev.jarful.platform.nowMillis
 import dev.jarful.ui.AppState
 import dev.jarful.ui.PrintTarget
 import dev.jarful.ui.ds.ButtonKind
@@ -63,7 +59,6 @@ import dev.jarful.ui.ds.DsMenuItem
 import dev.jarful.ui.ds.DsProgress
 import dev.jarful.ui.i18n.LocalStrings
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /** One receipt-like card (§7.3). Completing it plays the crumple animation (FR-4.1) then drops into the jar. */
@@ -75,7 +70,6 @@ fun TicketCard(state: AppState, ticket: Ticket, modifier: Modifier = Modifier, s
     val alpha = remember { Animatable(1f) }
     var crumpling by remember(ticket.id) { mutableStateOf(false) }
     var menu by remember { mutableStateOf(false) }
-    val isRunning = ticket.state == TicketState.RUNNING
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(crumpling) {
@@ -93,7 +87,7 @@ fun TicketCard(state: AppState, ticket: Ticket, modifier: Modifier = Modifier, s
         }
     }
 
-    val tone = when { ticket.isDone -> CardTone.Muted; isRunning -> CardTone.Highlight; else -> CardTone.Default }
+    val tone = if (ticket.isDone) CardTone.Muted else CardTone.Default
 
     // Touch: swipe the card to the right (past 40% of its width) to complete it (NFR-CB touch).
     val density = LocalDensity.current
@@ -157,17 +151,11 @@ fun TicketCard(state: AppState, ticket: Ticket, modifier: Modifier = Modifier, s
             )
 
             if (ticket.isQuota && !ticket.isDone) QuotaRow(state, ticket)
-            if (isRunning) TimerRow(state, ticket)
 
             Row(Modifier.padding(top = 8.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (ticket.isDone) {
                     DsButton(onClick = { state.undoComplete(ticket.id) }, kind = ButtonKind.Subtle) { Icon(Icons.Default.Refresh, null, modifier = Modifier.size(16.dp)); Spacer(Modifier.width(4.dp)); Text(s.undoDone) }
                 } else {
-                    if (isRunning) {
-                        DsButton(onClick = { state.store.stopTicket(ticket.id) }) { Text(s.stop) }
-                    } else {
-                        DsButton(onClick = { state.store.startTicket(ticket.id) }) { Icon(Icons.Default.PlayArrow, null, modifier = Modifier.size(16.dp)); Spacer(Modifier.width(2.dp)); Text(s.start) }
-                    }
                     DsButton(onClick = { if (!crumpling) crumpling = true }, enabled = !crumpling, kind = ButtonKind.Accent, modifier = Modifier.weight(1f)) {
                         Icon(Icons.Default.Check, null, modifier = Modifier.size(16.dp)); Spacer(Modifier.width(4.dp)); Text(s.done, maxLines = 1)
                     }
@@ -194,46 +182,4 @@ private fun QuotaRow(state: AppState, ticket: Ticket) {
         }) { Text("+1") }
     }
     DsProgress(progress = { ticket.quotaCount.toFloat() / target }, modifier = Modifier.fillMaxWidth().padding(top = 6.dp))
-}
-
-/** Elapsed / countdown timer for a running ticket (FR-8). */
-@Composable
-private fun TimerRow(state: AppState, ticket: Ticket) {
-    val s = LocalStrings.current
-    var now by remember { mutableLongStateOf(nowMillis()) }
-    var notified by remember(ticket.id, ticket.timeboxMin, ticket.startedAt) { mutableStateOf(false) }
-    LaunchedEffect(ticket.id) { while (true) { now = nowMillis(); delay(1000) } }
-    val started = ticket.startedAt ?: now
-    val elapsedSec = ((now - started) / 1000).coerceAtLeast(0)
-    val box = ticket.timeboxMin
-    val remainingSec = box?.let { it * 60L - elapsedSec }
-    val timeUp = remainingSec != null && remainingSec <= 0
-    if (timeUp && !notified) { notified = true; state.timeUp() }
-
-    Column(Modifier.padding(top = 6.dp)) {
-        if (box != null) {
-            val ratio = (elapsedSec.toFloat() / (box * 60f)).coerceIn(0f, 1f)
-            DsProgress(progress = { ratio }, modifier = Modifier.fillMaxWidth(), color = if (timeUp) MaterialTheme.colorScheme.error else null)
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
-                Text(
-                    if (timeUp) s.timeUp else "${s.remaining} ${fmt(remainingSec!!)}",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = if (timeUp) MaterialTheme.colorScheme.error else LocalContentColor.current,
-                    modifier = Modifier.weight(1f),
-                )
-                if (timeUp) {
-                    DsButton(onClick = { state.store.extendTimebox(ticket.id, 5) }, kind = ButtonKind.Subtle) { Text(s.extend5) }
-                    ticket.taskId?.let { tid -> DsButton(onClick = { state.breakDownTaskId = tid }, kind = ButtonKind.Subtle) { Text(s.breakDown) } }
-                }
-            }
-        } else {
-            Text("${s.elapsed} ${fmt(elapsedSec)}", style = MaterialTheme.typography.bodyMedium, color = LocalContentColor.current.copy(alpha = 0.75f))
-        }
-    }
-}
-
-private fun fmt(sec: Long): String {
-    val v = kotlin.math.abs(sec)
-    val m = v / 60; val s = v % 60
-    return (if (sec < 0) "-" else "") + m.toString() + ":" + s.toString().padStart(2, '0')
 }

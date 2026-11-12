@@ -5,6 +5,57 @@ import dev.jarful.model.Task
 
 /** Pure functions over the flat task list that implement the hierarchy (FR-1, FR-2). */
 object TaskTree {
+    /** Deepest allowed level: 0 = top-level task, 1 = child, 2 = grandchild, 3 = great-grandchild (FR-1.1). */
+    const val MAX_DEPTH = 3
+
+    /** 0 for top-level tasks, 1 for their children, and so on. */
+    fun depth(tasks: List<Task>, id: String): Int = (pathTo(tasks, id).size - 1).coerceAtLeast(0)
+
+    /** Height of the subtree below [id]: 0 when it has no children. */
+    fun subtreeHeight(tasks: List<Task>, id: String): Int {
+        val kids = tasks.filter { it.parentId == id }
+        return if (kids.isEmpty()) 0 else 1 + kids.maxOf { subtreeHeight(tasks, it.id) }
+    }
+
+    /** Whether a child may be added under [parentId] (null = root). */
+    fun canAddChild(tasks: List<Task>, parentId: String?): Boolean = parentId == null || depth(tasks, parentId) < MAX_DEPTH
+
+    /** Moves [id] to position [toIndex] among its siblings (drag and drop). */
+    fun moveTo(tasks: List<Task>, id: String, toIndex: Int): List<Task> {
+        val task = byId(tasks, id) ?: return tasks
+        val siblings = childrenOf(tasks, task.parentId).toMutableList()
+        val i = siblings.indexOfFirst { it.id == id }
+        val j = toIndex.coerceIn(0, siblings.size - 1)
+        if (i < 0 || i == j) return tasks
+        val item = siblings.removeAt(i); siblings.add(j, item)
+        val reordered = siblings.mapIndexed { k, t -> t.copy(order = k) }
+        return tasks.filter { it.parentId != task.parentId } + reordered
+    }
+
+    /** Duplicates [id] with its whole subtree [count] times right after the original (FR-2.8). */
+    fun copy(tasks: List<Task>, id: String, count: Int, now: Long): List<Task> {
+        val src = byId(tasks, id) ?: return tasks
+        var cur = tasks
+        var afterId = id
+        repeat(count.coerceIn(1, 50)) {
+            val (t1, dup) = add(cur, src.parentId, src.title, now, afterId = afterId)
+            cur = t1
+            cur = update(cur, dup.id, now) { it.copy(estimateMin = src.estimateMin, timeboxMin = src.timeboxMin) }
+            cur = copyChildren(cur, src.id, dup.id, now)
+            afterId = dup.id
+        }
+        return cur
+    }
+
+    private fun copyChildren(tasks: List<Task>, fromId: String, toId: String, now: Long): List<Task> {
+        var cur = tasks
+        for (child in childrenOf(tasks, fromId)) {
+            val (t1, dup) = add(cur, toId, child.title, now)
+            cur = update(t1, dup.id, now) { it.copy(estimateMin = child.estimateMin, timeboxMin = child.timeboxMin) }
+            cur = copyChildren(cur, child.id, dup.id, now)
+        }
+        return cur
+    }
 
     fun childrenOf(tasks: List<Task>, parentId: String?): List<Task> =
         tasks.filter { it.parentId == parentId }.sortedWith(compareBy({ it.order }, { it.createdAt }))
@@ -104,6 +155,8 @@ object TaskTree {
         if (id == INBOX_ID) return tasks
         if (newParentId == id) return tasks
         if (newParentId != null && isAncestor(tasks, id, newParentId)) return tasks
+        val newDepth = if (newParentId == null) 0 else depth(tasks, newParentId) + 1
+        if (newDepth + subtreeHeight(tasks, id) > MAX_DEPTH) return tasks
         val order = nextOrder(tasks, newParentId)
         return tasks.map { if (it.id == id) it.copy(parentId = newParentId, order = order, updatedAt = now) else it }
     }

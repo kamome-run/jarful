@@ -40,7 +40,7 @@ thành ứng dụng cho Android (gồm Chromebook và laptop ChromeOS/Android c�
 | Chia việc thành **việc siêu nhỏ 2–5 phút** để vòng lặp lặp lại thường xuyên | Việc phân cấp hiển thị theo **các cột cạnh nhau**; `Tab` thêm việc con ngay lập tức |
 | Một tờ giấy = một việc; xong thì **vò nát ném vào lọ trong suốt** | Hoàn thành “phiếu hôm nay” sẽ chạy **hiệu ứng vò giấy + tiếng giấy + rung** và một viên giấy rơi vào lọ |
 | Bắt đầu ngày bằng thói quen dễ; **chuẩn bị ngày mai từ tối hôm trước** | **Thói quen** theo ngày trong tuần tự tạo phiếu cho ngày mai sau giờ chuẩn bị (mặc định 21:00) |
-| Khi thấy mình trì hoãn, viết **3–5 việc tiếp theo** rồi bắt tay làm | `Ctrl+K` **Tập trung lại**: mỗi việc một dòng → thành phiếu ngay → việc đầu tiên bắt đầu chạy |
+| Khi thấy mình trì hoãn, viết **3–5 việc tiếp theo** rồi bắt tay làm | `Ctrl+K` **Tập trung lại**: mỗi việc một dòng → thành phiếu ngay trong thẻ Hôm nay |
 | Việc không chia nhỏ được thì **chia theo thời gian** (“chỉ 10 phút thôi”) | Phiếu có khung giờ sẽ đếm ngược; hết giờ chọn “hoàn thành / +5 phút / chia nhỏ” |
 | Việc tồn đọng (hàng nghìn email) thành “**tất cả email mới + N email cũ, mỗi ngày**” | **Thói quen định mức** (bộ đếm +1, đạt mục tiêu là hoàn thành) |
 | **Máy in nhiệt** xoá bỏ ma sát | In qua Bluetooth Classic / Bluetooth LE / COM / TCP bằng **ESC/POS, TSPL hoặc CPCL**, mỗi phiếu một tờ |
@@ -125,13 +125,13 @@ Gỡ cài đặt qua **Settings → Apps → Installed apps → Jarful**. Tệp 
 
 ## 5. Lần chạy đầu và nhịp một ngày
 
-1. **Thiết lập thói quen** (thẻ Thói quen): liệt kê từ trên xuống các thói quen buổi sáng dễ làm (pha cà phê, mở cửa sổ…). Bật ngày trong tuần cho từng thói quen; với thói quen đếm số như “xử lý 10 email”, nhập số vào **định mức**.
-2. **Chuẩn bị từ tối hôm trước**: mở ứng dụng sau giờ “Chuẩn bị ngày mai lúc” (mặc định 21:00) sẽ tạo phiếu thói quen cho ngày mai. Sáng mở lên nếu chưa có phiếu hôm nay thì sẽ tạo ngay.
-3. **Chia nhỏ việc** (thẻ Cột): tạo việc lớn (“Dọn nhà”) ở cột trái, chọn nó rồi nhấn `Tab` (hoặc “Thêm việc con”) để thêm “Bếp”, “Phòng tắm”… ở cột kế, rồi chia tiếp đến mức **2–5 phút** (“Rửa chén”). Việc mở quá 3 ngày sẽ hiện gợi ý “chia nhỏ hơn nữa”.
+1. **Thiết lập thói quen** (thẻ Thói quen): liệt kê từ trên xuống các thói quen buổi sáng dễ làm (pha cà phê, mở cửa sổ…). Bật ngày trong tuần cho từng thói quen; với thói quen đếm số như “xử lý 10 email”, nhập số vào **định mức**. Thói quen được nhóm theo **tiêu đề danh mục**; kéo tay nắm ≡ để sắp xếp (kéo sang tiêu đề khác sẽ đổi danh mục), **nhân bản** một thói quen với số lượng tùy chọn, hoặc **chọn nhiều** rồi bật / tắt cùng lúc.
+2. **Chuẩn bị từ tối hôm trước**: mở ứng dụng sau giờ “Chuẩn bị ngày mai lúc” (mặc định 21:00) sẽ tạo phiếu thói quen cho ngày mai. Sáng mở lên nếu chưa có phiếu hôm nay thì sẽ tạo ngay. Muốn **in tối nay các phiếu cho sáng mai**, dùng “In cho một ngày…” ở thẻ Thói quen và chọn ngày mai.
+3. **Chia nhỏ việc** (thẻ Cột): tạo việc lớn (“Dọn nhà”) ở cột trái, chọn nó rồi nhấn `Tab` (hoặc “Thêm việc con”) để thêm “Bếp”, “Phòng tắm”… ở cột kế, rồi chia tiếp đến mức **2–5 phút** (“Rửa chén”). Việc mở quá 3 ngày sẽ hiện gợi ý “chia nhỏ hơn nữa”. Phân cấp tối đa đến **cấp chắt** (bốn cột). Kéo tay nắm ≡ để sắp xếp các dòng, và dùng **Nhân bản** trong menu để sao chép một việc cùng việc con với số lượng tùy chọn. Tiêu đề dài sẽ tự xuống dòng.
 4. **Tạo phiếu hôm nay**: chọn việc rồi nhấn `T`; cả cột thì `Shift+T` (hoặc menu cột). Chúng xuất hiện dưới dạng thẻ kiểu hoá đơn trong thẻ Hôm nay.
 5. **In và gắn lên bảng** (tuỳ chọn): `Ctrl+P` in toàn bộ phiếu hôm nay; xé rời và **gắn lên bảng trắng bằng nam châm**.
-6. **Làm → hoàn thành**: **Bắt đầu** hiển thị thời gian đã trôi qua (đếm ngược nếu có khung giờ). Nhấn **Xong** (hoặc vuốt thẻ sang phải): thẻ vò lại rơi vào lọ kèm âm thanh và rung. Gỡ phiếu giấy, vò nát và bỏ vào lọ thật.
-7. **Khi thấy mình đang trì hoãn**: `Ctrl+K` (⚡ Tập trung lại), viết 3–5 việc tiếp theo mỗi việc một dòng rồi nhấn **Bắt đầu**. Chúng thành phiếu ngay và việc đầu tiên bắt đầu chạy.
+6. **Làm → hoàn thành**: nhấn **Xong** (hoặc vuốt thẻ sang phải): thẻ vò lại rơi vào lọ kèm âm thanh và rung. Gỡ phiếu giấy, vò nát và bỏ vào lọ thật.
+7. **Khi thấy mình đang trì hoãn**: `Ctrl+K` (⚡ Tập trung lại), viết 3–5 việc tiếp theo mỗi việc một dòng rồi nhấn **Bắt đầu**. Chúng thành phiếu ngay trong thẻ Hôm nay.
 8. **Thống kê**: số vòng mỗi ngày (90 ngày), chuỗi ngày liên tiếp và tỷ lệ hoàn thành thói quen.
 
 ## 6. Thiết lập máy in (chi tiết)
