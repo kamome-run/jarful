@@ -33,8 +33,8 @@ android {
         applicationId = "dev.jarful.app"
         minSdk = libs.versions.androidMinSdk.get().toInt()
         targetSdk = libs.versions.androidTargetSdk.get().toInt()
-        versionCode = 18
-        versionName = "1.5.3"
+        versionCode = 19
+        versionName = "1.5.4"
     }
     buildTypes {
         release {
