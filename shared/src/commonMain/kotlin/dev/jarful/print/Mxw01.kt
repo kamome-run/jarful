@@ -98,22 +98,22 @@ object Mxw01 {
                 listOf(BleWrite(CHAR_DATA, rowData(bmp, 24)), BleWrite(CHAR_CONTROL, flush(), awaitNotify = CHAR_DONE, delayMs = 800))
         }
         fun fourBpp(tag: String, mode: Int, inverted: Boolean): List<BleWrite> =
-            plan(label(tag), 1, 0xE0, gray = false) + listOf(
+            plan(label(tag), 1, 0x5D, gray = false) + listOf(
                 BleWrite(CHAR_CONTROL, getStatus(), awaitNotify = CHAR_NOTIFY, delayMs = 2000),
-                BleWrite(CHAR_CONTROL, setIntensity(0xE0), delayMs = 50),
+                BleWrite(CHAR_CONTROL, setIntensity(0x5D), delayMs = 50),
                 BleWrite(CHAR_CONTROL, printRequest(sample.height + 24, mode), awaitNotify = CHAR_NOTIFY),
                 BleWrite(CHAR_DATA, if (inverted) rowData4bppInverted(sample, 24) else rowData4bpp(sample, 24)),
                 BleWrite(CHAR_CONTROL, flush(), awaitNotify = CHAR_DONE, delayMs = 800),
             )
         return listOf(
-            "A 1bpp intensity 0xE0" to oneBpp("A", 0xE0),
-            "B 1bpp intensity 0xFF" to oneBpp("B", 0xFF),
-            "C 1bpp intensity 0x5D + quality 0x35" to oneBpp("C", 0x5D, listOf(BleWrite(CHAR_CONTROL, packet(CMD_SET_QUALITY, byteArrayOf(0x35)), delayMs = 50))),
-            "D 1bpp intensity 0xE0 + speed 0x08" to oneBpp("D", 0xE0, listOf(BleWrite(CHAR_CONTROL, packet(CMD_SPEED, byteArrayOf(0x08)), delayMs = 50))),
-            "E 1bpp intensity after request" to oneBpp("E", 0xE0, intensityAfterRequest = true),
-            "F 4bpp mode 2 black=F" to fourBpp("F", 0x02, false),
-            "G 4bpp mode 2 black=0" to fourBpp("G", 0x02, true),
-            "H 4bpp mode 1 black=F" to fourBpp("H", 0x01, false),
+            "A 1bpp intensity 0x5D (baseline)" to oneBpp("A", 0x5D),
+            "B 1bpp intensity 0x70" to oneBpp("B", 0x70),
+            "C 1bpp intensity 0x90" to oneBpp("C", 0x90),
+            "D 1bpp intensity 0xB0" to oneBpp("D", 0xB0),
+            "E 1bpp intensity 0xD0" to oneBpp("E", 0xD0),
+            "F 1bpp 0x5D + quality 0x35" to oneBpp("F", 0x5D, listOf(BleWrite(CHAR_CONTROL, packet(CMD_SET_QUALITY, byteArrayOf(0x35)), delayMs = 50))),
+            "G 1bpp 0x5D + speed 0x08" to oneBpp("G", 0x5D, listOf(BleWrite(CHAR_CONTROL, packet(CMD_SPEED, byteArrayOf(0x08)), delayMs = 50))),
+            "H 4bpp mode 2 black=F, 0x5D" to fourBpp("H", 0x02, false),
         )
     }
 }
