@@ -30,6 +30,9 @@ expect fun bluetoothSupported(): Boolean
 /** Whether Bluetooth Low Energy (GATT) is available on this platform. */
 expect fun bleSupported(): Boolean
 
+/** Short human-readable note on the Bluetooth capabilities of this build (shown in Settings → About). */
+expect fun bluetoothCapabilityNote(): String
+
 /**
  * Requests the runtime permissions needed for Bluetooth: connect (and scan/location when
  * [scan] is true, needed to discover BLE printers). Returns true when granted.
