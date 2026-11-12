@@ -161,7 +161,7 @@ Unsicher, welches Bluetooth du hast? Lässt sich der Drucker in den Bluetooth-Ei
 | Cat printer | 57-mm-Taschendrucker ohne ESC/POS (Familie GB01 / GT01 / MX06, mit den Apps „iPrint“ / „Fun Print“ verkauft). Verbindung über BLE |
 | Cat printer MXW01 | Neuere Generation (Familie MXW01 / X5h; die Diagnose listet AE01–AE04). Nur BLE |
 
-Papierbreite **58 mm (384 Punkte)** oder **80 mm (576 Punkte)**. Taschendrucker ohne Schneidwerk: **Cut aus** lassen; 3–5 Vorschubzeilen sind ein guter Wert.
+Papierbreite **58 mm (384 Punkte)** oder **80 mm (576 Punkte)**. Die **Druckdichte** (1–5, Standard 4) macht blasse Drucke dunkler. Taschendrucker ohne Schneidwerk: **Cut aus** lassen; 3–5 Vorschubzeilen sind ein guter Wert.
 
 ### 6.3 Android / Chromebook — Bluetooth Classic
 
