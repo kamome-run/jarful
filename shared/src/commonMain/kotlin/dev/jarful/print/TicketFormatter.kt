@@ -101,9 +101,15 @@ object TicketFormatter {
         return PrintJob.Bytes(encodeAll(tickets, s, dateLabel))
     }
 
+    /** Darkness probe for MXW01 printers: a list of labelled BLE sessions (temporary diagnostic). */
+    fun mxw01ProbeJobs(): List<Pair<String, List<BleWrite>>> {
+        val sample = renderTextBitmap(listOf(TextLine("Jarful 濃度テスト", 30f, bold = true), TextLine("ABCDEFG abcdefg 0123456789", 24f)), Mxw01.WIDTH, 8)
+        return Mxw01.variantPlans(sample) { tag -> renderTextBitmap(listOf(TextLine("[$tag]", 26f, bold = true)), Mxw01.WIDTH, 8) }
+    }
+
     fun encodeTestJob(s: PrinterSettings): PrintJob {
         if (s.protocol == PrintProtocol.CATPRINTER_MXW01) {
-            val bmp = renderTextBitmap(listOf(TextLine("Jarful", 40f, bold = true, center = true), TextLine("", 0f), TextLine("Test print OK / テスト印刷", 26f), TextLine("MXW01 / 384px / gray", 20f)), Mxw01.WIDTH, 8)
+            val bmp = renderTextBitmap(listOf(TextLine("Jarful", 40f, bold = true, center = true), TextLine("", 0f), TextLine("Test print OK / テスト印刷", 26f), TextLine("MXW01 / 384px", 20f)), Mxw01.WIDTH, 8)
             return PrintJob.Ble(Mxw01.plan(bmp, s.feedLines))
         }
         return PrintJob.Bytes(encodeTestPage(s))

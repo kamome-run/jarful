@@ -167,6 +167,9 @@ private fun PrinterSection(state: AppState, p: PrinterSettings, update: ((Printe
             if (p.transport == PrinterTransport.BLUETOOTH || p.transport == PrinterTransport.BLUETOOTH_LE) {
                 DsButton(onClick = { state.diagnosePrinter() }, enabled = !state.diagnosing && p.bluetoothAddress.isNotBlank()) { Text(if (state.diagnosing) "…" else s.printerDiagnose) }
             }
+            if (p.protocol == PrintProtocol.CATPRINTER_MXW01) {
+                DsButton(onClick = { state.probeDarkness() }, enabled = !state.printing && p.bluetoothAddress.isNotBlank()) { Text(s.printerProbe) }
+            }
         }
     }
     state.diagnosis?.let { report ->

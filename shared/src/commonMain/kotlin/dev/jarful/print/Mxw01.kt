@@ -19,6 +19,32 @@ object Mxw01 {
     private const val CMD_SET_INTENSITY = 0xA2
     private const val CMD_PRINT = 0xA9
     private const val CMD_FLUSH = 0xAD
+    private const val CMD_SET_QUALITY = 0xA4
+    private const val CMD_SPEED = 0xBD
+
+    /** 4-bpp rows with inverted polarity (0xF = white, 0x0 = black). */
+    fun rowData4bppInverted(bmp: MonoBitmap, feedRows: Int): ByteArray = rowData4bpp(bmp, feedRows).also { for (i in it.indices) it[i] = (it[i].toInt().inv() and 0xFF).toByte() }
+
+    /**
+     * Darkness probe (temporary diagnostic): several candidate configurations, each as its own BLE session.
+     * The label is printed first in the known-good 1-bpp mode so the user can report which variant printed dark.
+     */
+    fun variantPlans(bmp: MonoBitmap, label: (String) -> MonoBitmap): List<Pair<String, List<BleWrite>>> {
+        fun session(prefix: List<BleWrite>, request: ByteArray, data: ByteArray, suffix: List<BleWrite> = emptyList()) =
+            prefix + listOf(BleWrite(CHAR_CONTROL, request, awaitNotify = CHAR_NOTIFY), BleWrite(CHAR_DATA, data), BleWrite(CHAR_CONTROL, flush(), awaitNotify = CHAR_DONE, delayMs = 300)) + suffix
+        val lines = bmp.height
+        val status = BleWrite(CHAR_CONTROL, getStatus(), awaitNotify = CHAR_NOTIFY)
+        return listOf(
+            "A 1bpp intensity 0xE0" to plan(bmp, 0, 0xE0, gray = false),
+            "B 1bpp intensity 0xFF" to plan(bmp, 0, 0xFF, gray = false),
+            "C 1bpp intensity 0x5D + quality 0x35" to session(listOf(status, BleWrite(CHAR_CONTROL, setIntensity(0x5D), delayMs = 50), BleWrite(CHAR_CONTROL, packet(CMD_SET_QUALITY, byteArrayOf(0x35)), delayMs = 50)), printRequest(lines, 0x00), rowData(bmp, 0)),
+            "D 1bpp intensity 0xE0 + speed 0x08" to session(listOf(status, BleWrite(CHAR_CONTROL, setIntensity(0xE0), delayMs = 50), BleWrite(CHAR_CONTROL, packet(CMD_SPEED, byteArrayOf(0x08)), delayMs = 50)), printRequest(lines, 0x00), rowData(bmp, 0)),
+            "E 4bpp mode 2 black=F" to session(listOf(status, BleWrite(CHAR_CONTROL, setIntensity(0xE0), delayMs = 50)), printRequest(lines, 0x02), rowData4bpp(bmp, 0)),
+            "F 4bpp mode 2 black=0" to session(listOf(status, BleWrite(CHAR_CONTROL, setIntensity(0xE0), delayMs = 50)), printRequest(lines, 0x02), rowData4bppInverted(bmp, 0)),
+            "G 4bpp mode 1 black=F" to session(listOf(status, BleWrite(CHAR_CONTROL, setIntensity(0xE0), delayMs = 50)), printRequest(lines, 0x01), rowData4bpp(bmp, 0)),
+            "H 1bpp intensity after request" to session(listOf(status), printRequest(lines, 0x00), rowData(bmp, 0)).let { listOf(it[0], it[1], BleWrite(CHAR_CONTROL, setIntensity(0xE0), delayMs = 50)) + it.drop(2) },
+        ).map { (name, p) -> name to (plan(label(name.take(1)), 0, 0xE0, gray = false) + p) }
+    }
 
     fun packet(cmd: Int, data: ByteArray): ByteArray {
         require(data.size < 256) { "mxw01 payload too long" }
@@ -60,9 +86,9 @@ object Mxw01 {
 
     /**
      * The BLE job for one bitmap: status → intensity → print request (wait reply) → rows → flush (wait done).
-     * Always uses the darkest configuration (FR-9.10): maximum intensity and the 4-bpp mode with full-black pixels.
+     * 1 bpp is the mode known to print on real devices; the 4-bpp mode is kept for the darkness probe.
      */
-    fun plan(bmp: MonoBitmap, feedLines: Int, intensity: Int = Density.MXW01_INTENSITY, gray: Boolean = true): List<BleWrite> {
+    fun plan(bmp: MonoBitmap, feedLines: Int, intensity: Int = Density.MXW01_INTENSITY, gray: Boolean = false): List<BleWrite> {
         val feedRows = (feedLines * 24).coerceIn(0, 400)
         val lines = bmp.height + feedRows
         return listOf(
