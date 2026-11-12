@@ -85,6 +85,7 @@ actual suspend fun ensureBluetoothPermission(scan: Boolean): Boolean {
 }
 
 actual fun bleSupported(): Boolean = ctx.packageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE) && adapter() != null
+actual fun bluetoothCapabilityNote(): String = "Bluetooth: classic=${bluetoothSupported()} le=${bleSupported()}"
 
 /** Well-known writable characteristics of BLE thermal printers, tried in order before a generic search. */
 private val BLE_PRINTER_CHARACTERISTICS = listOf(

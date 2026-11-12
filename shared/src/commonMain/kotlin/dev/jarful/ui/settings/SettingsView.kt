@@ -105,7 +105,9 @@ fun SettingsView(state: AppState, modifier: Modifier = Modifier) {
                 DsButton(onClick = { state.showShortcuts = true }, kind = ButtonKind.Subtle) { Text(s.shortcuts) }
             }
             SectionTitle(s.about)
+            Text("Jarful " + dev.jarful.AppVersion.NAME, style = MaterialTheme.typography.titleMedium)
             Text(s.aboutBody, style = MaterialTheme.typography.bodyMedium)
+            Text(dev.jarful.platform.bluetoothCapabilityNote(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text("https://github.com/kamome-run/jarful", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
             Spacer(Modifier.padding(24.dp))
         }

@@ -52,4 +52,7 @@ jarful/
 
 ## リリース
 
+バージョンは 3 か所を同時に上げる: `androidApp/build.gradle.kts`（versionCode / versionName）、`desktopApp/build.gradle.kts`（packageVersion）、`shared/.../AppVersion.kt`（設定画面に表示）。
+
+
 `v*` タグを push すると CI が APK と Windows インストーラを GitHub Release に添付します。
