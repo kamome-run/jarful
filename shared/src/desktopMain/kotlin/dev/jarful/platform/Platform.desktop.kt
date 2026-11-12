@@ -94,11 +94,16 @@ private fun runBle(vararg args: String, timeoutMs: Long = 30_000): String {
     val pb = ProcessBuilder(listOf(powershell(), "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", script.absolutePath) + args)
     val p = pb.start()
     val out = StringBuilder(); val err = StringBuilder()
-    val tOut = thread(isDaemon = true) { p.inputStream.bufferedReader().useLines { it.forEach { l -> out.appendLine(l) } } }
-    val tErr = thread(isDaemon = true) { p.errorStream.bufferedReader().useLines { it.forEach { l -> err.appendLine(l) } } }
+    val nativeCharset = runCatching { Charset.forName(System.getProperty("native.encoding") ?: System.getProperty("sun.jnu.encoding") ?: "MS932") }.getOrDefault(Charsets.UTF_8)
+    val tOut = thread(isDaemon = true) { p.inputStream.bufferedReader(Charsets.UTF_8).useLines { it.forEach { l -> out.appendLine(l) } } }
+    val tErr = thread(isDaemon = true) { p.errorStream.bufferedReader(nativeCharset).useLines { it.forEach { l -> err.appendLine(l) } } }
     if (!p.waitFor(timeoutMs, TimeUnit.MILLISECONDS)) { p.destroyForcibly(); throw IllegalStateException("BLE_HELPER_TIMEOUT") }
     tOut.join(1000); tErr.join(1000)
-    if (p.exitValue() != 0) throw IllegalStateException(err.toString().lines().firstOrNull { it.isNotBlank() }?.take(200) ?: "BLE_HELPER_FAILED(${p.exitValue()})")
+    runCatching { File(dataDirectory(), "jarful-ble.log").appendText("[" + java.time.LocalDateTime.now() + "] " + args.joinToString(" ") + "\n" + out + err + "\n") }
+    if (p.exitValue() != 0) {
+        val fromScript = out.lines().firstOrNull { it.startsWith("ERROR:") }
+        throw IllegalStateException((fromScript ?: err.lines().firstOrNull { it.isNotBlank() } ?: "BLE_HELPER_FAILED(${p.exitValue()})").take(400))
+    }
     return out.toString()
 }
 
