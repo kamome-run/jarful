@@ -55,5 +55,4 @@ val RU = Strings(
     syncHostRunning = "ожидает подключений", syncHostError = { "Не удалось запустить хост: $it" },
     syncError = { code -> when (code) { "UNREACHABLE" -> "Хост недоступен (та же сеть Wi-Fi? хост запущен?)"; "PIN_MISMATCH" -> "Неверный PIN"; "VERSION_MISMATCH" -> "Версии приложения различаются"; "NO_PEER" -> "Хост не настроен"; "BAD_RESPONSE" -> "Нечитаемый ответ"; else -> code } },
     printerDiagnose = "Диагностика подключения", printerDiagnoseTitle = "Диагностика Bluetooth", printerDiagnoseHint = "Показывает тип устройства, наличие SPP, службы GATT и результат каждого способа подключения. Если печать не идёт, скопируйте это в issue на GitHub.", copy = "Копировать", printSwitchedTransport = { "Способ подключения переключён на $it" },
-    printDensity = "Плотность печати", printDensityHint = "Увеличьте, если печать бледная (1 = светлая, 5 = тёмная). Слишком тёмная замедляет протяжку бумаги.",
 )
