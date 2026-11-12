@@ -50,10 +50,10 @@ class ScreenshotSmokeTest {
         return store
     }
 
-    private fun shoot(name: String, w: Int, h: Int) {
+    private fun shoot(name: String, w: Int, h: Int, dark: Boolean = false, tab: dev.jarful.ui.Tab? = null) {
         val store = seededStore()
         ImageComposeScene(width = w, height = h, coroutineContext = Dispatchers.Unconfined).use { scene ->
-            scene.setContent { JarfulApp(store) }
+            scene.setContent { JarfulApp(store, darkTheme = dark) }
             scene.render(1_000_000_000L)
             val img = scene.render(2_000_000_000L)
             val png = img.encodeToData(EncodedImageFormat.PNG)!!.bytes
@@ -67,6 +67,12 @@ class ScreenshotSmokeTest {
 
     @Test
     fun phoneCompactLayout() = shoot("phone-412x915", 412, 915)
+
+    @Test
+    fun desktopDark() = shoot("desktop-1280x800-dark", 1280, 800, dark = true)
+
+    @Test
+    fun phoneDark() = shoot("phone-412x915-dark", 412, 915, dark = true)
 
     @Test
     fun ticketRasterLooksRight() {

@@ -16,6 +16,9 @@ kotlin {
 
     sourceSets {
         val desktopMain by getting
+        // JVM-only implementations shared verbatim by Android and desktop (both run on the JVM).
+        androidMain { kotlin.srcDir("src/jvmShared/kotlin") }
+        desktopMain.kotlin.srcDir("src/jvmShared/kotlin")
 
         commonMain.dependencies {
             implementation(compose.runtime)

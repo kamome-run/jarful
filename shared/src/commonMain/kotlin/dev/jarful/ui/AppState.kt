@@ -20,6 +20,10 @@ import dev.jarful.print.PrintResult
 import dev.jarful.print.PrinterClient
 import dev.jarful.print.TicketFormatter
 import dev.jarful.sound.CrumpleSound
+import dev.jarful.sync.SyncClient
+import dev.jarful.sync.SyncOutcome
+import dev.jarful.sync.SyncServer
+import dev.jarful.data.json
 import dev.jarful.ui.i18n.Strings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -66,6 +70,48 @@ class AppState(val store: Store, val scope: CoroutineScope, var strings: Strings
     private val crumplePcm by lazy { CrumpleSound.crumple() }
     private val chimePcm by lazy { CrumpleSound.chime() }
     private val printer = PrinterClient()
+
+    // ----- Sync (FR-14) -----
+    private val syncClient = SyncClient(json)
+    private val syncServer = SyncServer(json, pin = { data.settings.sync.pin }, onMerge = { remote -> store.mergeFromPeer(remote) })
+    var syncing by mutableStateOf(false)
+    var syncServerError by mutableStateOf<String?>(null)
+    val syncHostRunning: Boolean get() = syncServer.running
+
+    /** Starts or stops the host according to settings. Safe to call repeatedly. */
+    fun reconcileSyncHost() {
+        val s = data.settings.sync
+        if (s.hostEnabled && !syncServer.running) {
+            try { syncServer.start(s.port); syncServerError = null } catch (e: Throwable) { syncServerError = e.message ?: "BIND_FAILED" }
+        } else if (!s.hostEnabled && syncServer.running) {
+            syncServer.stop()
+        }
+    }
+
+    fun stopSyncHost() { syncServer.stop() }
+
+    /** One client-side sync round (FR-14.6). [quiet] suppresses the toast on failure (auto sync). */
+    fun syncNow(quiet: Boolean = false) {
+        val s = data.settings.sync
+        if (s.peerHost.isBlank() || syncing) return
+        syncing = true
+        scope.launch {
+            val outcome = syncClient.sync(s, store.syncPayload())
+            val now = nowMillis()
+            when (outcome) {
+                is SyncOutcome.Ok -> {
+                    store.applySynced(outcome.merged)
+                    store.updateSettings { it.copy(sync = it.sync.copy(lastSyncAt = now, lastSyncResult = "OK")) }
+                    if (!quiet) showToast(strings.syncOk)
+                }
+                is SyncOutcome.Error -> {
+                    store.updateSettings { it.copy(sync = it.sync.copy(lastSyncResult = outcome.code)) }
+                    if (!quiet) showToast(strings.syncFailed(strings.syncError(outcome.code)))
+                }
+            }
+            syncing = false
+        }
+    }
 
     val data get() = store.data.value
 
