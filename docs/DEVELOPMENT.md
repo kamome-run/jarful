@@ -36,6 +36,7 @@ jarful/
 - **状態**: `Store` が `StateFlow<AppData>` を持ち、すべての変更は `mutate {}` を通る。150ms デバウンスで JSON に原子的書き込み。Undo はスナップショット方式（最大 50）。
 - **UI 状態**: `AppState`（選択パス、フォーカス列、ダイアログ、コンボ、瓶の投入シグナル）。
 - **印刷**: `TicketFormatter` が `PrinterSettings.protocol` に応じて ESC/POS テキスト、または 1bit 画像（`renderTextBitmap` の expect/actual）を各プロトコルにエンコード。`PrinterClient` がトランスポートを切り替え、512 バイト単位で送信。
+- **同期**: `SyncMerge`（純粋関数、最終更新優先＋トゥームストーン）、`SyncServer`/`SyncClient`（`src/jvmShared` の最小 HTTP 実装を Android・デスクトップで共用）。`Store.mutate` が変更差分から `updatedAt` とトゥームストーンを自動付与する。
 - **効果音**: `CrumpleSound` が PCM を手続き生成（バイナリ資産なし）。
 - **Chromebook**: `uses-feature touchscreen required=false`、`resizeableActivity`、幅 840dp 以上で 3 ペイン。
 

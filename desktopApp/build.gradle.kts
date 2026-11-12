@@ -16,6 +16,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.swing)
     testImplementation(libs.kotlin.test)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.kotlinx.serialization.json)
 }
 
 tasks.withType<Test> {
@@ -30,7 +31,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Msi, TargetFormat.Exe)
             packageName = "Jarful"
-            packageVersion = "1.0.0"
+            packageVersion = "1.1.0"
             description = "Game-loop task manager for ADHD brains"
             vendor = "Jarful contributors"
             licenseFile.set(rootProject.file("LICENSE"))

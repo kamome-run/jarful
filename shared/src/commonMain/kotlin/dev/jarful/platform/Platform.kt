@@ -77,3 +77,21 @@ expect fun hasHardwareKeyboard(): Boolean
 
 /** Copies text to the system clipboard. */
 expect fun copyToClipboard(text: String)
+
+// ----- LAN sync transport (FR-14) -----
+
+data class HttpRequest(val method: String, val path: String, val body: String)
+data class HttpResponse(val status: Int, val body: String, val contentType: String = "application/json; charset=utf-8")
+data class HttpResult(val status: Int, val body: String)
+
+/** Minimal HTTP/1.1 server bound to all interfaces. [handler] runs on a worker thread. */
+expect class RawHttpServer(port: Int, handler: (HttpRequest) -> HttpResponse) {
+    fun start()
+    fun stop()
+}
+
+/** POSTs a JSON body and returns status + body. Throws on connection failure/timeout. */
+expect suspend fun httpPostJson(url: String, body: String, timeoutMs: Int): HttpResult
+
+/** Non-loopback IPv4 addresses of this device, for showing on the host's settings screen. */
+expect fun localIpAddresses(): List<String>

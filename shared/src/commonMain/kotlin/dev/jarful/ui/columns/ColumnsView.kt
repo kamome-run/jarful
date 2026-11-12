@@ -37,6 +37,8 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -71,7 +73,6 @@ import dev.jarful.platform.nowMillis
 import dev.jarful.ui.AppState
 import dev.jarful.ui.PrintTarget
 import dev.jarful.ui.i18n.LocalStrings
-import dev.jarful.ui.theme.JarfulColors
 
 /** Miller-column task browser (FR-1). Wide layout shows all columns; compact shows one with a breadcrumb. */
 @Composable
@@ -193,12 +194,17 @@ private fun TaskRow(state: AppState, t: Task, column: Int, selected: Boolean, fo
     val staleTicket = !t.done && state.data.tickets.any { k -> k.taskId == t.id && !k.isDone && Dates.parse(k.date) <= Dates.minusDays(Dates.today(), 3) }
     var menu by remember { mutableStateOf(false) }
     val bg = when {
-        selected && focusedColumn -> JarfulColors.Sticky.copy(alpha = 0.55f)
+        selected && focusedColumn -> MaterialTheme.colorScheme.primaryContainer
         selected -> MaterialTheme.colorScheme.surfaceVariant
         else -> androidx.compose.ui.graphics.Color.Transparent
     }
+    val fg = when {
+        t.done -> MaterialTheme.colorScheme.onSurfaceVariant
+        selected && focusedColumn -> MaterialTheme.colorScheme.onPrimaryContainer
+        else -> MaterialTheme.colorScheme.onSurface
+    }
     Column(
-        Modifier.fillMaxWidth().background(bg)
+        Modifier.fillMaxWidth()
             .combinedClickable(
                 onClick = {
                     if (compact) {
@@ -209,38 +215,44 @@ private fun TaskRow(state: AppState, t: Task, column: Int, selected: Boolean, fo
                 },
                 onDoubleClick = { state.select(column, t.id); state.renamingId = t.id },
                 onLongClick = { menu = true },
-            )
-            .padding(start = 8.dp, end = 2.dp, top = 2.dp, bottom = 2.dp),
+            ),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(checked = t.done, onCheckedChange = { state.toggleDone(t.id) }, enabled = t.id != INBOX_ID)
-            if (state.renamingId == t.id) {
-                RenameField(state, t)
-            } else {
-                Text(
-                    t.title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    textDecoration = if (t.done) TextDecoration.LineThrough else null,
-                    color = if (t.done) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
-                    maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
-                )
-            }
-            if (todayTicket) Icon(Icons.Default.Today, s.toToday, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.padding(horizontal = 2.dp))
-            if (totalKids > 0) {
-                Text(s.childCount(openKids, totalKids), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            Box {
-                IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, null) }
-                TaskMenu(state, t, column, menu) { menu = false }
-            }
-        }
-        if (staleTicket) {
-            Row(Modifier.padding(start = 12.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(s.breakDownHint, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error, modifier = Modifier.weight(1f))
-                TextButton(onClick = { state.select(column, t.id); state.startAddChildOfSelection() }) { Text(s.breakDownAction) }
-            }
-        }
+        ListItem(
+            colors = ListItemDefaults.colors(containerColor = bg, headlineColor = fg),
+            leadingContent = { Checkbox(checked = t.done, onCheckedChange = { state.toggleDone(t.id) }, enabled = t.id != INBOX_ID) },
+            headlineContent = {
+                if (state.renamingId == t.id) {
+                    Row { RenameField(state, t) }
+                } else {
+                    Text(
+                        t.title,
+                        textDecoration = if (t.done) TextDecoration.LineThrough else null,
+                        maxLines = 2, overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            },
+            supportingContent = if (staleTicket) {
+                {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(s.breakDownHint, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error, modifier = Modifier.weight(1f))
+                        TextButton(onClick = { state.select(column, t.id); state.startAddChildOfSelection() }) { Text(s.breakDownAction) }
+                    }
+                }
+            } else null,
+            trailingContent = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (todayTicket) Icon(Icons.Default.Today, s.toToday, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.padding(horizontal = 2.dp))
+                    if (totalKids > 0) {
+                        Text(s.childCount(openKids, totalKids), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Box {
+                        IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, null) }
+                        TaskMenu(state, t, column, menu) { menu = false }
+                    }
+                }
+            },
+        )
     }
 }
 

@@ -1,6 +1,6 @@
 # Jarful（ジャーフル） 仕様・要件定義書
 
-- 版: 1.1 (2026-09-22) — 1.1 で対象プリンター（Bluetooth Classic）と複数印刷プロトコルを追加
+- 版: 1.2 (2026-09-22) — 1.1 で対象プリンター（Bluetooth Classic）と複数印刷プロトコルを追加、1.2 で端末間同期（FR-14）を追加
 - 対象: Android（Chromebook 含む）/ Windows 11 デスクトップ
 - 根拠記事: `SOURCES.md` を参照。本文中の `[S1]` `[S2]` `[S3]` は出典記号。
 
@@ -33,8 +33,8 @@ ADHD 傾向のある人が「先延ばし」を減らし、毎日安定してタ
 | Android | Android 8.0 (API 26) 以上。スマートフォン・タブレット・**Chromebook（ChromeOS の Android ランタイム）** で動作。 |
 | Windows | Windows 11 (x64)。MSI インストーラおよび実行可能 JAR を配布。 |
 | 共通コード | Kotlin Multiplatform + Compose Multiplatform。ドメイン・UI・印刷ロジックを `shared` モジュールで共有。 |
-| データ | 端末ローカルのみ（JSON ファイル）。アカウント不要、クラウド同期なし。 |
-| 通信 | 外部との通信はサーマルプリンターへの送信（Bluetooth Classic SPP / シリアル COM / TCP 9100）のみ。テレメトリなし。 |
+| データ | 端末ローカル（JSON ファイル）。アカウント不要。端末間同期は同一 LAN 内の直接通信で行い、クラウドを介さない（FR-14）。 |
+| 通信 | 外部との通信はサーマルプリンターへの送信（Bluetooth Classic SPP / シリアル COM / TCP 9100）と、ユーザーが設定した相手端末との LAN 内同期のみ。テレメトリなし。 |
 | ライセンス | MIT License（OSS）。 |
 
 ### 3.1 Chromebook 要件 (`[NFR-CB]`)
@@ -124,28 +124,28 @@ ADHD 傾向のある人が「先延ばし」を減らし、毎日安定してタ
 
 ### FR-9 サーマルプリンター印刷 [S2 S3 P4 P5]
 
-対象機器: Irfora 57mm ミニポケットサーマルプリンター（Amazon ASIN B0DNSQ4NWF、型番 LAKJPOS8036W-11、203dpi、
-Bluetooth 接続、公式アプリ "Luck Jingle"）。同系統の 58mm ポータブル ESC/POS 機、および一般的なネットワーク
-レシートプリンター（Epson TM 系等）も同じ実装で扱う。
+対象機器: 58mm / 80mm の ESC/POS 互換サーマルプリンター（Bluetooth Classic 接続のポータブル機、および
+Epson TM 系等のネットワークレシートプリンター）と、TSPL / CPCL 対応のラベルプリンター。
+203dpi・日本語フォント非内蔵のポータブル機を主な想定機とし、同じ実装で扱う。
 
 - FR-9.1 **接続方式（トランスポート）** を以下から選択できる。
   - (a) **Bluetooth Classic（SPP / RFCOMM, UUID 00001101-0000-1000-8000-00805F9B34FB）**: Android / Chromebook。ペアリング済み機器一覧から選択する。Android 12 以降は `BLUETOOTH_CONNECT` 権限を実行時に要求する。
   - (b) **シリアル COM ポート**: Windows 11。Bluetooth 設定で SPP 機器に割り当てられた仮想 COM ポート（例: `COM5`）を一覧から選択する。
   - (c) **TCP/IP（既定ポート 9100）**: ネットワークプリンター用。Android / Windows 共通。
-- FR-9.2 **印刷プロトコル（コマンド体系）** を以下から選択できる。対象機器の既定は「ESC/POS ラスター」。
+- FR-9.2 **印刷プロトコル（コマンド体系）** を以下から選択できる。既定は「ESC/POS ラスター」。
   - `ESC/POS テキスト`: プリンター内蔵フォントで文字を送る（`ESC @`, `ESC a`, `GS !`, `ESC E`, UTF-8 / Shift_JIS）。日本語フォント内蔵機向け。
-  - `ESC/POS ラスター`: アプリ側でチケットをモノクロ画像に描画し `GS v 0` で送る。日本語フォント非内蔵機（対象機器）向け。
+  - `ESC/POS ラスター`: アプリ側でチケットをモノクロ画像に描画し `GS v 0` で送る。日本語フォント非内蔵のポータブル機向け。
   - `ESC/POS ビットイメージ`: 同じ画像を `ESC * 33`（24 ドット密度）で 24 行ずつ送る。`GS v 0` 非対応の旧機向け。
   - `TSPL`: ラベルプリンター向け。`SIZE` / `GAP` / `CLS` / `BITMAP` / `PRINT` で 1 チケット = 1 ラベル。
   - `CPCL`: ラベルプリンター向け。`! 0 200 200 <h> 1` / `EG` / `FORM` / `PRINT`。
-- FR-9.3 印刷単位は **1 チケット = 1 枚**。各枚の末尾に「フィード行数（既定 3）」を送り、設定で **カットコマンド（`GS V 66 0`）の有無** を選べる（対象機器はカッター非搭載のため既定オフ）。
+- FR-9.3 印刷単位は **1 チケット = 1 枚**。各枚の末尾に「フィード行数（既定 3）」を送り、設定で **カットコマンド（`GS V 66 0`）の有無** を選べる（ポータブル機はカッター非搭載が多いため既定オフ）。
 - FR-9.4 チケットの印字内容: カテゴリ（親タスク名）を大きく、タイトル、所要時間/タイムボックス/クォータ、日付。ラスター系では画面と同じ描画エンジンで **日本語を含む任意の文字** を描画する。
 - FR-9.5 用紙幅: 58mm（384 ドット / テキスト 32 桁）、80mm（576 ドット / 48 桁）。ラベル紙用に **ラベル高さ (mm) と ギャップ (mm)** を設定できる（TSPL/CPCL）。
 - FR-9.6 印刷できる対象: (a) 今日のチケット全部、(b) 選択した列の全タスク、(c) 単一タスク、(d) 当日のルーチン。
 - FR-9.7 設定画面から **テスト印刷** ができ、接続失敗時はエラー理由を表示する。送信は 5 秒でタイムアウトし、UI を固めない。
 - FR-9.8 Bluetooth / シリアル送信は **512 バイト単位に分割** し、間に短い待ち時間を入れて安価な機器のバッファ溢れを防ぐ。
 - FR-9.9 印刷したチケットには「印刷済み」マークを付ける。再印刷は可能。
-- FR-9.10 印刷濃度（ESC/POS: `GS ( K` / 対象機器互換の `ESC 7`）は v1 では固定とし、設定に持たない。
+- FR-9.10 印刷濃度（ESC/POS: `GS ( K` / ポータブル機互換の `ESC 7`）は v1 では固定とし、設定に持たない。
 
 ### FR-10 キーボード主体の高速操作 [S3 P5]
 
@@ -168,6 +168,37 @@ Bluetooth 接続、公式アプリ "Luck Jingle"）。同系統の 58mm ポー�
 
 - 効果音 ON/OFF、触覚 ON/OFF、準備時刻、プリンター（接続方式、Bluetooth 機器 / COM ポート / ホスト・ポート、プロトコル、用紙幅、文字コード、フィード行数、カット有無、ラベル高さ・ギャップ）、言語（システム追従 / 日本語 / 英語）、完了済みタスクの表示。
 
+### FR-14 端末間同期（Android ⇄ Windows） [P5]
+
+同じ Wi-Fi（LAN）上にある 2 台以上の端末の間で、タスク・チケット・ルーチンを同期する。
+クラウドやアカウントを使わず、記事の原則「摩擦ゼロ」を保つため、一度設定すれば自動で同期する。
+
+- FR-14.1 **ホストとクライアント**: 任意の端末を「ホスト」にできる（設定でオン）。ホストは TCP ポート（既定 47831）で待ち受け、自分の IP アドレス・ポート・PIN を設定画面に表示する。他の端末はそれを入力して「クライアント」として接続する。Android・Windows のどちらもホストにもクライアントにもなれる。
+- FR-14.2 **認証**: 6 桁の PIN（ホストで自動生成、変更可）。PIN が一致しない要求は拒否する（HTTP 403）。通信は LAN 内の平文 HTTP とし、インターネット経由の利用は対象外とする。
+- FR-14.3 **同期の単位**: `tasks`, `tickets`, `routines`, `routineGeneratedDates`, および削除記録（トゥームストーン）。**設定（プリンター、効果音、言語など）は端末固有とし同期しない**。
+- FR-14.4 **マージ規則**（両端末で同じ純粋関数）:
+  - 各エンティティは `updatedAt`（エポックミリ秒）を持つ。同じ id は `updatedAt` が新しい方を採用する（最終更新優先）。
+  - 削除は `tombstones[id] = deletedAt` として記録する。トゥームストーンがエンティティの `updatedAt` より新しければ削除、古ければ復活（後から編集された方が勝つ）。
+  - `routineGeneratedDates` は和集合。
+  - マージ結果を**両端末が同じ内容で保持**する（クライアントはホストの返答で自分のデータを置き換える）。
+- FR-14.5 **更新時刻の付与**: Store のすべての変更で、内容が変わったエンティティに自動的に `updatedAt = now` を付け、消えた id にトゥームストーンを付ける（個々の操作に依存しない）。
+- FR-14.6 **自動同期**: クライアント設定が有効なとき、アプリ起動時・復帰時・5 分ごとに同期を試みる。失敗しても UI を妨げず、設定画面に最終同期時刻と直近の結果を表示する。「今すぐ同期」ボタンも提供する。
+- FR-14.7 **ホストの動作**: ホスト設定が有効な間、アプリ起動中は待ち受ける（バックグラウンドサービスは持たない。Windows 側を常時起動のホストにする使い方を想定）。
+- FR-14.8 **エラー表示**: 接続不可（タイムアウト 5 秒）、PIN 不一致、データ形式エラーを区別して表示する。
+- FR-14.9 **互換性**: 同期プロトコルは `protocolVersion` を持ち、不一致の場合は拒否してバージョン更新を促す。
+
+#### 同期プロトコル
+
+```
+POST http://<host>:<port>/sync
+Content-Type: application/json
+{ "protocolVersion": 1, "pin": "123456", "deviceId": "…", "data": { tasks, tickets, routines, tombstones, routineGeneratedDates } }
+
+200 { "protocolVersion": 1, "data": { …マージ結果… } }
+403 PIN 不一致 / 426 protocolVersion 不一致 / 400 形式エラー
+GET  http://<host>:<port>/ping → 200 {"app":"jarful","protocolVersion":1}
+```
+
 ## 6. 非機能要件
 
 | # | 要件 |
@@ -179,6 +210,7 @@ Bluetooth 接続、公式アプリ "Luck Jingle"）。同系統の 58mm ポー�
 | NFR-5 | 最小タッチターゲット 48dp。色だけに依存しない状態表示。 |
 | NFR-6 | 共有コードのドメインロジック（ツリー操作、ルーチン生成、ESC/POS・TSPL・CPCL エンコード、統計）に単体テストを備える。 |
 | NFR-7 | CI（GitHub Actions）で Android APK と Windows MSI を自動ビルドする。 |
+| NFR-8 | UI は **Material Design 3** に全面準拠する: `Scaffold` / `TopAppBar` / `NavigationBar` / `NavigationRail` / `FloatingActionButton` / `Card` / `ListItem` / `SegmentedButton` / `Switch` / `Snackbar` / `AlertDialog` 等の M3 コンポーネントと M3 タイポグラフィ・カラースキームを用い、Android 12 以降ではダイナミックカラー（Material You）を適用する。ライト・ダーク両テーマで WCAG AA 相当のコントラストを保つ。 |
 
 ## 7. 画面構成
 
@@ -243,10 +275,13 @@ Ticket(id, date /* yyyy-MM-dd */, taskId?, routineId?, category, title, estimate
        quotaTarget?, quotaCount, order, state /* PENDING|RUNNING|DONE */, startedAt?, doneAt?, printedAt?)
 Routine(id, title, category, weekdays: Set<DayOfWeek>, order, estimateMin?, timeboxMin?, quotaTarget?, enabled)
 Settings(soundEnabled, hapticsEnabled, prepareHour, prepareMinute,
+         sync{hostEnabled, port, pin, peerHost, peerPort, peerPin, autoSync, lastSyncAt?, lastSyncResult?},
          printer{transport, host, port, bluetoothAddress, bluetoothName, serialPort, protocol, paperWidth, charset,
                  feedLines, cutEnabled, labelHeightMm, labelGapMm},
          language, showCompleted)
 DayStat(date, loops)     // 統計用（Ticket から導出可能だが高速化のため保持）
+AppData.tombstones: Map<id, deletedAt>   // 同期用の削除記録（FR-14.4）
+Ticket / Routine にも updatedAt を持つ（FR-14.5）
 ```
 
 - 「受信箱（Inbox）」はルート直下の固定タスク（削除不可）で、リフォーカスからのタスクを受ける。
@@ -271,7 +306,7 @@ LF × フィード行数
 (GS V 66 0             部分カット: 設定で有効時のみ)
 ```
 
-### 10.2 ESC/POS ラスター（対象機器の既定）
+### 10.2 ESC/POS ラスター（既定）
 
 1. チケットを幅 384 ドット（58mm）の 1bit 画像として描画する（カテゴリ: 太字 大、タイトル: 太字、メタ・日付: 通常、区切り線）。
 2. `ESC @` → `ESC a 1` → `GS v 0 0 xL xH yL yH <データ>`（1 バイト = 8 ドット、1 = 黒）→ フィード（→ カット）。
@@ -311,10 +346,12 @@ FORM\r\n PRINT\r\n
 | AC-8 | 幅 840dp 以上では 3 ペイン、未満では下部タブ構成になる。 |
 | AC-9 | データファイルを削除して起動すると、初期状態（Inbox のみ）で起動しクラッシュしない。 |
 | AC-10 | Chromebook でタッチ非搭載でもインストール可能（マニフェストの単体検証）。 |
+| AC-11 | 端末 A でタスクを編集し端末 B で同じタスクを削除した場合、後に行った操作が両端末に反映される（マージの単体テスト）。 |
+| AC-12 | PIN が違う同期要求は 403 で拒否され、データは変更されない（HTTP 往復の単体テスト）。 |
 
 ## 12. スコープ外（v1）
 
-- クラウド同期、複数端末間の同期、アカウント。
+- クラウド同期、アカウント、インターネット経由の同期（LAN 内の直接同期は FR-14 で対応）。
 - USB 接続のプリンター、BLE（Bluetooth Low Energy）のみの機器（例: GB01 系「キャットプリンター」）。
 - iOS / macOS / Linux 向け配布（コードは共通だが配布物は用意しない）。
 - 通知・リマインダー（ADHD 向けには有効だが、記事の手法の範囲外）。
