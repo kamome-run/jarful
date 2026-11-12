@@ -9,6 +9,7 @@ import dev.jarful.data.Store
 import dev.jarful.domain.Dates
 import dev.jarful.domain.Ids
 import dev.jarful.domain.TaskTree
+import dev.jarful.model.AppData
 import dev.jarful.model.INBOX_ID
 import dev.jarful.model.Routine
 import dev.jarful.model.Task
@@ -114,7 +115,18 @@ class AppState(val store: Store, val scope: CoroutineScope, var strings: Strings
         }
     }
 
-    val data get() = store.data.value
+    /**
+     * Snapshot-observable copy of the store's data. Composables must read this (not `store.data.value`)
+     * so that Compose re-runs them when the data changes; with strong skipping, reading a StateFlow's
+     * value directly is invisible to the runtime and screens silently stop updating.
+     */
+    var data: AppData by mutableStateOf(store.data.value)
+        private set
+
+    init {
+        store.onChange = { data = it }
+        data = store.data.value
+    }
 
     fun parentIdForColumn(i: Int): String? = if (i == 0) null else path.getOrNull(i - 1)
     fun selectedIdInColumn(i: Int): String? = path.getOrNull(i)

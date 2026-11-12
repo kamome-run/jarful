@@ -17,6 +17,8 @@ dependencies {
     testImplementation(libs.kotlin.test)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.kotlinx.serialization.json)
+    @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
+    testImplementation(compose.uiTest)
 }
 
 tasks.withType<Test> {
@@ -31,7 +33,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Msi, TargetFormat.Exe)
             packageName = "Jarful"
-            packageVersion = "1.3.1"
+            packageVersion = "1.3.2"
             description = "Game-loop task manager for ADHD brains"
             vendor = "Jarful contributors"
             licenseFile.set(rootProject.file("LICENSE"))
