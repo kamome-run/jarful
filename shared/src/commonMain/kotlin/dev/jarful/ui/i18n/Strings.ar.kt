@@ -55,5 +55,4 @@ val AR = Strings(
     syncHostRunning = "بانتظار الاتصالات", syncHostError = { "تعذّر تشغيل المضيف: $it" },
     syncError = { code -> when (code) { "UNREACHABLE" -> "تعذّر الوصول إلى المضيف (نفس شبكة Wi-Fi؟ هل المضيف يعمل؟)"; "PIN_MISMATCH" -> "رمز PIN غير صحيح"; "VERSION_MISMATCH" -> "إصدارا التطبيق مختلفان"; "NO_PEER" -> "لم يُحدَّد مضيف"; "BAD_RESPONSE" -> "استجابة غير مقروءة"; else -> code } },
     printerDiagnose = "تشخيص الاتصال", printerDiagnoseTitle = "تشخيص Bluetooth", printerDiagnoseHint = "يعرض نوع الجهاز وتوفر SPP وخدمات GATT ونتيجة كل طريقة اتصال. إذا فشلت الطباعة، انسخ هذا والصقه في مشكلة على GitHub.", copy = "نسخ", printSwitchedTransport = { "تم تبديل طريقة الاتصال إلى $it" },
-    printerProbe = "طباعة اختبار الكثافة (A–H)",
 )
