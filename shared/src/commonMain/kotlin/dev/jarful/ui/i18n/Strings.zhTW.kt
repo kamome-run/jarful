@@ -56,4 +56,5 @@ val ZH_TW = Strings(
     syncError = { code -> when (code) { "UNREACHABLE" -> "無法連線到主機（是否在同一個 Wi-Fi？主機是否已啟動？）"; "PIN_MISMATCH" -> "PIN 碼錯誤"; "VERSION_MISMATCH" -> "App 版本不一致"; "NO_PEER" -> "尚未設定主機"; "BAD_RESPONSE" -> "無法讀取回應"; else -> code } },
     printerDiagnose = "連線診斷", printerDiagnoseTitle = "Bluetooth 連線診斷", printerDiagnoseHint = "顯示裝置類型、是否有 SPP、GATT 服務，以及各種連線方式的結果。若無法列印，請複製此內容貼到 GitHub Issue。", copy = "複製", printSwitchedTransport = { "已將連線方式切換為 $it" },
     nothingToPrint = "沒有可列印的內容。請先把任務加入今天的票券，或使用 ⋮ → 列印。",
+    printBusy = "正在列印", printPaused = { "列印已中斷（剩餘 $it 張）" }, printProgress = { d, n -> "列印中 $d / $n 張" }, printResume = "從中斷處繼續列印", printDiscard = "捨棄剩餘", printStop = "中斷", printPaperHint = "紙用完時，請更換紙卷後按「從中斷處繼續列印」。",
 )

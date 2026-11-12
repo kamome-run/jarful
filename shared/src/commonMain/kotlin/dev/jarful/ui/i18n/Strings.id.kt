@@ -56,4 +56,5 @@ val ID = Strings(
     syncError = { code -> when (code) { "UNREACHABLE" -> "Host tidak terjangkau (Wi-Fi sama? host berjalan?)"; "PIN_MISMATCH" -> "PIN salah"; "VERSION_MISMATCH" -> "Versi aplikasi berbeda"; "NO_PEER" -> "Host belum diatur"; "BAD_RESPONSE" -> "Respons tidak terbaca"; else -> code } },
     printerDiagnose = "Diagnosis koneksi", printerDiagnoseTitle = "Diagnosis Bluetooth", printerDiagnoseHint = "Menampilkan jenis perangkat, ketersediaan SPP, layanan GATT, dan hasil tiap metode koneksi. Jika gagal mencetak, salin ini dan tempel ke issue GitHub.", copy = "Salin", printSwitchedTransport = { "Koneksi dialihkan ke $it" },
     nothingToPrint = "Tidak ada yang dicetak. Jadikan tugas sebagai tiket hari ini atau gunakan ⋮ → Cetak.",
+    printBusy = "Sedang mencetak", printPaused = { "Pencetakan terhenti (sisa $it)" }, printProgress = { d, n -> "Mencetak $d / $n" }, printResume = "Lanjutkan mencetak", printDiscard = "Buang sisanya", printStop = "Hentikan", printPaperHint = "Kertas habis? Ganti gulungan lalu tekan “Lanjutkan mencetak”.",
 )
