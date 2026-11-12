@@ -300,7 +300,7 @@ Cetak raster berfungsi di semua bahasa (font yang sesuai dipilih per baris; huru
 ./gradlew :desktopApp:run
 ```
 
-Persyaratan: JDK 17 dan Android SDK (API 35). Lihat [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md);
+Persyaratan: JDK 25 dan Android SDK (API 36). Lihat [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md);
 spesifikasinya di [docs/SPEC.md](docs/SPEC.md) dan catatan artikel di [docs/SOURCES.md](docs/SOURCES.md) (bahasa Jepang).
 
 ## 14. Lisensi dan sangkalan

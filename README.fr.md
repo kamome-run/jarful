@@ -300,7 +300,7 @@ L'impression raster fonctionne dans toutes les langues (police adaptée choisie 
 ./gradlew :desktopApp:run
 ```
 
-Prérequis : JDK 17 et le SDK Android (API 35). Voir [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) ;
+Prérequis : JDK 25 et le SDK Android (API 36). Voir [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) ;
 la spécification est dans [docs/SPEC.md](docs/SPEC.md) et les notes sur les articles dans [docs/SOURCES.md](docs/SOURCES.md) (en japonais).
 
 ## 14. Licence et avertissement

@@ -3,6 +3,8 @@ package dev.jarful.ui.i18n
 import kotlinx.datetime.DayOfWeek
 
 val DE = Strings(
+    deleteSelectedTickets = "Ausgewählte Tickets löschen", confirmDeleteTickets = { "$it heutige Tickets löschen? Aufgaben und Routinen bleiben erhalten. Erledigte Tickets werden auch aus der Statistik entfernt. Rückgängig stellt alle wieder her." },
+    deleteSelected = "Ausgewählte Aufgaben löschen", confirmDeleteTasks = { "$it ausgewählte Aufgaben samt Unteraufgaben löschen? Rückgängig stellt alle wieder her." },
     tabToday = "Heute", tabColumns = "Spalten", tabRoutines = "Routinen", tabStats = "Statistik", tabSettings = "Einstellungen",
     inbox = "Eingang", root = "Alle",
     newTask = "Neue Aufgabe", newSubtask = "Teilaufgabe hinzufügen (zerlegen)", addTaskHint = "Aufgabe eingeben und Enter drücken (Tab = zerlegen)", addSubtaskHint = "Teilaufgabe eingeben und Enter drücken",

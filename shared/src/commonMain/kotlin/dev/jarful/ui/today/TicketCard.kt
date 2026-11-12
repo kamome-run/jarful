@@ -4,6 +4,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.Box
@@ -41,6 +42,9 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntOffset
 import kotlin.math.roundToInt
 import androidx.compose.ui.text.font.FontWeight
@@ -53,6 +57,7 @@ import dev.jarful.ui.ds.ButtonKind
 import dev.jarful.ui.ds.CardTone
 import dev.jarful.ui.ds.DsButton
 import dev.jarful.ui.ds.DsCard
+import dev.jarful.ui.ds.DsCheckbox
 import dev.jarful.ui.ds.DsIconButton
 import dev.jarful.ui.ds.DsMenu
 import dev.jarful.ui.ds.DsMenuItem
@@ -65,6 +70,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun TicketCard(state: AppState, ticket: Ticket, modifier: Modifier = Modifier, showReorder: Boolean = true) {
     val s = LocalStrings.current
+    val selecting = state.ticketSelectMode
     val scale = remember { Animatable(1f) }
     val rotation = remember { Animatable(0f) }
     val alpha = remember { Animatable(1f) }
@@ -93,7 +99,7 @@ fun TicketCard(state: AppState, ticket: Ticket, modifier: Modifier = Modifier, s
     val density = LocalDensity.current
     var widthPx by remember { mutableStateOf(1f) }
     val swipe = remember { Animatable(0f) }
-    val swipeModifier = if (ticket.isDone) Modifier else Modifier.pointerInput(ticket.id) {
+    val swipeModifier = if (ticket.isDone || selecting) Modifier else Modifier.pointerInput(ticket.id) {
         detectHorizontalDragGestures(
             onDragEnd = {
                 if (swipe.value > widthPx * 0.4f) { if (!crumpling) crumpling = true }
@@ -109,6 +115,7 @@ fun TicketCard(state: AppState, ticket: Ticket, modifier: Modifier = Modifier, s
 
     DsCard(
         modifier = modifier.fillMaxWidth()
+            .then(if (selecting) Modifier.clickable { state.toggleTicketSelection(ticket.id) } else Modifier)
             .onSizeChanged { widthPx = it.width.toFloat().coerceAtLeast(1f) }
             .offset { IntOffset(swipe.value.roundToInt(), 0) }
             .then(swipeModifier)
@@ -117,6 +124,11 @@ fun TicketCard(state: AppState, ticket: Ticket, modifier: Modifier = Modifier, s
     ) {
         Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                if (selecting) {
+                    Box(Modifier.testTag("selectTicket:${ticket.id}").semantics(mergeDescendants = true) { contentDescription = ticket.title }) {
+                        DsCheckbox(checked = ticket.id in state.selectedTicketIds, onCheckedChange = { state.toggleTicketSelection(ticket.id) })
+                    }
+                }
                 Text(
                     ticket.category.ifBlank { "—" }.uppercase(),
                     style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold,
@@ -128,7 +140,7 @@ fun TicketCard(state: AppState, ticket: Ticket, modifier: Modifier = Modifier, s
                     if (ticket.printedAt != null) add("🖨")
                 }.joinToString("  ")
                 if (meta.isNotEmpty()) Text(meta, style = MaterialTheme.typography.labelMedium, color = LocalContentColor.current.copy(alpha = 0.75f))
-                if (!ticket.isDone) {
+                if (!ticket.isDone && !selecting) {
                     Box {
                         DsIconButton(onClick = { menu = true }, icon = Icons.Default.MoreVert, contentDescription = null, size = 32.dp)
                         DsMenu(expanded = menu, onDismissRequest = { menu = false }) {
@@ -150,9 +162,9 @@ fun TicketCard(state: AppState, ticket: Ticket, modifier: Modifier = Modifier, s
                 modifier = Modifier.padding(top = 2.dp),
             )
 
-            if (ticket.isQuota && !ticket.isDone) QuotaRow(state, ticket)
+            if (ticket.isQuota && !ticket.isDone && !selecting) QuotaRow(state, ticket)
 
-            Row(Modifier.padding(top = 8.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (!selecting) Row(Modifier.padding(top = 8.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (ticket.isDone) {
                     DsButton(onClick = { state.undoComplete(ticket.id) }, kind = ButtonKind.Subtle) { Icon(Icons.Default.Refresh, null, modifier = Modifier.size(16.dp)); Spacer(Modifier.width(4.dp)); Text(s.undoDone) }
                 } else {

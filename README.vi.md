@@ -300,7 +300,7 @@ In raster hoạt động với mọi ngôn ngữ (font phù hợp được chọ
 ./gradlew :desktopApp:run
 ```
 
-Yêu cầu: JDK 17 và Android SDK (API 35). Xem [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md);
+Yêu cầu: JDK 25 và Android SDK (API 36). Xem [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md);
 tài liệu đặc tả ở [docs/SPEC.md](docs/SPEC.md), ghi chú bài viết ở [docs/SOURCES.md](docs/SOURCES.md) (tiếng Nhật).
 
 ## 14. Giấy phép và miễn trừ

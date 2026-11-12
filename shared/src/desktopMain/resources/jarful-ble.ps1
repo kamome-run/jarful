@@ -1,5 +1,5 @@
 # Jarful BLE helper for Windows (WinRT via Windows PowerShell 5.1). No native code, no extra installs.
-#   list                              -> prints "<address>|<name>" per line for known/paired BLE devices
+#   list                              -> prints "<address>|<name>" for nearby and known BLE devices
 #   write <addr> <charUuid|auto> <file> <chunk> -> writes the file's bytes to the characteristic in chunks
 #   services <addr>                   -> prints services/characteristics (diagnostics)
 param(
@@ -34,12 +34,162 @@ $known = @(
     "49535343-8841-43f4-a8d4-ecbe34729bb3", "bef8d6c9-9c21-4c9e-b632-bd58c1009f9f", "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
 )
 
-function Get-Device([string] $addr) {
+function Initialize-BleDiscovery {
+    # PowerShell 5.1 cannot subscribe to WinRT events, and scriptblock callbacks on a
+    # Bluetooth worker thread have no runspace. Keep callbacks in managed C# instead.
+    if (-not ('Jarful.BleDiscovery' -as [type])) {
+        $source = @'
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using Windows.Devices.Bluetooth;
+using Windows.Devices.Bluetooth.Advertisement;
+using Windows.Foundation;
+
+namespace Jarful {
+    public sealed class BleAdvertisement {
+        public ulong Address;
+        public string Name;
+        public BluetoothAddressType AddressType;
+    }
+    public static class BleDiscovery {
+        public static BleAdvertisement[] Scan(ulong targetAddress, int durationMs) {
+            var devices = new Dictionary<ulong, BleAdvertisement>();
+            var gate = new object();
+            var finished = new ManualResetEvent(false);
+            bool closed = false;
+            BluetoothError error = BluetoothError.Success;
+            var watcher = new BluetoothLEAdvertisementWatcher();
+            watcher.ScanningMode = BluetoothLEScanningMode.Active;
+            TypedEventHandler<BluetoothLEAdvertisementWatcher, BluetoothLEAdvertisementReceivedEventArgs> received = (sender, args) => {
+                lock (gate) {
+                    if (closed) return;
+                    BleAdvertisement device;
+                    if (!devices.TryGetValue(args.BluetoothAddress, out device)) {
+                        device = new BleAdvertisement { Address = args.BluetoothAddress, Name = "" };
+                        devices.Add(device.Address, device);
+                    }
+                    if (!String.IsNullOrWhiteSpace(args.Advertisement.LocalName)) device.Name = args.Advertisement.LocalName;
+                    device.AddressType = args.BluetoothAddressType;
+                    if (targetAddress != 0 && device.Address == targetAddress) finished.Set();
+                }
+            };
+            TypedEventHandler<BluetoothLEAdvertisementWatcher, BluetoothLEAdvertisementWatcherStoppedEventArgs> stopped = (sender, args) => {
+                lock (gate) {
+                    if (closed) return;
+                    error = args.Error;
+                    finished.Set();
+                }
+            };
+            watcher.Received += received;
+            watcher.Stopped += stopped;
+            try {
+                watcher.Start();
+                finished.WaitOne(durationMs);
+                lock (gate) {
+                    if (error != BluetoothError.Success) throw new InvalidOperationException("BLE_SCAN_" + error);
+                    var result = new BleAdvertisement[devices.Count];
+                    devices.Values.CopyTo(result, 0);
+                    return result;
+                }
+            } finally {
+                lock (gate) { closed = true; }
+                try { watcher.Stop(); }
+                finally {
+                    watcher.Received -= received;
+                    watcher.Stopped -= stopped;
+                    finished.Dispose();
+                }
+            }
+        }
+    }
+}
+'@
+        # Use the .NET Framework compiler directly: Add-Type attempts to load .winmd
+        # references as ordinary assemblies. All references ship with Windows 11.
+        $compiler = New-Object Microsoft.CSharp.CSharpCodeProvider
+        try {
+            $parameters = New-Object System.CodeDom.Compiler.CompilerParameters
+            $parameters.GenerateInMemory = $true
+            foreach ($reference in @(
+                "$env:SystemRoot\System32\WinMetadata\Windows.Devices.winmd",
+                "$env:SystemRoot\System32\WinMetadata\Windows.Foundation.winmd",
+                [System.Runtime.InteropServices.WindowsRuntime.WindowsRuntimeMarshal].Assembly.Location,
+                [Reflection.Assembly]::Load('System.Runtime, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a').Location,
+                [Reflection.Assembly]::Load('System.Runtime.InteropServices.WindowsRuntime, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a').Location
+            )) { $parameters.ReferencedAssemblies.Add($reference) | Out-Null }
+            $result = $compiler.CompileAssemblyFromSource($parameters, $source)
+            if ($result.Errors.HasErrors) { throw "BLE_SCAN_HELPER_COMPILE: $($result.Errors -join '; ')" }
+        } finally { $compiler.Dispose() }
+    }
+}
+
+function Find-BleAdvertisements([UInt64] $TargetAddress = 0) {
+    Initialize-BleDiscovery
+    return [Jarful.BleDiscovery]::Scan($TargetAddress, 6000)
+}
+
+function Get-AddressNumber([string] $addr) {
     $hex = $addr -replace '[:\-]', ''
-    $num = [Convert]::ToUInt64($hex, 16)
-    $dev = Await ([Windows.Devices.Bluetooth.BluetoothLEDevice]::FromBluetoothAddressAsync($num)) ([Windows.Devices.Bluetooth.BluetoothLEDevice])
-    if ($null -eq $dev) { throw "DEVICE_NOT_FOUND (turn the printer on; pair it once in Windows Bluetooth settings)" }
+    if ($hex -notmatch '^[0-9a-fA-F]{12}$') { throw "INVALID_BLUETOOTH_ADDRESS: $addr" }
+    return [Convert]::ToUInt64($hex, 16)
+}
+
+function Format-Address([UInt64] $num) {
+    return ($num.ToString('X12') -replace '(..)(?!$)', '$1:')
+}
+
+function Open-BleDevice([UInt64] $num, $addressType = $null) {
+    $operation = if ($null -eq $addressType) {
+        [Windows.Devices.Bluetooth.BluetoothLEDevice]::FromBluetoothAddressAsync($num)
+    } else {
+        [Windows.Devices.Bluetooth.BluetoothLEDevice]::FromBluetoothAddressAsync($num, $addressType)
+    }
+    return Await $operation ([Windows.Devices.Bluetooth.BluetoothLEDevice])
+}
+
+function Get-Device([string] $addr) {
+    $num = Get-AddressNumber $addr
+    $dev = Open-BleDevice $num
+    if ($null -eq $dev) {
+        # FromBluetoothAddressAsync returns null for unpaired devices absent from
+        # the system cache. A live scan populates that cache; pairing is not required.
+        $nearby = @(Find-BleAdvertisements $num)
+        $advertisement = $nearby | Where-Object { $_.Address -eq $num } | Select-Object -First 1
+        if ($null -ne $advertisement) { $dev = Open-BleDevice $num $advertisement.AddressType }
+        else { $dev = Open-BleDevice $num }
+    }
+    if ($null -eq $dev) {
+        throw "DEVICE_NOT_FOUND: $(Format-Address $num) (turn the printer on, disconnect phone apps, then refresh the Bluetooth LE list and select its LE address; a Classic/COM address may differ)"
+    }
     return $dev
+}
+
+function Get-KnownBleDevices {
+    foreach ($paired in @($true, $false)) {
+        $sel = [Windows.Devices.Bluetooth.BluetoothLEDevice]::GetDeviceSelectorFromPairingState($paired)
+        $infos = Await ([Windows.Devices.Enumeration.DeviceInformation]::FindAllAsync($sel)) ([Windows.Devices.Enumeration.DeviceInformationCollection])
+        foreach ($i in $infos) {
+            if ($i.Id -match '-((?:[0-9a-f]{2}:){5}[0-9a-f]{2})$') {
+                [PSCustomObject]@{ Address = (Get-AddressNumber $Matches[1]); Name = $i.Name }
+            }
+        }
+    }
+}
+
+function Get-BleDeviceList {
+    $devices = @{}
+    $nearby = @(Find-BleAdvertisements)
+    # Some Bluetooth drivers fail enumeration for an unsupported pairing selector.
+    # That must not hide printers which were found in the live scan.
+    $remembered = @(try { Get-KnownBleDevices } catch { Write-Verbose $_.Exception.Message })
+    foreach ($device in $remembered + $nearby) {
+        $mac = Format-Address $device.Address
+        $name = $device.Name -replace '[\r\n|]', ' '
+        if (-not [string]::IsNullOrWhiteSpace($name)) { $devices[$mac] = $name }
+        elseif (-not $devices.ContainsKey($mac)) { $devices[$mac] = $mac }
+    }
+    foreach ($mac in @($devices.Keys | Sort-Object)) { Write-Output "$mac|$($devices[$mac])" }
 }
 
 function Get-Characteristics($dev) {
@@ -51,6 +201,21 @@ function Get-Characteristics($dev) {
         if ($chRes.Status -eq 'Success') { foreach ($c in $chRes.Characteristics) { $all += $c } }
     }
     return $all
+}
+
+function Select-WriteCharacteristic($chars, [string] $uuid = 'auto') {
+    $writable = @($chars | Where-Object { ($_.CharacteristicProperties -band 12) -ne 0 })
+    $target = $null
+    if ($uuid -ne 'auto') {
+        $target = $writable | Where-Object { $_.Uuid.ToString() -eq $uuid } | Select-Object -First 1
+    } else {
+        foreach ($k in $known) {
+            if ($null -eq $target) { $target = $writable | Where-Object { $_.Uuid.ToString() -eq $k } | Select-Object -First 1 }
+        }
+        if ($null -eq $target) { $target = $writable | Select-Object -First 1 }
+    }
+    if ($null -eq $target) { throw "NO_WRITABLE_CHARACTERISTIC" }
+    return $target
 }
 
 $script:writeMode = ""
@@ -76,6 +241,7 @@ function Write-Buffer($target, $buffer, $option) {
 }
 
 function Write-Chunks($target, [byte[]] $bytes, [int] $chunkSize) {
+    if ($chunkSize -lt 1) { throw "INVALID_CHUNK_SIZE" }
     $noResp = ($target.CharacteristicProperties -band [Windows.Devices.Bluetooth.GenericAttributeProfile.GattCharacteristicProperties]::WriteWithoutResponse) -ne 0
     $option = if ($noResp) { [Windows.Devices.Bluetooth.GenericAttributeProfile.GattWriteOption]::WriteWithoutResponse } else { [Windows.Devices.Bluetooth.GenericAttributeProfile.GattWriteOption]::WriteWithResponse }
     $i = 0
@@ -95,18 +261,7 @@ function Write-Chunks($target, [byte[]] $bytes, [int] $chunkSize) {
 try {
 switch ($Mode) {
     "list" {
-        foreach ($paired in @($true, $false)) {
-            $sel = [Windows.Devices.Bluetooth.BluetoothLEDevice]::GetDeviceSelectorFromPairingState($paired)
-            $infos = Await ([Windows.Devices.Enumeration.DeviceInformation]::FindAllAsync($sel)) ([Windows.Devices.Enumeration.DeviceInformationCollection])
-            foreach ($i in $infos) {
-                # Id looks like BluetoothLE#BluetoothLE<host mac>-<device mac>
-                if ($i.Id -match '-([0-9a-f]{2}:){5}[0-9a-f]{2}$') {
-                    $mac = $Matches[0].Substring(1).ToUpper()
-                    $name = if ([string]::IsNullOrWhiteSpace($i.Name)) { $mac } else { $i.Name }
-                    Write-Output "$mac|$name"
-                }
-            }
-        }
+        Get-BleDeviceList
     }
     "services" {
         $dev = Get-Device $Address
@@ -116,27 +271,15 @@ switch ($Mode) {
             $mark = if ($known -contains $c.Uuid.ToString().ToLower()) { " <- known printer characteristic" } else { "" }
             Write-Output ("  char {0} [{1}]{2}" -f $c.Uuid, $c.CharacteristicProperties, $mark)
         }
-        # probe: write one harmless GB01 "get device state" packet to the first known printer characteristic
-        $probe = $null
-        foreach ($k in $known) { if ($null -eq $probe) { $probe = $chars | Where-Object { $_.Uuid.ToString().ToLower() -eq $k } | Select-Object -First 1 } }
-        if ($null -ne $probe) {
-            try {
-                Write-Chunks $probe ([byte[]](0x51, 0x78, 0xA3, 0x00, 0x01, 0x00, 0x00, 0x00, 0xFF)) 20
-                Write-Output ("probe write to {0}: OK (mode {1})" -f $probe.Uuid, $script:writeMode)
-            } catch { Write-Output ("probe write to {0}: FAILED {1}" -f $probe.Uuid, $_.Exception.Message) }
-        }
+        # A GB01 probe is not valid for M02 or other printer protocols. Diagnostics
+        # report the selected channel without sending protocol-specific bytes.
+        $target = Select-WriteCharacteristic $chars
+        Write-Output ("write characteristic: {0}" -f $target.Uuid)
     }
     "write" {
         $dev = Get-Device $Address
         $chars = Get-Characteristics $dev
-        $target = $null
-        if ($CharUuid -ne "auto") {
-            $target = $chars | Where-Object { $_.Uuid.ToString().ToLower() -eq $CharUuid.ToLower() } | Select-Object -First 1
-        } else {
-            foreach ($k in $known) { if ($null -eq $target) { $target = $chars | Where-Object { $_.Uuid.ToString().ToLower() -eq $k } | Select-Object -First 1 } }
-            if ($null -eq $target) { $target = $chars | Where-Object { ($_.CharacteristicProperties -band 12) -ne 0 } | Select-Object -First 1 }
-        }
-        if ($null -eq $target) { throw "NO_WRITABLE_CHARACTERISTIC" }
+        $target = Select-WriteCharacteristic $chars $CharUuid
         $bytes = [System.IO.File]::ReadAllBytes($DataFile)
         Write-Chunks $target $bytes $Chunk
         Start-Sleep -Milliseconds 400

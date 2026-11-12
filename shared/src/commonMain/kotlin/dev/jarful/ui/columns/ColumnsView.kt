@@ -8,6 +8,8 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -36,9 +38,11 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Today
+import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
@@ -54,6 +58,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.isShiftPressed
@@ -85,7 +91,43 @@ import dev.jarful.ui.i18n.LocalStrings
 /** Miller-column task browser (FR-1). Wide layout shows all columns; compact shows one with a breadcrumb. */
 @Composable
 fun ColumnsView(state: AppState, compact: Boolean, modifier: Modifier = Modifier) {
-    if (compact) CompactColumns(state, modifier) else WideColumns(state, modifier)
+    Column(modifier.fillMaxSize()) {
+        TaskSelectionBar(state, compact)
+        if (compact) CompactColumns(state, Modifier.weight(1f)) else WideColumns(state, Modifier.weight(1f))
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun TaskSelectionBar(state: AppState, compact: Boolean) {
+    val s = LocalStrings.current
+    val canUndo = remember(state.data) { state.store.canUndo() }
+    FlowRow(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        DsButton(onClick = { if (state.taskSelectMode) state.exitTaskSelect() else state.startTaskSelect() },
+            modifier = Modifier.testTag("taskSelectMode")) {
+            Icon(Icons.Default.Checklist, null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(4.dp))
+            Text(if (state.taskSelectMode) s.close else s.selectMode)
+        }
+        DsButton(onClick = { state.undo() }, enabled = canUndo, kind = ButtonKind.Subtle,
+            modifier = Modifier.testTag("undoTaskAction")) {
+            Icon(Icons.AutoMirrored.Filled.Undo, null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(4.dp))
+            Text(s.undo)
+        }
+        if (state.taskSelectMode) {
+            Text(s.selectedCount(state.selectedTaskIds.size), modifier = Modifier.padding(vertical = 8.dp), style = MaterialTheme.typography.labelLarge)
+            DsButton(onClick = {
+                val columns = if (compact) listOf(state.compactColumnIndex.coerceIn(0, state.columnCount - 1)) else (0 until state.columnCount).toList()
+                state.selectTasks(columns.flatMap { state.visibleChildren(state.parentIdForColumn(it)) }.map { it.id }.toSet())
+            }, kind = ButtonKind.Subtle, modifier = Modifier.testTag("taskSelectAll")) { Text(s.selectAll) }
+            DsButton(onClick = { state.clearTaskSelection() }, kind = ButtonKind.Subtle,
+                enabled = state.selectedTaskIds.isNotEmpty(), modifier = Modifier.testTag("taskSelectNone")) { Text(s.selectNone) }
+            DsButton(onClick = { state.requestDeleteSelectedTasks() }, enabled = state.selectedTaskIds.isNotEmpty(),
+                modifier = Modifier.testTag("deleteSelectedTasks")) { Text(s.deleteSelected, color = MaterialTheme.colorScheme.error) }
+        }
+    }
 }
 
 @Composable
@@ -166,7 +208,8 @@ private fun TaskColumn(state: AppState, index: Int, modifier: Modifier, compact:
         val canAdd = TaskTree.canAddChild(state.data.tasks, parentId)
         LazyColumn(Modifier.weight(1f), state = listState) {
             items(tasks, key = { it.id }) { t ->
-                TaskRow(state, t, index, selected = t.id == selectedId, focusedColumn = focused, compact = compact, modifier = Modifier.reorderItem(reorder, t.id), handle = Modifier.reorderHandle(reorder, t.id))
+                TaskRow(state, t, index, selected = t.id == selectedId, focusedColumn = focused, compact = compact,
+                    modifier = if (state.taskSelectMode) Modifier else Modifier.reorderItem(reorder, t.id), handle = Modifier.reorderHandle(reorder, t.id))
             }
             item {
                 if (!canAdd) {
@@ -210,35 +253,44 @@ private fun TaskRow(state: AppState, t: Task, column: Int, selected: Boolean, fo
     val staleTicket = !t.done && state.data.tickets.any { k -> k.taskId == t.id && !k.isDone && Dates.parse(k.date) <= Dates.minusDays(Dates.today(), 3) }
     var menu by remember { mutableStateOf(false) }
     val bg = when {
-        selected && focusedColumn -> MaterialTheme.colorScheme.primaryContainer
-        selected -> MaterialTheme.colorScheme.surfaceVariant
+        state.taskSelectMode && t.id in state.selectedTaskIds -> MaterialTheme.colorScheme.primaryContainer
+        selected && !state.taskSelectMode && focusedColumn -> MaterialTheme.colorScheme.primaryContainer
+        selected && !state.taskSelectMode -> MaterialTheme.colorScheme.surfaceVariant
         else -> androidx.compose.ui.graphics.Color.Transparent
     }
     val fg = when {
         t.done -> MaterialTheme.colorScheme.onSurfaceVariant
-        selected && focusedColumn -> MaterialTheme.colorScheme.onPrimaryContainer
+        state.taskSelectMode && t.id in state.selectedTaskIds -> MaterialTheme.colorScheme.onPrimaryContainer
+        selected && !state.taskSelectMode && focusedColumn -> MaterialTheme.colorScheme.onPrimaryContainer
         else -> MaterialTheme.colorScheme.onSurface
     }
     Column(
         modifier.fillMaxWidth()
             .combinedClickable(
                 onClick = {
-                    if (compact) {
+                    if (state.taskSelectMode) state.toggleTaskSelection(t.id)
+                    else if (compact) {
                         state.select(column, t.id)
                         state.compactColumnIndex = column + 1
                         state.focusedColumn = column + 1
                     } else state.select(column, t.id)
                 },
-                onDoubleClick = { state.select(column, t.id); state.renamingId = t.id },
-                onLongClick = { menu = true },
+                onDoubleClick = if (state.taskSelectMode) null else { { state.select(column, t.id); state.renamingId = t.id } },
+                onLongClick = if (state.taskSelectMode) null else { { menu = true } },
             ),
     ) {
         DsListItem(
             containerColor = bg, contentColor = fg,
             leading = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (t.id != INBOX_ID) Icon(Icons.Default.DragHandle, s.dragToReorder, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = handle.size(24.dp).testTag("drag:${t.id}"))
-                    DsCheckbox(checked = t.done, onCheckedChange = { state.toggleDone(t.id) }, enabled = t.id != INBOX_ID)
+                    if (state.taskSelectMode) {
+                        Box(Modifier.testTag("selectTask:${t.id}").semantics(mergeDescendants = true) { contentDescription = t.title }) {
+                            DsCheckbox(checked = t.id in state.selectedTaskIds, onCheckedChange = { state.toggleTaskSelection(t.id) }, enabled = t.id != INBOX_ID)
+                        }
+                    } else {
+                        if (t.id != INBOX_ID) Icon(Icons.Default.DragHandle, s.dragToReorder, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = handle.size(24.dp).testTag("drag:${t.id}"))
+                        DsCheckbox(checked = t.done, onCheckedChange = { state.toggleDone(t.id) }, enabled = t.id != INBOX_ID)
+                    }
                 }
             },
             headline = {
@@ -248,7 +300,7 @@ private fun TaskRow(state: AppState, t: Task, column: Int, selected: Boolean, fo
                     Text(t.title, textDecoration = if (t.done) TextDecoration.LineThrough else null)
                 }
             },
-            supporting = if (staleTicket) {
+            supporting = if (staleTicket && !state.taskSelectMode) {
                 {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(s.breakDownHint, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error, modifier = Modifier.weight(1f))
@@ -261,9 +313,13 @@ private fun TaskRow(state: AppState, t: Task, column: Int, selected: Boolean, fo
                     if (todayTicket) Icon(Icons.Default.Today, s.toToday, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.padding(horizontal = 2.dp))
                     if (totalKids > 0) {
                         Text(s.childCount(openKids, totalKids), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        if (state.taskSelectMode) {
+                            DsIconButton(onClick = { state.select(column, t.id); state.compactColumnIndex = column + 1; state.focusedColumn = column + 1 },
+                                icon = Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = t.title,
+                                modifier = Modifier.testTag("openTask:${t.id}"))
+                        } else Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    Box {
+                    if (!state.taskSelectMode) Box {
                         DsIconButton(onClick = { menu = true }, icon = Icons.Default.MoreVert, contentDescription = null)
                         TaskMenu(state, t, column, menu) { menu = false }
                     }
